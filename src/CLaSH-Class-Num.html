@@ -15,16 +15,19 @@
 <a name="line-6"></a>
 <a name="line-7"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>TypeLits</span>
 <a name="line-8"></a>
-<a name="line-9"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Add</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyword'>where</span>
-<a name="line-10"></a>  <span class='hs-keyword'>type</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
-<a name="line-11"></a>  <span class='hs-varid'>plus</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
-<a name="line-12"></a>  <span class='hs-varid'>minus</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
-<a name="line-13"></a>
-<a name="line-14"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Mult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyword'>where</span>
-<a name="line-15"></a>  <span class='hs-keyword'>type</span> <span class='hs-conid'>MResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
-<a name="line-16"></a>  <span class='hs-varid'>mult</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>MResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
-<a name="line-17"></a>
-<a name="line-18"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Resize</span> <span class='hs-varid'>f</span> <span class='hs-keyword'>where</span>
-<a name="line-19"></a>  <span class='hs-varid'>resize</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>KnownNat</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>KnownNat</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>b</span>
+<a name="line-9"></a><span class='hs-comment'>-- | Implicitly adding or subtracting values of two different (sub-)types.</span>
+<a name="line-10"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Add</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyword'>where</span>
+<a name="line-11"></a>  <span class='hs-keyword'>type</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
+<a name="line-12"></a>  <span class='hs-varid'>plus</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
+<a name="line-13"></a>  <span class='hs-varid'>minus</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>AResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
+<a name="line-14"></a>
+<a name="line-15"></a><span class='hs-comment'>-- | Implicitly multiplying values of two different (sub-)types.</span>
+<a name="line-16"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Mult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span> <span class='hs-keyword'>where</span>
+<a name="line-17"></a>  <span class='hs-keyword'>type</span> <span class='hs-conid'>MResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
+<a name="line-18"></a>  <span class='hs-varid'>mult</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>MResult</span> <span class='hs-varid'>a</span> <span class='hs-varid'>b</span>
+<a name="line-19"></a>
+<a name="line-20"></a><span class='hs-comment'>-- | Coerce a value to be represented by a different number of bits</span>
+<a name="line-21"></a><span class='hs-keyword'>class</span> <span class='hs-conid'>Resize</span> <span class='hs-varid'>f</span> <span class='hs-keyword'>where</span>
+<a name="line-22"></a>  <span class='hs-varid'>resize</span> <span class='hs-keyglyph'>::</span> <span class='hs-layout'>(</span><span class='hs-conid'>KnownNat</span> <span class='hs-varid'>a</span><span class='hs-layout'>,</span> <span class='hs-conid'>KnownNat</span> <span class='hs-varid'>b</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>b</span>
 </pre></body>
 </html>

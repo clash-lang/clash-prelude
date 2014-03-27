@@ -8,11 +8,21 @@
 </head>
 <body>
 <pre><a name="line-1"></a><span class='hs-comment'>{-# LANGUAGE TemplateHaskell, DataKinds #-}</span>
-<a name="line-2"></a><span class='hs-comment'>-- | Predefined 'SNat' singleton literals</span>
-<a name="line-3"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span><span class='hs-varop'>.</span><span class='hs-conid'>Literals</span> <span class='hs-keyword'>where</span>
-<a name="line-4"></a>
-<a name="line-5"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span><span class='hs-varop'>.</span><span class='hs-conid'>TH</span>
-<a name="line-6"></a>
-<a name="line-7"></a><span class='hs-varop'>$</span><span class='hs-layout'>(</span><span class='hs-varid'>decLiteralsD</span> <span class='hs-str'>"d"</span> <span class='hs-num'>0</span> <span class='hs-num'>1024</span><span class='hs-layout'>)</span>
+<a name="line-2"></a><span class='hs-comment'>-- | Predefined 'SNat' singleton literals in the range [0 .. 1024]</span>
+<a name="line-3"></a><span class='hs-comment'>--</span>
+<a name="line-4"></a><span class='hs-comment'>-- Defines:</span>
+<a name="line-5"></a><span class='hs-comment'>--</span>
+<a name="line-6"></a><span class='hs-comment'>-- &gt; d0 = snat :: SNat 0</span>
+<a name="line-7"></a><span class='hs-comment'>-- &gt; d1 = snat :: SNat 1</span>
+<a name="line-8"></a><span class='hs-comment'>-- &gt; d2 = snat :: SNat 2</span>
+<a name="line-9"></a><span class='hs-comment'>-- &gt; ...</span>
+<a name="line-10"></a><span class='hs-comment'>-- &gt; d1024 = snat :: SNat 1024</span>
+<a name="line-11"></a><span class='hs-comment'>--</span>
+<a name="line-12"></a><span class='hs-comment'>-- You can generate more 'SNat' literals using 'decLiteralsD' from "CLaSH.Promoted.Nat.TH"</span>
+<a name="line-13"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span><span class='hs-varop'>.</span><span class='hs-conid'>Literals</span> <span class='hs-keyword'>where</span>
+<a name="line-14"></a>
+<a name="line-15"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span><span class='hs-varop'>.</span><span class='hs-conid'>TH</span>
+<a name="line-16"></a>
+<a name="line-17"></a><span class='hs-varop'>$</span><span class='hs-layout'>(</span><span class='hs-varid'>decLiteralsD</span> <span class='hs-str'>"d"</span> <span class='hs-num'>0</span> <span class='hs-num'>1024</span><span class='hs-layout'>)</span>
 </pre></body>
 </html>
