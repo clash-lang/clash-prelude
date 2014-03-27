@@ -26,7 +26,7 @@
 <a name="line-17"></a><span class='hs-comment'>--   and use truncation as the rounding method.</span>
 <a name="line-18"></a><span class='hs-comment'>--</span>
 <a name="line-19"></a><span class='hs-comment'>-- * Use @$$('fLit' d)@ to create 'Fixed' point number literals.</span>
-<a name="line-20"></a><span class='hs-comment'>-- * Use &lt;#constraintsynonyms Constrain synonyms&gt; when writing type signatures</span>
+<a name="line-20"></a><span class='hs-comment'>-- * Use &lt;#constraintsynonyms Constraint synonyms&gt; when writing type signatures</span>
 <a name="line-21"></a><span class='hs-comment'>--   for polymorphic functions that use 'Fixed' point numbers.</span>
 <a name="line-22"></a><span class='hs-comment'>--</span>
 <a name="line-23"></a><span class='hs-comment'>-- BEWARE: rounding by truncation introduces a sign bias!</span>
@@ -45,13 +45,13 @@
 <a name="line-36"></a>    <span class='hs-comment'>-- * Constraint synonyms</span>
 <a name="line-37"></a>    <span class='hs-comment'>-- $constraintsynonyms</span>
 <a name="line-38"></a>
-<a name="line-39"></a>    <span class='hs-comment'>-- ** Constraints synonyms for 'SFixed'</span>
+<a name="line-39"></a>    <span class='hs-comment'>-- ** Constraint synonyms for 'SFixed'</span>
 <a name="line-40"></a>  <span class='hs-layout'>,</span> <span class='hs-conid'>NumSFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>AddSFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>MultSFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>ResizeSFC</span>
-<a name="line-41"></a>    <span class='hs-comment'>-- ** Constraints synonyms for 'UFixed'</span>
+<a name="line-41"></a>    <span class='hs-comment'>-- ** Constraint synonyms for 'UFixed'</span>
 <a name="line-42"></a>  <span class='hs-layout'>,</span> <span class='hs-conid'>NumUFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>AddUFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>MultUFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>ResizeUFC</span>
-<a name="line-43"></a>    <span class='hs-comment'>-- ** Constraints synonyms for 'Fixed' wrapper</span>
+<a name="line-43"></a>    <span class='hs-comment'>-- ** Constraint synonyms for 'Fixed' wrapper</span>
 <a name="line-44"></a>  <span class='hs-layout'>,</span> <span class='hs-conid'>NumFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>AddFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>MultFixed</span><span class='hs-layout'>,</span> <span class='hs-conid'>ResizeFC</span><span class='hs-layout'>,</span> <span class='hs-conid'>SatN2C</span>
-<a name="line-45"></a>    <span class='hs-comment'>-- ** Constraints synonyms for 'Signed' and 'Unsigned'</span>
+<a name="line-45"></a>    <span class='hs-comment'>-- ** Constraint synonyms for 'Signed' and 'Unsigned'</span>
 <a name="line-46"></a>  <span class='hs-layout'>,</span> <span class='hs-conid'>SatN2SC</span><span class='hs-layout'>,</span> <span class='hs-conid'>SatN2UC</span>
 <a name="line-47"></a>    <span class='hs-comment'>-- * Proxy</span>
 <a name="line-48"></a>  <span class='hs-layout'>,</span> <span class='hs-varid'>asFracProxy</span><span class='hs-layout'>,</span> <span class='hs-varid'>asRepProxy</span>
@@ -113,9 +113,9 @@
 <a name="line-104"></a><a name="SFixed"></a><span class='hs-comment'>-- 3.9375</span>
 <a name="line-105"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (-2 :: SFixed 3 4) + (-3 :: SFixed 3 4)</span>
 <a name="line-106"></a><a name="SFixed"></a><span class='hs-comment'>-- -4.0</span>
-<a name="line-107"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (sf d4 22 :: SFixed 3 4) * (sf d4 (-13) :: SFixed 3 4)</span>
+<a name="line-107"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; ($$(fLit 1.375) :: SFixed 3 4) * ($$(fLit -0.8125) :: SFixed 3 4)</span>
 <a name="line-108"></a><a name="SFixed"></a><span class='hs-comment'>-- -1.125</span>
-<a name="line-109"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (sf d4 22 :: SFixed 3 4) `mult` (sf d4 (-13) :: SFixed 3 4) :: SFixed 6 8</span>
+<a name="line-109"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; ($$(fLit 1.375) :: SFixed 3 4) `mult` ($$(fLit -0.8125) :: SFixed 3 4) :: SFixed 6 8</span>
 <a name="line-110"></a><a name="SFixed"></a><span class='hs-comment'>-- -1.1171875</span>
 <a name="line-111"></a><a name="SFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (2 :: SFixed 3 4) `plus` (3 :: SFixed 3 4) :: SFixed 4 4</span>
 <a name="line-112"></a><a name="SFixed"></a><span class='hs-comment'>-- 5.0</span>
@@ -140,9 +140,9 @@
 <a name="line-131"></a><a name="UFixed"></a><span class='hs-comment'>-- 7.9375</span>
 <a name="line-132"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (1 :: UFixed 3 4) - (3 :: UFixed 3 4)</span>
 <a name="line-133"></a><a name="UFixed"></a><span class='hs-comment'>-- 0.0</span>
-<a name="line-134"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (uf d4 22 :: UFixed 3 4) * (uf d4 (13) :: UFixed 3 4)</span>
+<a name="line-134"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; ($$(fLit 1.375) :: UFixed 3 4) * ($$(fLit 0.8125) :: UFixed 3 4)</span>
 <a name="line-135"></a><a name="UFixed"></a><span class='hs-comment'>-- 1.0625</span>
-<a name="line-136"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (uf d4 22 :: UFixed 3 4) `mult` (uf d4 (13) :: UFixed 3 4) :: UFixed 6 8</span>
+<a name="line-136"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; ($$(fLit 1.375) :: UFixed 3 4) `mult` ($$(fLit 0.8125) :: UFixed 3 4) :: UFixed 6 8</span>
 <a name="line-137"></a><a name="UFixed"></a><span class='hs-comment'>-- 1.1171875</span>
 <a name="line-138"></a><a name="UFixed"></a><span class='hs-comment'>-- &gt;&gt;&gt; (2 :: UFixed 3 4) `plus` (6 :: UFixed 3 4) :: UFixed 4 4</span>
 <a name="line-139"></a><a name="UFixed"></a><span class='hs-comment'>-- 8.0</span>
