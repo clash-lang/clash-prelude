@@ -14,37 +14,35 @@
 <a name="line-5"></a>
 <a name="line-6"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span>
 <a name="line-7"></a>
-<a name="line-8"></a><a name="decLiteralD"></a><span class='hs-comment'>-- | Create an 'SNat' constant</span>
+<a name="line-8"></a><a name="decLiteralD"></a><span class='hs-comment'>-- | Create an 'SNat' literal</span>
 <a name="line-9"></a><span class='hs-comment'>--</span>
 <a name="line-10"></a><span class='hs-comment'>-- &gt; $(decLiteralD "d" 1200)</span>
 <a name="line-11"></a><span class='hs-comment'>--</span>
 <a name="line-12"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1200</span>
 <a name="line-13"></a><span class='hs-comment'>-- d1200 :: SNat 1200</span>
-<a name="line-14"></a><span class='hs-definition'>decLiteralD</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>String</span>
-<a name="line-15"></a>            <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
-<a name="line-16"></a>            <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Q</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Dec</span><span class='hs-keyglyph'>]</span>
-<a name="line-17"></a><span class='hs-definition'>decLiteralD</span> <span class='hs-varid'>valPrefix</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>=</span>
-<a name="line-18"></a>    <span class='hs-keyword'>do</span> <span class='hs-keyword'>let</span> <span class='hs-varid'>suffix</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>n</span> <span class='hs-varop'>&lt;</span> <span class='hs-num'>0</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>error</span> <span class='hs-layout'>(</span><span class='hs-str'>"Can't make negative SNat: "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span> <span class='hs-keyword'>else</span> <span class='hs-varid'>show</span> <span class='hs-varid'>n</span>
-<a name="line-19"></a>           <span class='hs-varid'>valName</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkName</span> <span class='hs-varop'>$</span> <span class='hs-varid'>valPrefix</span> <span class='hs-varop'>++</span> <span class='hs-varid'>suffix</span>
-<a name="line-20"></a>       <span class='hs-varid'>sig</span>   <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>sigD</span> <span class='hs-varid'>valName</span> <span class='hs-layout'>(</span><span class='hs-varid'>appT</span> <span class='hs-layout'>(</span><span class='hs-varid'>conT</span> <span class='hs-chr'>'</span><span class='hs-chr'>'</span><span class='hs-conid'>SNat</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>litT</span> <span class='hs-layout'>(</span><span class='hs-varid'>numTyLit</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
-<a name="line-21"></a>       <span class='hs-varid'>val</span>   <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>valD</span> <span class='hs-layout'>(</span><span class='hs-varid'>varP</span> <span class='hs-varid'>valName</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>normalB</span> <span class='hs-keyglyph'>[</span><span class='hs-keyglyph'>|</span> <span class='hs-varid'>snat</span> <span class='hs-keyglyph'>|</span><span class='hs-keyglyph'>]</span><span class='hs-layout'>)</span> <span class='hs-conid'>[]</span>
-<a name="line-22"></a>       <span class='hs-varid'>return</span> <span class='hs-keyglyph'>[</span> <span class='hs-varid'>sig</span><span class='hs-layout'>,</span> <span class='hs-varid'>val</span> <span class='hs-keyglyph'>]</span>
-<a name="line-23"></a>
-<a name="line-24"></a><a name="decLiteralsD"></a><span class='hs-comment'>-- | Create an 'SNat' constants</span>
-<a name="line-25"></a><span class='hs-comment'>--</span>
-<a name="line-26"></a><span class='hs-comment'>-- &gt; $(decLiteralsD "d" 1200 1202)</span>
-<a name="line-27"></a><span class='hs-comment'>--</span>
-<a name="line-28"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1200</span>
-<a name="line-29"></a><span class='hs-comment'>-- d1200 :: SNat 1200</span>
-<a name="line-30"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1201</span>
-<a name="line-31"></a><span class='hs-comment'>-- d1201 :: SNat 1201</span>
-<a name="line-32"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1202</span>
-<a name="line-33"></a><span class='hs-comment'>-- d1202 :: SNat 1202</span>
-<a name="line-34"></a><span class='hs-definition'>decLiteralsD</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>String</span>
-<a name="line-35"></a>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
-<a name="line-36"></a>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
-<a name="line-37"></a>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Q</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Dec</span><span class='hs-keyglyph'>]</span>
-<a name="line-38"></a><span class='hs-definition'>decLiteralsD</span> <span class='hs-varid'>valPrefix</span> <span class='hs-varid'>from</span> <span class='hs-varid'>to</span> <span class='hs-keyglyph'>=</span>
-<a name="line-39"></a>    <span class='hs-varid'>fmap</span> <span class='hs-varid'>concat</span> <span class='hs-varop'>$</span> <span class='hs-varid'>sequence</span> <span class='hs-varop'>$</span> <span class='hs-keyglyph'>[</span> <span class='hs-varid'>decLiteralD</span> <span class='hs-varid'>valPrefix</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>from</span><span class='hs-keyglyph'>..</span><span class='hs-varid'>to</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>]</span>
+<a name="line-14"></a><span class='hs-definition'>decLiteralD</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Integer</span>
+<a name="line-15"></a>            <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Q</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Dec</span><span class='hs-keyglyph'>]</span>
+<a name="line-16"></a><span class='hs-definition'>decLiteralD</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>do</span>
+<a name="line-17"></a>  <span class='hs-keyword'>let</span> <span class='hs-varid'>suffix</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>n</span> <span class='hs-varop'>&lt;</span> <span class='hs-num'>0</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>error</span> <span class='hs-layout'>(</span><span class='hs-str'>"Can't make negative SNat: "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span> <span class='hs-keyword'>else</span> <span class='hs-varid'>show</span> <span class='hs-varid'>n</span>
+<a name="line-18"></a>      <span class='hs-varid'>valName</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkName</span> <span class='hs-varop'>$</span> <span class='hs-chr'>'d'</span><span class='hs-conop'>:</span><span class='hs-varid'>suffix</span>
+<a name="line-19"></a>  <span class='hs-varid'>sig</span>   <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>sigD</span> <span class='hs-varid'>valName</span> <span class='hs-layout'>(</span><span class='hs-varid'>appT</span> <span class='hs-layout'>(</span><span class='hs-varid'>conT</span> <span class='hs-chr'>'</span><span class='hs-chr'>'</span><span class='hs-conid'>SNat</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>litT</span> <span class='hs-layout'>(</span><span class='hs-varid'>numTyLit</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-20"></a>  <span class='hs-varid'>val</span>   <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>valD</span> <span class='hs-layout'>(</span><span class='hs-varid'>varP</span> <span class='hs-varid'>valName</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>normalB</span> <span class='hs-keyglyph'>[</span><span class='hs-keyglyph'>|</span> <span class='hs-varid'>snat</span> <span class='hs-keyglyph'>|</span><span class='hs-keyglyph'>]</span><span class='hs-layout'>)</span> <span class='hs-conid'>[]</span>
+<a name="line-21"></a>  <span class='hs-varid'>return</span> <span class='hs-keyglyph'>[</span> <span class='hs-varid'>sig</span><span class='hs-layout'>,</span> <span class='hs-varid'>val</span> <span class='hs-keyglyph'>]</span>
+<a name="line-22"></a>
+<a name="line-23"></a><a name="decLiteralsD"></a><span class='hs-comment'>-- | Create a range of 'SNat' literals</span>
+<a name="line-24"></a><span class='hs-comment'>--</span>
+<a name="line-25"></a><span class='hs-comment'>-- &gt; $(decLiteralsD 1200 1202)</span>
+<a name="line-26"></a><span class='hs-comment'>--</span>
+<a name="line-27"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1200</span>
+<a name="line-28"></a><span class='hs-comment'>-- d1200 :: SNat 1200</span>
+<a name="line-29"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1201</span>
+<a name="line-30"></a><span class='hs-comment'>-- d1201 :: SNat 1201</span>
+<a name="line-31"></a><span class='hs-comment'>-- &gt;&gt;&gt; :t d1202</span>
+<a name="line-32"></a><span class='hs-comment'>-- d1202 :: SNat 1202</span>
+<a name="line-33"></a><span class='hs-definition'>decLiteralsD</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Integer</span>
+<a name="line-34"></a>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span>
+<a name="line-35"></a>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Q</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Dec</span><span class='hs-keyglyph'>]</span>
+<a name="line-36"></a><span class='hs-definition'>decLiteralsD</span> <span class='hs-varid'>from</span> <span class='hs-varid'>to</span> <span class='hs-keyglyph'>=</span>
+<a name="line-37"></a>    <span class='hs-varid'>fmap</span> <span class='hs-varid'>concat</span> <span class='hs-varop'>$</span> <span class='hs-varid'>sequence</span> <span class='hs-varop'>$</span> <span class='hs-keyglyph'>[</span> <span class='hs-varid'>decLiteralD</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>from</span><span class='hs-keyglyph'>..</span><span class='hs-varid'>to</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>]</span>
 </pre></body>
 </html>
