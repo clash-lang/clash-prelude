@@ -22,11 +22,11 @@
 <a name="line-13"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Promoted</span><span class='hs-varop'>.</span><span class='hs-conid'>Nat</span>  <span class='hs-layout'>(</span><span class='hs-conid'>SNat</span><span class='hs-layout'>)</span>
 <a name="line-14"></a>
 <a name="line-15"></a><span class='hs-keyword'>infixr</span> <span class='hs-num'>5</span> <span class='hs-conop'>:-</span>
-<a name="line-16"></a><a name="Signal"></a><span class='hs-comment'>-- | A synchronized signal with elements of type @a@, implicitly synchronized to</span>
+<a name="line-16"></a><a name="Signal"></a><span class='hs-comment'>-- | A synchronized signal with samples of type @a@, implicitly synchronized to</span>
 <a name="line-17"></a><a name="Signal"></a><span class='hs-comment'>-- an unnamed global clock</span>
 <a name="line-18"></a><a name="Signal"></a><span class='hs-keyword'>data</span> <span class='hs-conid'>Signal</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>a</span> <span class='hs-conop'>:-</span> <span class='hs-conid'>Signal</span> <span class='hs-varid'>a</span>
 <a name="line-19"></a>
-<a name="line-20"></a><a name="CSignal"></a><span class='hs-comment'>-- | A synchronized signal with elements of type @a@, explicitly synchronized to</span>
+<a name="line-20"></a><a name="CSignal"></a><span class='hs-comment'>-- | A synchronized signal with samples of type @a@, explicitly synchronized to</span>
 <a name="line-21"></a><a name="CSignal"></a><span class='hs-comment'>-- a clock with period @clk@</span>
 <a name="line-22"></a><a name="CSignal"></a><span class='hs-keyword'>newtype</span> <span class='hs-conid'>CSignal</span> <span class='hs-layout'>(</span><span class='hs-varid'>clk</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Nat</span><span class='hs-layout'>)</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>CSignal</span> <span class='hs-layout'>(</span><span class='hs-conid'>Signal</span> <span class='hs-varid'>a</span><span class='hs-layout'>)</span>
 <a name="line-23"></a>  <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Show</span><span class='hs-layout'>,</span><span class='hs-conid'>Default</span><span class='hs-layout'>,</span><span class='hs-conid'>Lift</span><span class='hs-layout'>,</span><span class='hs-conid'>Functor</span><span class='hs-layout'>,</span><span class='hs-conid'>Applicative</span><span class='hs-layout'>)</span>
