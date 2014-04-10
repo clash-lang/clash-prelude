@@ -236,7 +236,7 @@
 <a name="line-227"></a>  <span class='hs-varid'>unpack</span> <span class='hs-varid'>vs</span><span class='hs-keyglyph'>@</span><span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-keyword'>_</span> <span class='hs-conop'>:&gt;</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-conop'>:-</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fmap</span> <span class='hs-varid'>vhead</span> <span class='hs-varid'>vs</span> <span class='hs-conop'>:&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>unpack</span> <span class='hs-layout'>(</span><span class='hs-varid'>fmap</span> <span class='hs-varid'>vtail</span> <span class='hs-varid'>vs</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
 <a name="line-228"></a>
 <a name="line-229"></a>
-<a name="line-230"></a><a name="%3c%5e"></a><span class='hs-comment'>-- | Operator lifting, use in conjunction with '(^&gt;)'</span>
+<a name="line-230"></a><a name="%3c%5e"></a><span class='hs-comment'>-- | Operator lifting, use in conjunction with ('^&gt;')</span>
 <a name="line-231"></a><span class='hs-comment'>--</span>
 <a name="line-232"></a><span class='hs-comment'>-- &gt; add2 :: Signal Int -&gt; Signal Int</span>
 <a name="line-233"></a><span class='hs-comment'>-- &gt; add2 x = x &lt;^(+)^&gt; (signal 2)</span>
@@ -246,7 +246,7 @@
 <a name="line-237"></a><span class='hs-layout'>(</span><span class='hs-varop'>&lt;^</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Applicative</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>c</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>b</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>c</span>
 <a name="line-238"></a><a name="v"></a><span class='hs-definition'>v</span> <span class='hs-varop'>&lt;^</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>liftA2</span> <span class='hs-varid'>f</span> <span class='hs-varid'>v</span>
 <a name="line-239"></a>
-<a name="line-240"></a><a name="%5e%3e"></a><span class='hs-comment'>-- | Operator lifting, use in conjunction with '(&lt;^)'</span>
+<a name="line-240"></a><a name="%5e%3e"></a><span class='hs-comment'>-- | Operator lifting, use in conjunction with ('&lt;^')</span>
 <a name="line-241"></a><span class='hs-comment'>--</span>
 <a name="line-242"></a><span class='hs-comment'>-- &gt; add2 :: Signal Int -&gt; Signal Int</span>
 <a name="line-243"></a><span class='hs-comment'>-- &gt; add2 x = x &lt;^(+)^&gt; (signal 2)</span>
