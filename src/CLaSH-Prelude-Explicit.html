@@ -184,7 +184,7 @@
 <a name="line-175"></a><span class='hs-definition'>cregisterC</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Clock</span> <span class='hs-varid'>clk</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>CComp</span> <span class='hs-varid'>clk</span> <span class='hs-varid'>a</span> <span class='hs-varid'>a</span>
 <a name="line-176"></a><span class='hs-definition'>cregisterC</span> <span class='hs-varid'>clk</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>CC</span> <span class='hs-conid'>Prelude</span><span class='hs-keyglyph'>..</span> <span class='hs-varid'>cregister</span> <span class='hs-varid'>clk</span>
 <a name="line-177"></a>
-<a name="line-178"></a><a name="csimulateC"></a><span class='hs-comment'>{-# DEPRECATED csimulateC "'Comp' is deprecated, use 'csimulate' instead" #-}</span>
+<a name="line-178"></a><a name="csimulateC"></a><span class='hs-comment'>{-# DEPRECATED csimulateC "'CComp' is deprecated, use 'csimulate' instead" #-}</span>
 <a name="line-179"></a><span class='hs-comment'>-- | Simulate a 'Comp'onent given a list of samples</span>
 <a name="line-180"></a><span class='hs-comment'>--</span>
 <a name="line-181"></a><span class='hs-comment'>-- &gt; clk100 = Clock d100</span>
@@ -222,7 +222,7 @@
 <a name="line-213"></a>             <span class='hs-keyglyph'>|</span> <span class='hs-varid'>otherwise</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>ram</span>
 <a name="line-214"></a>        <span class='hs-varid'>o'</span>               <span class='hs-keyglyph'>=</span> <span class='hs-varid'>ram</span> <span class='hs-varop'>!</span> <span class='hs-varid'>r</span>
 <a name="line-215"></a>
-<a name="line-216"></a><a name="blockRamCC"></a><span class='hs-comment'>{-# DEPRECATED blockRamCC "'Comp' is deprecated, use 'cblockRam' instead" #-}</span>
+<a name="line-216"></a><a name="blockRamCC"></a><span class='hs-comment'>{-# DEPRECATED blockRamCC "'CComp' is deprecated, use 'cblockRam' instead" #-}</span>
 <a name="line-217"></a><span class='hs-comment'>-- | Create a blockRAM with space for @n@ elements</span>
 <a name="line-218"></a><span class='hs-comment'>--</span>
 <a name="line-219"></a><span class='hs-comment'>-- &gt; clk100 = Clock 100</span>
@@ -250,7 +250,7 @@
 <a name="line-241"></a>              <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>CSignal</span> <span class='hs-varid'>clk</span> <span class='hs-varid'>a</span>            <span class='hs-comment'>-- ^ Value of the 'blockRAM' at address @r@ from the previous clock cycle</span>
 <a name="line-242"></a><span class='hs-definition'>cblockRamPow2</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>cblockRam</span>
 <a name="line-243"></a>
-<a name="line-244"></a><a name="blockRamPow2CC"></a><span class='hs-comment'>{-# DEPRECATED blockRamPow2CC "'Comp' is deprecated, use 'cblockRamPow2' instead" #-}</span>
+<a name="line-244"></a><a name="blockRamPow2CC"></a><span class='hs-comment'>{-# DEPRECATED blockRamPow2CC "'CComp' is deprecated, use 'cblockRamPow2' instead" #-}</span>
 <a name="line-245"></a><span class='hs-comment'>-- | Create a blockRAM with space for 2^@n@ elements</span>
 <a name="line-246"></a><span class='hs-comment'>--</span>
 <a name="line-247"></a><span class='hs-comment'>-- &gt; clk100 = Clock d100</span>

@@ -7,179 +7,233 @@
 <link type='text/css' rel='stylesheet' href='hscolour.css' />
 </head>
 <body>
-<pre><a name="line-1"></a><span class='hs-comment'>{- | A little tutorial to CλaSH
-<a name="line-2"></a>-}</span>
-<a name="line-3"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Tutorial</span> <span class='hs-layout'>(</span>
-<a name="line-4"></a>  <span class='hs-comment'>-- * Introduction</span>
-<a name="line-5"></a>  <span class='hs-comment'>-- $introduction</span>
-<a name="line-6"></a>
-<a name="line-7"></a>  <span class='hs-comment'>-- * MAC Example</span>
-<a name="line-8"></a>  <span class='hs-comment'>-- $mac_example</span>
-<a name="line-9"></a>
-<a name="line-10"></a>  <span class='hs-comment'>-- * Conclusion</span>
-<a name="line-11"></a>  <span class='hs-comment'>-- $conclusion</span>
-<a name="line-12"></a>
-<a name="line-13"></a>  <span class='hs-comment'>-- * Errors and their solutions</span>
-<a name="line-14"></a>  <span class='hs-comment'>-- $errorsandsolutions</span>
-<a name="line-15"></a>
-<a name="line-16"></a>  <span class='hs-comment'>-- * Haskell stuff that the CλaSH compiler does not support</span>
-<a name="line-17"></a>  <span class='hs-comment'>-- $unsupported</span>
-<a name="line-18"></a>  <span class='hs-layout'>)</span>
-<a name="line-19"></a><span class='hs-keyword'>where</span>
-<a name="line-20"></a>
-<a name="line-21"></a><span class='hs-comment'>{- $introduction
-<a name="line-22"></a>-}</span>
-<a name="line-23"></a>
-<a name="line-24"></a><span class='hs-comment'>{- $mac_example
-<a name="line-25"></a>-}</span>
-<a name="line-26"></a>
-<a name="line-27"></a><span class='hs-comment'>{- $conclusion
-<a name="line-28"></a>-}</span>
-<a name="line-29"></a>
-<a name="line-30"></a><span class='hs-comment'>{- $errorsandsolutions
-<a name="line-31"></a>
-<a name="line-32"></a>* __Type error: Couldn't match expected type ‘Signal (a,b)’ with actual type__
-<a name="line-33"></a>  __‘(Signal a, Signal b)’__:
+<pre><a name="line-1"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>CLaSH</span><span class='hs-varop'>.</span><span class='hs-conid'>Tutorial</span> <span class='hs-layout'>(</span>
+<a name="line-2"></a>  <span class='hs-comment'>-- * Introduction</span>
+<a name="line-3"></a>  <span class='hs-comment'>-- $introduction</span>
+<a name="line-4"></a>
+<a name="line-5"></a>  <span class='hs-comment'>-- * Installation</span>
+<a name="line-6"></a>  <span class='hs-comment'>-- $installation</span>
+<a name="line-7"></a>
+<a name="line-8"></a>  <span class='hs-comment'>-- * MAC Example</span>
+<a name="line-9"></a>  <span class='hs-comment'>-- $mac_example</span>
+<a name="line-10"></a>
+<a name="line-11"></a>  <span class='hs-comment'>-- * Conclusion</span>
+<a name="line-12"></a>  <span class='hs-comment'>-- $conclusion</span>
+<a name="line-13"></a>
+<a name="line-14"></a>  <span class='hs-comment'>-- * Errors and their solutions</span>
+<a name="line-15"></a>  <span class='hs-comment'>-- $errorsandsolutions</span>
+<a name="line-16"></a>
+<a name="line-17"></a>  <span class='hs-comment'>-- * Haskell stuff that the CλaSH compiler does not support</span>
+<a name="line-18"></a>  <span class='hs-comment'>-- $unsupported</span>
+<a name="line-19"></a>  <span class='hs-layout'>)</span>
+<a name="line-20"></a><span class='hs-keyword'>where</span>
+<a name="line-21"></a>
+<a name="line-22"></a><span class='hs-comment'>{- $introduction
+<a name="line-23"></a>CλaSH (pronounced ‘clash’) is a functional hardware description language that
+<a name="line-24"></a>borrows both its syntax and semantics from the functional programming language
+<a name="line-25"></a>Haskell. The merits of using a functional language to describe hardware comes
+<a name="line-26"></a>from the fact that combinational circuits can be directly modeled as
+<a name="line-27"></a>mathematical functions and that functional languages lend themselves very well
+<a name="line-28"></a>at describing and (de-)composing mathematical functions.
+<a name="line-29"></a>-}</span>
+<a name="line-30"></a>
+<a name="line-31"></a><span class='hs-comment'>{- $installation
+<a name="line-32"></a>The CλaSH compiler and Prelude library for circuit design only work with the
+<a name="line-33"></a>&lt;<a href="http://haskell.org/ghc">http://haskell.org/ghc</a> GHC&gt; Haskell compiler version 7.8.1 and up.
 <a name="line-34"></a>
-<a name="line-35"></a>    Signals of product types and product types (to which tuples belong) of
-<a name="line-36"></a>    signals are __isomorphic__, but not (structurally) equal. Use the
-<a name="line-37"></a>    'CLaSH.Signal.Implicit.pack' function to convert from a product type to the
-<a name="line-38"></a>    signal type. So if your code which gives the error looks like:
-<a name="line-39"></a>
-<a name="line-40"></a>    @
-<a name="line-41"></a>    ... = f a b (c,d)
-<a name="line-42"></a>    @
-<a name="line-43"></a>
-<a name="line-44"></a>    add the 'CLaSH.Signal.Implicit.pack' function like so:
-<a name="line-45"></a>
-<a name="line-46"></a>    @
-<a name="line-47"></a>    ... = f a b (pack (c,d))
-<a name="line-48"></a>    @
+<a name="line-35"></a>(1) Install __GHC (version 7.8.1 or higher)__
+<a name="line-36"></a>
+<a name="line-37"></a>    * Download and install &lt;<a href="http://www.haskell.org/ghc/download">http://www.haskell.org/ghc/download</a> GHC for your platform&gt;.
+<a name="line-38"></a>      Unix user can use @./configure prefix=\&lt;LOCATION\&gt;@ to set the installation
+<a name="line-39"></a>      location.
+<a name="line-40"></a>
+<a name="line-41"></a>    * Make sure that the @bin@ directory of __GHC__ is in your @PATH@.
+<a name="line-42"></a>
+<a name="line-43"></a>(2) Install __Cabal__
+<a name="line-44"></a>
+<a name="line-45"></a>    * Windows:
+<a name="line-46"></a>
+<a name="line-47"></a>        * Download the binary for &lt;<a href="http://www.haskell.org/cabal/download.html">http://www.haskell.org/cabal/download.html</a> cabal-install&gt;
+<a name="line-48"></a>        * Put the binary in a location mentioned in your @PATH@
 <a name="line-49"></a>
-<a name="line-50"></a>    Product types supported by 'CLaSH.Signal.Implicit.pack' are:
+<a name="line-50"></a>    * Unix:
 <a name="line-51"></a>
-<a name="line-52"></a>    * All tuples until and including 8-tuples
-<a name="line-53"></a>    * The 'CLaSH.Sized.Vector.Vec'tor type
-<a name="line-54"></a>
-<a name="line-55"></a>    NB: Use 'CLaSH.Signal.Explicit.cpack' when you are using explicitly
-<a name="line-56"></a>    clocked 'CLaSH.Signal.Explicit.CSignal's
-<a name="line-57"></a>
-<a name="line-58"></a>* __Type error: Couldn't match expected type ‘(Signal a, Signal b)’ with__
-<a name="line-59"></a>  __ actual type ‘Signal (a,b)’__:
+<a name="line-52"></a>        * Download the sources for &lt;<a href="http://hackage.haskell.org/package/cabal-install">http://hackage.haskell.org/package/cabal-install</a> cabal-install&gt;
+<a name="line-53"></a>        * Unpack (@tar xf@) the archive and @cd@ to the directory
+<a name="line-54"></a>        * Run @sh bootstrap.sh@
+<a name="line-55"></a>        * Follow the instructions to add @cabal@ to your @PATH@
+<a name="line-56"></a>
+<a name="line-57"></a>    * Run @cabal update@
+<a name="line-58"></a>
+<a name="line-59"></a>(3) Install update __RepLib__ library
 <a name="line-60"></a>
-<a name="line-61"></a>    Product types (to which tuples belong) of signals and signals of product
-<a name="line-62"></a>    types are __isomorphic__, but not (structurally) equal. Use the
-<a name="line-63"></a>    'CLaSH.Signal.Implicit.unpack' function to convert from a signal type to the
-<a name="line-64"></a>    product type. So if your code which gives the error looks like:
+<a name="line-61"></a>    * Download the sources for the modified &lt;https://www.dropbox.com/s/k1nfbqpzwbub0c1/RepLib-0.5.3.2.tar.gz RepLib-0.5.3.2.tar.gz&gt; library
+<a name="line-62"></a>    * Run @cabal install RepLib-0.5.3.2.tar.gz@
+<a name="line-63"></a>
+<a name="line-64"></a>(4) Install __CλaSH__
 <a name="line-65"></a>
-<a name="line-66"></a>    @
-<a name="line-67"></a>    (c,d) = f a b
-<a name="line-68"></a>    @
+<a name="line-66"></a>    * Run @cabal install clash-ghc@
+<a name="line-67"></a>
+<a name="line-68"></a>(5) Verify that everything is working by:
 <a name="line-69"></a>
-<a name="line-70"></a>    add the 'CLaSH.Signal.Implicit.unpack' function like so:
-<a name="line-71"></a>
-<a name="line-72"></a>    @
-<a name="line-73"></a>    (c,d) = unpack (f a b)
-<a name="line-74"></a>    @
+<a name="line-70"></a>    * Downloading the &lt;https://raw.github.com/christiaanb/clash2/master/examples/FIR.hs Fir.hs&gt; example
+<a name="line-71"></a>    * Run @clash --interactive FIR.hs@
+<a name="line-72"></a>    * Execute, in the interpreter, the @:vhdl@ command.
+<a name="line-73"></a>    * Exit the interpreter using @:q@
+<a name="line-74"></a>    * Examin the VHDL code in the @vhdl@ directory
 <a name="line-75"></a>
-<a name="line-76"></a>    Product types supported by 'CLaSH.Signal.Implicit.unpack' are:
+<a name="line-76"></a>-}</span>
 <a name="line-77"></a>
-<a name="line-78"></a>    * All tuples until and including 8-tuples
-<a name="line-79"></a>    * The 'CLaSH.Sized.Vector.Vec'tor type
+<a name="line-78"></a><span class='hs-comment'>{- $mac_example
+<a name="line-79"></a>-}</span>
 <a name="line-80"></a>
-<a name="line-81"></a>    NB: Use 'CLaSH.Signal.Explicit.cunpack' when you are using explicitly
-<a name="line-82"></a>    clocked 'CLaSH.Signal.Explicit.CSignal's
+<a name="line-81"></a><span class='hs-comment'>{- $conclusion
+<a name="line-82"></a>-}</span>
 <a name="line-83"></a>
-<a name="line-84"></a>* __CLaSH.Normalize(94): Expr belonging to bndr: \&lt;FUNCTION\&gt; remains__
-<a name="line-85"></a>  __recursive after normalization__:
-<a name="line-86"></a>
-<a name="line-87"></a>    * If you actually wrote a recursive function, rewrite it to a non-recursive
-<a name="line-88"></a>      one :-)
-<a name="line-89"></a>
-<a name="line-90"></a>    * You defined a recursively defined value, but left it polymorphic:
-<a name="line-91"></a>
-<a name="line-92"></a>    @
-<a name="line-93"></a>    topEntity x y = acc
-<a name="line-94"></a>    where
-<a name="line-95"></a>      acc = register 3 (x*y + acc)
+<a name="line-84"></a><span class='hs-comment'>{- $errorsandsolutions
+<a name="line-85"></a>
+<a name="line-86"></a>* __Type error: Couldn't match expected type ‘Signal (a,b)’ with actual type__
+<a name="line-87"></a>  __‘(Signal a, Signal b)’__:
+<a name="line-88"></a>
+<a name="line-89"></a>    Signals of product types and product types (to which tuples belong) of
+<a name="line-90"></a>    signals are __isomorphic__, but not (structurally) equal. Use the
+<a name="line-91"></a>    'CLaSH.Signal.Implicit.pack' function to convert from a product type to the
+<a name="line-92"></a>    signal type. So if your code which gives the error looks like:
+<a name="line-93"></a>
+<a name="line-94"></a>    @
+<a name="line-95"></a>    ... = f a b (c,d)
 <a name="line-96"></a>    @
 <a name="line-97"></a>
-<a name="line-98"></a>    The above function, works for any number-like type. This means that @acc@ is
-<a name="line-99"></a>    a recursively defined __polymorphic__ value. Adding a monomorphic type
-<a name="line-100"></a>    annotation makes the error go away.
-<a name="line-101"></a>
+<a name="line-98"></a>    add the 'CLaSH.Signal.Implicit.pack' function like so:
+<a name="line-99"></a>
+<a name="line-100"></a>    @
+<a name="line-101"></a>    ... = f a b (pack (c,d))
 <a name="line-102"></a>    @
-<a name="line-103"></a>    topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
-<a name="line-104"></a>    topEntity x y = acc
-<a name="line-105"></a>    where
-<a name="line-106"></a>      acc = register 3 (x*y + acc)
-<a name="line-107"></a>    @
+<a name="line-103"></a>
+<a name="line-104"></a>    Product types supported by 'CLaSH.Signal.Implicit.pack' are:
+<a name="line-105"></a>
+<a name="line-106"></a>    * All tuples until and including 8-tuples
+<a name="line-107"></a>    * The 'CLaSH.Sized.Vector.Vec'tor type
 <a name="line-108"></a>
-<a name="line-109"></a>* __CLaSH.Normalize.Transformations(155): InlineNonRep: \&lt;FUNCTION\&gt; already__
-<a name="line-110"></a>  __inlined 100 times in:\&lt;FUNCTION\&gt;, \&lt;TYPE\&gt;__:
+<a name="line-109"></a>    NB: Use 'CLaSH.Signal.Explicit.cpack' when you are using explicitly
+<a name="line-110"></a>    clocked 'CLaSH.Signal.Explicit.CSignal's
 <a name="line-111"></a>
-<a name="line-112"></a>    You left the @topEntity@ function polymorphic or higher-order: use
-<a name="line-113"></a>    @:t topEntity@ to check if the type is indeed polymorphic or higher-order.
-<a name="line-114"></a>    If it is, add a monomorphic type signature, and / or supply higher-order
-<a name="line-115"></a>    arguments.
-<a name="line-116"></a>
-<a name="line-117"></a>* __Can't make testbench for: \&lt;LONG_VERBATIM_COMPONENT_DESCRIPTION\&gt;__:
-<a name="line-118"></a>
-<a name="line-119"></a>    * Don't worry, it's actually only a warning.
-<a name="line-120"></a>
-<a name="line-121"></a>    * The @topEntity@ function does __not__ have exactly 1 argument. If your
-<a name="line-122"></a>      @topEntity@ has no arguments, you're out of luck for now. If it has
-<a name="line-123"></a>      multiple arguments, consider bundling them in a tuple.
-<a name="line-124"></a>
-<a name="line-125"></a>-}</span>
-<a name="line-126"></a>
-<a name="line-127"></a><span class='hs-comment'>{- $unsupported
-<a name="line-128"></a>Here is a list of Haskell features which the CλaSH compiler cannot synthesize
-<a name="line-129"></a>to VHDL (for now):
-<a name="line-130"></a>
-<a name="line-131"></a>  [@Recursive functions@]
-<a name="line-132"></a>
-<a name="line-133"></a>    Although it seems rather bad that a compiler for a
-<a name="line-134"></a>    functional language does not support recursion, this bug/feature of the
-<a name="line-135"></a>    CλaSH compiler is amortized by the builtin knowledge of all the functions
-<a name="line-136"></a>    listed in "CLaSH.Sized.Vector". And as you saw in this tutorial, the
-<a name="line-137"></a>    higher-order functions of "CLaSH.Sized.Vector" can cope with many of the
-<a name="line-138"></a>    recursive design patterns found in circuit design.
-<a name="line-139"></a>
-<a name="line-140"></a>    Also note that although recursive functions are not supported, recursively
-<a name="line-141"></a>    (tying-the-knot) defined values are supported (as long as these values do
-<a name="line-142"></a>    not have a function type). An example that uses recursively defined values
-<a name="line-143"></a>    is the following function that performs one iteration of bubble sort:
-<a name="line-144"></a>
-<a name="line-145"></a>    @
-<a name="line-146"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
-<a name="line-147"></a>     where
-<a name="line-148"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
-<a name="line-149"></a>       rights = vtail xs
-<a name="line-150"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
-<a name="line-151"></a>    @
-<a name="line-152"></a>
-<a name="line-153"></a>    Where we can clearly see that 'lefts' and 'sorted' are defined in terms of
-<a name="line-154"></a>    each other.
+<a name="line-112"></a>* __Type error: Couldn't match expected type ‘(Signal a, Signal b)’ with__
+<a name="line-113"></a>  __ actual type ‘Signal (a,b)’__:
+<a name="line-114"></a>
+<a name="line-115"></a>    Product types (to which tuples belong) of signals and signals of product
+<a name="line-116"></a>    types are __isomorphic__, but not (structurally) equal. Use the
+<a name="line-117"></a>    'CLaSH.Signal.Implicit.unpack' function to convert from a signal type to the
+<a name="line-118"></a>    product type. So if your code which gives the error looks like:
+<a name="line-119"></a>
+<a name="line-120"></a>    @
+<a name="line-121"></a>    (c,d) = f a b
+<a name="line-122"></a>    @
+<a name="line-123"></a>
+<a name="line-124"></a>    add the 'CLaSH.Signal.Implicit.unpack' function like so:
+<a name="line-125"></a>
+<a name="line-126"></a>    @
+<a name="line-127"></a>    (c,d) = unpack (f a b)
+<a name="line-128"></a>    @
+<a name="line-129"></a>
+<a name="line-130"></a>    Product types supported by 'CLaSH.Signal.Implicit.unpack' are:
+<a name="line-131"></a>
+<a name="line-132"></a>    * All tuples until and including 8-tuples
+<a name="line-133"></a>    * The 'CLaSH.Sized.Vector.Vec'tor type
+<a name="line-134"></a>
+<a name="line-135"></a>    NB: Use 'CLaSH.Signal.Explicit.cunpack' when you are using explicitly
+<a name="line-136"></a>    clocked 'CLaSH.Signal.Explicit.CSignal's
+<a name="line-137"></a>
+<a name="line-138"></a>* __CLaSH.Normalize(94): Expr belonging to bndr: \&lt;FUNCTION\&gt; remains__
+<a name="line-139"></a>  __recursive after normalization__:
+<a name="line-140"></a>
+<a name="line-141"></a>    * If you actually wrote a recursive function, rewrite it to a non-recursive
+<a name="line-142"></a>      one :-)
+<a name="line-143"></a>
+<a name="line-144"></a>    * You defined a recursively defined value, but left it polymorphic:
+<a name="line-145"></a>
+<a name="line-146"></a>    @
+<a name="line-147"></a>    topEntity x y = acc
+<a name="line-148"></a>    where
+<a name="line-149"></a>      acc = register 3 (x*y + acc)
+<a name="line-150"></a>    @
+<a name="line-151"></a>
+<a name="line-152"></a>    The above function, works for any number-like type. This means that @acc@ is
+<a name="line-153"></a>    a recursively defined __polymorphic__ value. Adding a monomorphic type
+<a name="line-154"></a>    annotation makes the error go away.
 <a name="line-155"></a>
-<a name="line-156"></a>  [@Recursive datatypes@]
-<a name="line-157"></a>
-<a name="line-158"></a>    The CλaSH compiler needs to be able to determine a bit-size for any value
-<a name="line-159"></a>    that will be represented in the eventual circuit. More specifically, we need
-<a name="line-160"></a>    to know the maximum number of bits needed to represent a value. While this
-<a name="line-161"></a>    is trivial for values of the elementary types, sum types, and product types,
-<a name="line-162"></a>    putting a fixed upper bound on recursive types is not (always) feasible.
-<a name="line-163"></a>    The only recursive type that is currently supported by the CλaSH compiler
-<a name="line-164"></a>    is the 'CLaSH.Sized.Vector.Vec'tor type, for which the compiler has
-<a name="line-165"></a>    hard-coded knowledge.
-<a name="line-166"></a>
-<a name="line-167"></a>  [@GADT pattern matching@]
-<a name="line-168"></a>
-<a name="line-169"></a>    While pattern matching for regular ADTs is supported, pattern matching for
-<a name="line-170"></a>    GADTs is __not__. The 'CLaSH.Sized.Vector.Vec'tor type, which is also a
-<a name="line-171"></a>    GADT, is __no__ exception! You can use the extraction and indexing functions
-<a name="line-172"></a>    of "CLaSH.Sized.Vector" to get access to individual ranges / elements of a
-<a name="line-173"></a>    'CLaSH.Sized.Vector.Vec'tor.
-<a name="line-174"></a>-}</span>
+<a name="line-156"></a>    @
+<a name="line-157"></a>    topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
+<a name="line-158"></a>    topEntity x y = acc
+<a name="line-159"></a>    where
+<a name="line-160"></a>      acc = register 3 (x*y + acc)
+<a name="line-161"></a>    @
+<a name="line-162"></a>
+<a name="line-163"></a>* __CLaSH.Normalize.Transformations(155): InlineNonRep: \&lt;FUNCTION\&gt; already__
+<a name="line-164"></a>  __inlined 100 times in:\&lt;FUNCTION\&gt;, \&lt;TYPE\&gt;__:
+<a name="line-165"></a>
+<a name="line-166"></a>    You left the @topEntity@ function polymorphic or higher-order: use
+<a name="line-167"></a>    @:t topEntity@ to check if the type is indeed polymorphic or higher-order.
+<a name="line-168"></a>    If it is, add a monomorphic type signature, and / or supply higher-order
+<a name="line-169"></a>    arguments.
+<a name="line-170"></a>
+<a name="line-171"></a>* __Can't make testbench for: \&lt;LONG_VERBATIM_COMPONENT_DESCRIPTION\&gt;__:
+<a name="line-172"></a>
+<a name="line-173"></a>    * Don't worry, it's actually only a warning.
+<a name="line-174"></a>
+<a name="line-175"></a>    * The @topEntity@ function does __not__ have exactly 1 argument. If your
+<a name="line-176"></a>      @topEntity@ has no arguments, you're out of luck for now. If it has
+<a name="line-177"></a>      multiple arguments, consider bundling them in a tuple.
+<a name="line-178"></a>
+<a name="line-179"></a>-}</span>
+<a name="line-180"></a>
+<a name="line-181"></a><span class='hs-comment'>{- $unsupported #unsupported#
+<a name="line-182"></a>Here is a list of Haskell features which the CλaSH compiler cannot synthesize
+<a name="line-183"></a>to VHDL (for now):
+<a name="line-184"></a>
+<a name="line-185"></a>  [@Recursive functions@]
+<a name="line-186"></a>
+<a name="line-187"></a>    Although it seems rather bad that a compiler for a
+<a name="line-188"></a>    functional language does not support recursion, this bug/feature of the
+<a name="line-189"></a>    CλaSH compiler is amortized by the builtin knowledge of all the functions
+<a name="line-190"></a>    listed in "CLaSH.Sized.Vector". And as you saw in this tutorial, the
+<a name="line-191"></a>    higher-order functions of "CLaSH.Sized.Vector" can cope with many of the
+<a name="line-192"></a>    recursive design patterns found in circuit design.
+<a name="line-193"></a>
+<a name="line-194"></a>    Also note that although recursive functions are not supported, recursively
+<a name="line-195"></a>    (tying-the-knot) defined values are supported (as long as these values do
+<a name="line-196"></a>    not have a function type). An example that uses recursively defined values
+<a name="line-197"></a>    is the following function that performs one iteration of bubble sort:
+<a name="line-198"></a>
+<a name="line-199"></a>    @
+<a name="line-200"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+<a name="line-201"></a>     where
+<a name="line-202"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+<a name="line-203"></a>       rights = vtail xs
+<a name="line-204"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
+<a name="line-205"></a>    @
+<a name="line-206"></a>
+<a name="line-207"></a>    Where we can clearly see that 'lefts' and 'sorted' are defined in terms of
+<a name="line-208"></a>    each other.
+<a name="line-209"></a>
+<a name="line-210"></a>  [@Recursive datatypes@]
+<a name="line-211"></a>
+<a name="line-212"></a>    The CλaSH compiler needs to be able to determine a bit-size for any value
+<a name="line-213"></a>    that will be represented in the eventual circuit. More specifically, we need
+<a name="line-214"></a>    to know the maximum number of bits needed to represent a value. While this
+<a name="line-215"></a>    is trivial for values of the elementary types, sum types, and product types,
+<a name="line-216"></a>    putting a fixed upper bound on recursive types is not (always) feasible.
+<a name="line-217"></a>    The only recursive type that is currently supported by the CλaSH compiler
+<a name="line-218"></a>    is the 'CLaSH.Sized.Vector.Vec'tor type, for which the compiler has
+<a name="line-219"></a>    hard-coded knowledge.
+<a name="line-220"></a>
+<a name="line-221"></a>  [@GADT pattern matching@]
+<a name="line-222"></a>
+<a name="line-223"></a>    While pattern matching for regular ADTs is supported, pattern matching for
+<a name="line-224"></a>    GADTs is __not__. The 'CLaSH.Sized.Vector.Vec'tor type, which is also a
+<a name="line-225"></a>    GADT, is __no__ exception! You can use the extraction and indexing functions
+<a name="line-226"></a>    of "CLaSH.Sized.Vector" to get access to individual ranges / elements of a
+<a name="line-227"></a>    'CLaSH.Sized.Vector.Vec'tor.
+<a name="line-228"></a>-}</span>
 </pre></body>
 </html>

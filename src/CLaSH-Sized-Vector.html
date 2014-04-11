@@ -44,7 +44,7 @@
 <a name="line-35"></a><span class='hs-keyword'>where</span>
 <a name="line-36"></a>
 <a name="line-37"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Applicative</span>
-<a name="line-38"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Traversable</span>
+<a name="line-38"></a><span class='hs-comment'>-- import Data.Traversable</span>
 <a name="line-39"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Foldable</span>              <span class='hs-varid'>hiding</span> <span class='hs-layout'>(</span><span class='hs-varid'>toList</span><span class='hs-layout'>)</span>
 <a name="line-40"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Proxy</span>
 <a name="line-41"></a><span class='hs-keyword'>import</span> <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>TypeLits</span>
@@ -85,15 +85,15 @@
 <a name="line-76"></a>  <span class='hs-varid'>pure</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>vcopyI</span>
 <a name="line-77"></a>  <span class='hs-layout'>(</span><span class='hs-varop'>&lt;*&gt;</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>vzipWith</span> <span class='hs-layout'>(</span><span class='hs-varop'>$</span><span class='hs-layout'>)</span>
 <a name="line-78"></a>
-<a name="line-79"></a><a name="instance%20Traversable%20(Vec%20n)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Traversable</span> <span class='hs-layout'>(</span><span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-80"></a>  <span class='hs-varid'>traverse</span> <span class='hs-keyword'>_</span> <span class='hs-conid'>Nil</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>pure</span> <span class='hs-conid'>Nil</span>
-<a name="line-81"></a>  <span class='hs-varid'>traverse</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span> <span class='hs-conop'>:&gt;</span> <span class='hs-varid'>xs</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-conop'>:&gt;</span><span class='hs-layout'>)</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>f</span> <span class='hs-varid'>x</span> <span class='hs-varop'>&lt;*&gt;</span> <span class='hs-varid'>traverse</span> <span class='hs-varid'>f</span> <span class='hs-varid'>xs</span>
+<a name="line-79"></a><span class='hs-comment'>-- instance Traversable (Vec n) where</span>
+<a name="line-80"></a><span class='hs-comment'>--   traverse _ Nil       = pure Nil</span>
+<a name="line-81"></a><span class='hs-comment'>--   traverse f (x :&gt; xs) = (:&gt;) &lt;$&gt; f x &lt;*&gt; traverse f xs</span>
 <a name="line-82"></a>
 <a name="line-83"></a><a name="instance%20Foldable%20(Vec%20n)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Foldable</span> <span class='hs-layout'>(</span><span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-84"></a>  <span class='hs-varid'>foldMap</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>foldMapDefault</span>
+<a name="line-84"></a>  <span class='hs-varid'>foldr</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>vfoldr</span>
 <a name="line-85"></a>
 <a name="line-86"></a><a name="instance%20Functor%20(Vec%20n)"></a><span class='hs-keyword'>instance</span> <span class='hs-conid'>Functor</span> <span class='hs-layout'>(</span><span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-87"></a>  <span class='hs-varid'>fmap</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fmapDefault</span>
+<a name="line-87"></a>  <span class='hs-varid'>fmap</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>vmap</span>
 <a name="line-88"></a>
 <a name="line-89"></a><a name="vhead"></a><span class='hs-comment'>{-# NOINLINE vhead #-}</span>
 <a name="line-90"></a><span class='hs-comment'>-- | Extract the first element of a vector</span>
