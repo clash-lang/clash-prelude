@@ -1,46 +1,366 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CLaSH.Tutorial</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();setSynopsis("mini_CLaSH-Tutorial.html");};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/CLaSH-Tutorial.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">clash-prelude-0.5: CAES Language for Synchronous Hardware - Prelude library</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Safe Haskell</th><td>Safe-Inferred</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">CLaSH.Tutorial</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Introduction</a></li><li><a href="#g:2">Installation</a></li><li><a href="#g:3">MAC Example</a></li><li><a href="#g:4">Conclusion</a></li><li><a href="#g:5">Errors and their solutions</a></li><li><a href="#g:6">Haskell stuff that the C&#955;aSH compiler does not support</a></li></ul></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"></ul></div><div id="interface"><h1 id="g:1">Introduction</h1><div class="doc"><p>C&#955;aSH (pronounced &#8216;clash&#8217;) is a functional hardware description language that
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/CLaSH-Tutorial.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">clash-prelude-0.5: CAES Language for Synchronous Hardware - Prelude library</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>&#169; Christiaan Baaij, 2014</td></tr><tr><th>License</th><td>Creative Commons 4.0 (CC BY-NC 4.0) (http://creativecommons.org/licenses/by-nc/4.0/)</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">CLaSH.Tutorial</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Introduction</a></li><li><a href="#g:2">Installation</a></li><li><a href="#g:3">Working with this tutorial</a></li><li><a href="#g:4">Your first circuit</a><ul><li><a href="#g:5">Sequential circuit</a></li><li><a href="#g:6">Creating VHDL</a></li><li><a href="#g:7">Circuit testbench</a></li><li><a href="#g:8">Alternative specifications</a></li></ul></li><li><a href="#g:9">Higher-order functions</a></li><li><a href="#g:10">Composition of sequential circuits</a></li><li><a href="#g:11">Conclusion</a></li><li><a href="#g:12">Troubleshooting</a></li><li><a href="#g:13">Unsupported Haskell features</a></li><li><a href="#g:14">C&#955;aSH vs Lava</a></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc empty">&nbsp;</div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"></ul></div><div id="interface"><h1 id="g:1">Introduction</h1><div class="doc"><p>C&#955;aSH (pronounced &#8216;clash&#8217;) is a functional hardware description language that
 borrows both its syntax and semantics from the functional programming language
 Haskell. The merits of using a functional language to describe hardware comes
 from the fact that combinational circuits can be directly modeled as
 mathematical functions and that functional languages lend themselves very well
-at describing and (de-)composing mathematical functions.</p></div><h1 id="g:2">Installation</h1><div class="doc"><p>The C&#955;aSH compiler and Prelude library for circuit design only work with the
-<a href="http://haskell.org/ghc">GHC</a> Haskell compiler version 7.8.1 and up.</p><ol><li>Install <strong>GHC (version 7.8.1 or higher)</strong><ul><li>Download and install <a href="http://www.haskell.org/ghc/download">GHC for your platform</a>.
-  Unix user can use <code>./configure prefix=&lt;LOCATION&gt;</code> to set the installation
-  location.</li><li>Make sure that the <code>bin</code> directory of <strong>GHC</strong> is in your <code>PATH</code>.</li></ul></li><li>Install <strong>Cabal</strong><ul><li>Windows:<ul><li>Download the binary for <a href="http://www.haskell.org/cabal/download.html">cabal-install</a></li><li>Put the binary in a location mentioned in your <code>PATH</code></li></ul></li><li>Unix:<ul><li>Download the sources for <a href="http://hackage.haskell.org/package/cabal-install">cabal-install</a></li><li>Unpack (<code>tar xf</code>) the archive and <code>cd</code> to the directory</li><li>Run <code>sh bootstrap.sh</code></li><li>Follow the instructions to add <code>cabal</code> to your <code>PATH</code></li></ul></li><li>Run <code>cabal update</code></li></ul></li><li>Install update <strong>RepLib</strong> library<ul><li>Download the sources for the modified <a href="https://www.dropbox.com/s/k1nfbqpzwbub0c1/RepLib-0.5.3.2.tar.gz">RepLib-0.5.3.2.tar.gz</a> library</li><li>Run <code>cabal install RepLib-0.5.3.2.tar.gz</code></li></ul></li><li>Install <strong>C&#955;aSH</strong><ul><li>Run <code>cabal install clash-ghc</code></li></ul></li><li>Verify that everything is working by:<ul><li>Downloading the <a href="https://raw.github.com/christiaanb/clash2/master/examples/FIR.hs">Fir.hs</a> example</li><li>Run <code>clash --interactive FIR.hs</code></li><li>Execute, in the interpreter, the <code>:vhdl</code> command.</li><li>Exit the interpreter using <code>:q</code></li><li>Examin the VHDL code in the <code>vhdl</code> directory</li></ul></li></ol></div><h1 id="g:3">MAC Example</h1><div class="doc empty">&nbsp;</div><h1 id="g:4">Conclusion</h1><div class="doc empty">&nbsp;</div><h1 id="g:5">Errors and their solutions</h1><div class="doc"><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
+at describing and (de-)composing mathematical functions. The C&#955;aSH compiler
+transforms these high-level descriptions to low-level synthesizable VHDL.</p><p>Although we say that C&#955;aSH borrows the semantics of Haskell, that statement
+should be taken with a grain of salt. What we mean to say is that the C&#955;aSH
+compiler views a circuit description as <em>structural</em> description. This means,
+in an academic handwavy way, that every function denotes a component and every
+function application denotes an instantiation of said component. Now, this has
+consequences on how we view <em>recursive</em> functions: structurally, a recursive
+function would denote an <em>infinitely</em> deep / structured component, something
+that cannot be turned into an actual circuit (See also <a href="#unsupported">Unsupported Haskell features</a>).
+Of course there are variants of recursion that cab be completely unfolded at
+compile-time with a finite amount of steps and hence could be converted to a
+realisable circuit. Sadly, this last feature is missing in the current version
+of the compiler.</p><p>On the other hand, Haskell's by-default non-strict evaluation corresponds very
+well to the simulation of the feedback loops which are ubiquitous in digital
+circuits. That is, when we take our structural view to circuit descriptions,
+value-recursion corresponds directly to a feedback loop:</p><pre>counter = s
+  where
+    s = register 0 (s + 1)
+</pre><p>Over time, you will get a better feeling of what exact the consequences are of
+taking a structural view on circuit descriptions. What is always important to
+remember is that every applied functions results in an instantiated component,
+and also that the compiler will never infer / invent more logic than what is
+specified in the circuit description.</p><p>With that out of the way, let us continue with installing C&#955;aSH and building
+our first circuit.</p></div><h1 id="g:2">Installation</h1><div class="doc"><p>The C&#955;aSH compiler and Prelude library for circuit design only work with the
+<a href="http://haskell.org/ghc">GHC</a> Haskell compiler version 7.8.* and up.</p><ol><li>Install <strong>GHC (version 7.8.* or higher)</strong><ul><li>Download and install <a href="http://www.haskell.org/ghc/download">GHC for your platform</a>.
+    Unix user can use <code>./configure prefix=&lt;LOCATION&gt;</code> to set the installation
+    location.</li><li>Make sure that the <code>bin</code> directory of <strong>GHC</strong> is in your <code>PATH</code>.</li></ul></li><li>Install <strong>Cabal</strong><ul><li>Windows and OS X Mavericks:<ul><li>Download the binary for <a href="http://www.haskell.org/cabal/download.html">cabal-install</a></li><li>Put the binary in a location mentioned in your <code>PATH</code></li></ul></li><li>Other Unix systems:<ul><li>Download the sources for <a href="http://hackage.haskell.org/package/cabal-install">cabal-install</a></li><li>Unpack (<code>tar xf</code>) the archive and <code>cd</code> to the directory</li><li>Run <code>sh bootstrap.sh</code></li><li>Follow the instructions to add <code>cabal</code> to your <code>PATH</code></li></ul></li><li>Run <code>cabal update</code></li></ul></li><li>Install <strong>C&#955;aSH</strong><ul><li>Run <code>cabal install clash-ghc</code></li></ul></li><li>Verify that everything is working by:<ul><li>Downloading the <a href="https://raw.github.com/christiaanb/clash2/master/examples/FIR.hs">Fir.hs</a> example</li><li>Run <code>clash --interactive FIR.hs</code></li><li>Execute, in the interpreter, the <code>:vhdl</code> command.</li><li>Exit the interpreter using <code>:q</code></li><li>Examine the VHDL code in the <code>vhdl</code> directory</li></ul></li></ol></div><h1 id="g:3">Working with this tutorial</h1><div class="doc"><p>This tutorial can be followed best whilst having the C&#955;aSH interpreter running
+at the same time. If you followed the installation instructions, you already
+know how to start the C&#955;aSH compiler in interpretive mode:</p><pre>clash --interactive
+</pre><p>For those familiar with Haskell/GHC, this is indeed just <code>GHCi</code>, with one added
+command (<code>:vhdl</code>). You can load files into the interpreter using the
+<code>:l &lt;FILENAME&gt;</code> command. Now, depending on your choice in editor, the following
+<code>edit-load-run</code> cycle probably work best for you:</p><ul><li><strong>Commandline (e.g. emacs, vim):</strong><ul><li>You can run system commands using <code>:!</code>, for example <code>:! touch &lt;FILENAME&gt;</code></li><li>Set the <em>editor</em> mode to your favourite editor using: <code>:set editor &lt;EDITOR&gt;</code></li><li>You can load files using <code>:l</code> as noted above.</li><li>You can go into <em>editor</em> mode using: <code>:e</code></li><li>Leave the editor mode by quitting the editor (e.g. <code>:wq</code> in <code>vim</code>)</li></ul></li></ul><ul><li><strong>GUI (e.g. SublimeText, Notepad++):</strong><ul><li>Just create new files in your editor.</li><li>Load the files using <code>:l</code> as noted above.</li><li>Once a file has been edited and saved, type <code>:r</code> to reload the files in
+    the interpreter</li></ul></li></ul><p>You are of course free to deviate from these suggestions as you see fit :-) It
+is just recommended that you have the C&#955;aSH interpreter open during this
+tutorial.</p></div><h1 id="g:4">Your first circuit</h1><div class="doc"><p>The very first circuit that we will build is the &quot;classic&quot; multiply-and-accumulate
+(MAC) circuit. This circuit is as simple as it sounds, it multiplies its inputs
+and accumulates them. Before we describe any logic, we must first create the
+file we will be working on and input some preliminaries:</p><ul><li>Create the file:<pre>MAC.hs
+</pre></li></ul><ul><li>Write on the first line the module header:<pre>module MAC where
+</pre><p>Module names must always start with a <strong>C</strong>apital letter. Also make sure that
+the file name corresponds to the module name.</p></li></ul><ul><li>Add the import statement for the C&#955;aSH prelude library:<pre>import CLaSH.Prelude
+</pre><p>This imports all the necessary functions and datatypes for circuit description.</p></li></ul><p>We can now finally start describing the logic of our circuit, starting with just
+the multiplication and addition:</p><pre>ma acc (x,y) = acc + x * y
+</pre><p>If you followed the instructions of running the interpreter side-by-side, you
+can already test this function:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>ma 4 (8,9)
+</code></strong>76
+<code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>ma 2 (3,4)
+</code></strong>14
+</pre><p>We can also examine the inferred type of <code>ma</code> in the interpreter:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>:t ma
+</code></strong>ma :: Num a =&gt; a -&gt; a -&gt; a
+</pre><p>Talking about <em>types</em> also brings us to one of the most important parts of this
+tutorial: <em>types</em> and <em>synchronous sequential logic</em>. Especially how we can
+always determine, through the types of a specification, if it describes
+combinational logic or (synchronous) sequential logic. We do this by examining
+the type of one of the sequential primitives, the <code>register</code> function:</p><pre>register :: a -&gt; Signal a -&gt; Signal a
+regiser i s = ...
+</pre><p>Where we see that the second argument and the result are not just of the
+<em>polymorphic</em> <code>a</code> type, but of the type: <code><code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> a</code>. All (synchronous)
+sequential circuits work on values of type <code><code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> a</code>. Combinational
+circuits always work on values of, well, not of type <code><code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> a</code>. A <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>
+is an (infinite) list of samples, where the samples correspond to the values
+of the <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> at discrete, consecutive, ticks of the <em>clock</em>. All (sequential)
+components in the circuit are synchronized to this global <em>clock</em>. For the
+rest of this tutorial, and probably at any moment where you will be working with
+C&#955;aSH, you should probably not actively think about <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s as infinite lists
+of samples, but just as values that are manipulated by sequential circuits. To
+make this even easier, it actually not possible to manipulate the underlying
+representation directly: you can only modify <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> values through a set of
+primitives such as the <code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> function above.</p><p>Now, let us get back to the functionality of the <code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> function: it is
+a simple <code>latch</code> that only changes state at the tick of the global <em>clock</em>, and
+it has an initial value <code>a</code> which is its output at time 0. We can further
+examine the <code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> function by taking a look at the first 4 samples of the
+<code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> functions applied to a constant signal with the value 8:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sampleN 4 (register 0 (signal 8))
+</code></strong>[0,8,8,8]
+</pre><p>Where we see that the initial value of the signal is the specified 0 value,
+followed by 8's.</p></div><h3 id="g:5">Sequential circuit</h3><div class="doc"><p>The <code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> function is our primary sequential building block to capture
+<em>state</em>. It is used internally by one of the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> function that we
+will use to describe our MAC circuit. Note that the following paragraphs will
+only show one of many ways to specify a sequential circuit, at the section we
+will show a couple more.</p><p>A principled way to describe a sequential circuit is to use one of the classic
+machine models, within the C&#955;aSH prelude library offer standard function to
+support the <a href="http://en.wikipedia.org/wiki/Mealy_machine">Mealy machine</a>.
+To improve sharing, we will combine the transition function and output function
+into one. This gives rise to the following Mealy specification of the MAC
+circuit:</p><pre>macT acc (x,y) = (acc',o)
+  where
+    acc' = ma acc (x,y)
+    o    = acc
+</pre><p>Note that the <code>where</code> clause and explicit tuple are just for demonstrative
+purposes, without loss of sharing we could've also written:</p><pre>macT acc inp = (ma acc inp,acc)
+</pre><p>Going back to the original specification we note the following:</p><ul><li><code>acc</code> is the current <em>state</em> of the circuit.</li><li>'(x,y)' is its input.</li><li><code>acc'</code> is the updated, or next, <em>state</em>.</li><li><code>o</code> is the output.</li></ul><p>When we examine the type of <code>macT</code> we see that is still completely combinational:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>:t macT
+</code></strong>macT :: Num t =&gt; t -&gt; (t, t) -&gt; (t, t)
+</pre><p>The <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> library contains a function that creates a sequential
+circuit from a combinational circuit that has the same Mealy machine type /
+shape of <code>macT</code>:</p><pre>(&lt;^&gt;) :: (Pack i, Pack o)
+      =&gt; (s -&gt; i -&gt; (s,o))
+      -&gt; s
+      -&gt; (SignalP i -&gt; SignalP o)
+f &lt;^&gt; initS = ...
+</pre><p>The complete sequential MAC circuit can now be specified as:</p><pre>mac = macT &lt;^&gt; 0
+</pre><p>Where the LHS of <code><a href="CLaSH-Prelude.html#v:-60--94--62-">&lt;^&gt;</a></code> is our <code>macT</code> function, and the RHS is the initial state,
+in this case 0. We can see it is functioning correctly in our interpreter:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>take 4 $ simulateP mac [(1::Int,1),(2,2),(3,3),(4,4)] :: [Int]
+</code></strong>[0,1,5,14]
+</pre><p>Where we simulate our sequential circuit over a list of input samples and take
+the first 4 output samples. We have now completed our first sequential circuit
+and have made an initial confirmation that it is working as expected.</p><p>The observant reader already saw that the <code><a href="CLaSH-Prelude.html#v:-60--94--62-">&lt;^&gt;</a></code> operator does not create a
+function that works on <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s, but on on <code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code>s. Indeed, when we look at
+the type of our <code>mac</code> circuit:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>:t mac
+</code></strong>mac :: (Pack o, Num o) =&gt; (Signal o, Signal o) -&gt; SignalP o
+</pre><p>We see that our <code>mac</code> function work on a two-tuple of <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s and not on a
+<code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> of a two-tuple. Indeed, the C&#955;aSH prelude library defines that:</p><pre>type instance SignalP (a,b) = (Signal a, Signal b)
+</pre><p><code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> is an <a href="http://www.haskell.org/ghc/docs/latest/html/users_guide/type-families.html#assoc-decl">associcated type family</a>
+belonging to the <code><a href="CLaSH-Signal-Implicit.html#t:Pack">Pack</a></code> <a href="http://en.wikipedia.org/wiki/Type_class">type class</a>,
+which, together with <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> and <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> defines the isomorphism between a
+product type of <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s and a <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> of a product type. That is, while
+<code>(Signal a, Signal b)</code> and <code>Signal (a,b)</code> are not equal, they are <em>isomorphic</em>
+and can be converted from on to the other using <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> and <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code>. Instances
+of this <code><a href="CLaSH-Signal-Implicit.html#t:Pack">Pack</a></code> type-class are defined as <em>isomorphisms</em> for:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>But they are defined as <em>identities</em> for:</p><ul><li>All elementary / primitive types such as: <code><a href="CLaSH-Bit.html#t:Bit">Bit</a></code>, <code><a href="http://hackage.haskell.org/package/base/docs/Data-Bool.html#t:Bool">Bool</a></code>, <code><code><a href="CLaSH-Sized-Signed.html#t:Signed">Signed</a></code> n</code>, etc.</li></ul><p>That is:</p><pre>instance Pack Bool where
+  type SignalP Bool = Signal Bool
+  pack :: SignalP Bool -&gt; Signal Bool
+  pack = <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:id">id</a></code>
+  unpack :: Signal Bool -&gt; SignalP Bool
+  unpack = <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:id">id</a></code>
+</pre><p>We will see later why this <code><a href="CLaSH-Signal-Implicit.html#t:Pack">Pack</a></code> type class is so convenient, for now, you just
+have to remember that it exists. And more importantly, that you understand that
+a product type of <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s is not equal to a <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> of a product type, but
+that the functions of the <code><a href="CLaSH-Signal-Implicit.html#t:Pack">Pack</a></code> type class allow easy conversion between the
+two.</p></div><h3 id="g:6">Creating VHDL</h3><div class="doc"><p>We are now almost at the point that we can create actual hardware, in the form
+of a <a href="http://en.wikipedia.org/wiki/VHDL">VHDL</a> netlist, from our sequential
+circuit specification. The first thing we have to do is create a function
+called <code>topEntity</code> and ensure that it has a <strong>monomorphic</strong> type. In our case
+that means that we have to give it an explicit type annotation. It might now
+always be needed, you can always check the type with the <code>:t</code> command and see
+if the function is monomorphic:</p><pre>topEntity :: (Signal (Signed 9),Signal (Signed 9)) -&gt; Signal (Signed 9)
+topEntity = mac
+</pre><p>Which makes our circuit work on 9-bit signed integers. Including the above
+definition, our complete <code>MAC.hs</code> should now have the following content:</p><pre>module MAC where
+
+import CLaSH.Prelude
+
+ma acc (x,y) = acc + x * y
+
+macT acc (x,y) = (acc',o)
+  where
+    acc' = ma acc (x,y)
+    o    = acc
+
+mac = macT &lt;^&gt; 0
+
+topEntity :: (Signal (Signed 9),Signal (Signed 9)) -&gt; Signal (Signed 9)
+topEntity = mac
+</pre><p>The <code>topEntity</code> function is the starting point for the C&#955;aSH compiler to
+transform your circuit description into a VHDL netlist. It must meet the
+following restrictions in order for the C&#955;aSH compiler to work:</p><ul><li>It must be completely monomorphic</li><li>It must be completely first-order</li></ul><p>Our <code>topEntity</code> meets those restrictions, and so we can convert it successfully
+to VHDL by executing the <code>:vhdl</code> command in the interpreter. This will create
+a directory called <code>vhdl</code>, which contains a directory called <code>MAC</code>, which
+ultimately contains all the generated VHDL files. You can now load these files
+(except <code>testbench.vhdl</code>) into your favourite VHDL synthesis tool, marking
+<code>topEntity_0.vhdl</code> as the file containing the top level entity.</p></div><h3 id="g:7">Circuit testbench</h3><div class="doc"><p>There are multiple reasons as to why might you want to create a so-called
+<em>testbench</em> for the VHDL:</p><ul><li>You want to compare post-synthesis / post-place&amp;route behaviour to that of
+    the behaviour of the original VHDL.</li><li>Need representative stimuli for your dynamic power calculations</li><li>Verify that the VHDL output of the C&#955;aSH compiler has the same behaviour as
+    the Haskell / C&#955;aSH specification.</li></ul><p>For these purposes, you can have C&#955;aSH compiler generate a <code>testbench.vhdl</code>
+file which contains a stimulus generator and an expected output verifier. The
+C&#955;aSH compiler looks for the following functions to generate these to aspects:</p><ol><li><code>testInput</code> for the stimulus generator.</li><li><code>expectedOutput</code> for the output verification.</li></ol><p>Given a <code>topEntity</code> with the type:</p><pre>topEntity :: SignalP a -&gt; SignalP b
+</pre><p>Where <code>a</code> and <code>b</code> are placeholders for monomorphics types: the <code>topEntity</code> is
+not allowed to be polymorphic. So given the above type for the <code>topEntity</code>, the
+type of <code>testInput</code> should be:</p><pre>testInput :: Signal a
+</pre><p>And the type of <code>expectedOutput</code> should be:</p><pre>expectedOutput :: Signal b -&gt; Signal Bool
+</pre><p>Where the <code>expectedOutput</code> function should assert to <code><a href="http://hackage.haskell.org/package/base/docs/Data-Bool.html#v:True">True</a></code> once it has verified
+all expected values. The <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module contains two standard functions
+to serve the above purpose, but a user is free to use any C&#955;aSH specification
+to describe these two functions. For this tutorial we will be using the
+functions specified in the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module, which are <code><a href="CLaSH-Prelude.html#v:stimuliGenerator">stimuliGenerator</a></code>
+and <code><a href="CLaSH-Prelude.html#v:outputVerifier">outputVerifier</a></code>:</p><pre>testInput :: Signal (Signed 9,Signed 9)
+testInput = stimuliGenerator $(v [(1,1) :: (Signed 9,Signed 9),(2,2),(3,3),(4,4)])
+
+expectedOutput :: Signal (Signed 9) -&gt; Signal Bool
+expectedOutput = outputVerifier $(v [0 :: Signed 9,1,5,14])
+</pre><p>This will create a stimulus generator that creates the same inputs as we used
+earlier for the simulation of the circuit, and creates an output verifier that
+compares against the results we got from our earlier simulation. We can even
+simulate the behaviour of the <em>testbench</em>:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sampleN 7 $ expectedOutput (topEntity $ unpack testInput)
+</code></strong>[False,False,False,False,
+expected value: 14, not equal to actual value: 30
+True,
+expected value: 14, not equal to actual value: 46
+True,
+expected value: 14, not equal to actual value: 62
+True]
+</pre><p>We can see that for the first 4 samples, everything is working as expected,
+after which warnings are being reported. The reason is that <code><a href="CLaSH-Prelude.html#v:stimuliGenerator">stimuliGenerator</a></code>
+will keep on producing the last sample, (4,4), while the <code><a href="CLaSH-Prelude.html#v:outputVerifier">outputVerifier</a></code> will
+keep on expecting the last sample, 14. In the VHDL testbench these errors won't
+show, as the the global clock will be stopped after 4 ticks.</p><p>You should now again run <code>:vhdl</code> in the interpreter; this time the compiler
+will take a bit longer to generate all the circuits. After it is finished you
+can load all the files in your favourite VHDL simulation tool that has support
+for VHDL-2008. VHDL-2008 support is required because the output verifier will
+use the VHDL-2008-only <code>to_string</code> function. Once all files are loaded into
+the VHDL simulator, run the simulation on the <code>testbench</code> entity. On questasim /
+modelsim: doing a <code>run -all</code> will finish once the output verifier will assert
+its output to <code>true</code>. The generated testbench, modulo the clock signal
+generator(s), is completely synthesizable. This means that if you want to test
+your circuit on an FPGA, you will only have to replace the clock signal
+generator(s) by actual clock sources, such as an onboard PLL.</p><p>This concludes the main part of this section on &quot;Your first circuit&quot;, read on
+for alternative specifications for the same <code>mac</code> circuit, or just skip to the
+next section where we will describe another DSP classic: an FIR filter
+structure.</p></div><h3 id="g:8">Alternative specifications</h3><div class="doc"><ul><li><strong><code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Num">Num</a></code> instance for <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code></strong>:<p><code><code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> a</code> is also also considered a <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Num">Num</a></code>eric type as long as the value
+type <em>a</em> is also <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Num">Num</a></code>eric.  This means that we can also use the standard
+numeric operators, such as (<code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:-42-">*</a></code>) and (<code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:-43-">+</a></code>), directly on signals. An
+alternative specification of the <code>mac</code> circuit will also use the <code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code>
+function directly:</p><pre>macN (x,y) = acc
+  where
+    acc = register 0 (acc + x * y)
+</pre></li><li><strong><code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#t:Applicative">Applicative</a></code> instance for <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code></strong>:<p>We can also mix the combinational <code>ma</code> function, with the sequential
+<code><a href="CLaSH-Signal-Implicit.html#v:register">register</a></code> function, by lifting the <code>ma</code> function to the sequential <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>
+domain using the operators (<code><a href="http://hackage.haskell.org/package/base/docs/Data-Functor.html#v:-60--36--62-">&lt;$&gt;</a></code> and <code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#v:-60--42--62-">&lt;*&gt;</a></code>) of the <code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#t:Applicative">Applicative</a></code> type
+class:</p><pre>macA (x,y) = acc
+  where
+    acc  = register 0 acc'
+    acc' = ma &lt;$&gt; acc &lt;*&gt; pack (x,y)
+</pre></li><li><strong><a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a> Monad</strong><p>We can also implement the original <code>macT</code> function as a <a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a>
+monadic computation. First we must an extra import statement, right after
+the import of <a href="CLaSH-Prelude.html">CLaSH.Prelude</a>:</p><pre>import Control.Monad.State
+</pre><p>We can then implement macT as follows:</p><pre>macTS (x,y) = do
+  acc &lt;- get
+  put (acc + x * y)
+  return acc
+</pre><p>We can use the <code><a href="CLaSH-Prelude.html#v:-60--94--62-">&lt;^&gt;</a></code> operator again, although we will have to change
+position of the arguments and result:</p><pre>asStateM f i = g &lt;^&gt; i
+  where
+    g s x = let (o,s') = runState (f x) s
+            in  (s',o)
+</pre><p>We can then create the complete <code>mac</code> circuit as:</p><pre>macS = asStateM macTS 0
+</pre></li></ul></div><h1 id="g:9">Higher-order functions</h1><div class="doc"><p>An FIR filter is defined as: the dot-product of a set of filter coefficients and
+a window over the input, where the size of the window matches the number
+of coefficients.</p><pre>dotp as bs = vfoldl (+) 0 (vzipWith (*) as bs)
+
+fir coeffs x_t = y_t
+  where
+    y_t = dotp coeffs xs
+    xs  = window x_t
+
+topEntity :: Signal (Signed 16) -&gt; Signal (Signed 16)
+topEntity = fir $(v [0::Signal (Signed 16),1,2,3])
+</pre><p>Here we can see that, although the C&#955;aSH compiler does not support recursion,
+many of the regular patterns that we often encounter in circuit design are
+already captured by the higher-order functions that are present for the <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor
+type.</p></div><h1 id="g:10">Composition of sequential circuits</h1><div class="doc"><p>First we define some types:</p><pre>module CalculatorTypes where
+
+import CLaSH.Prelude
+
+type Word = Signed 4
+data OPC a = ADD | MUL | Imm a | Pop | Push
+
+deriveLift ''OPC
+</pre><p>Now we define the actual calculator:</p><pre>module Calculator where
+
+import CLaSH.Prelude
+import CalculatorTypes
+
+(.:) :: (c -&gt; d) -&gt; (a -&gt; b -&gt; c) -&gt; a -&gt; b -&gt; d
+(f .: g) a b = f (g a b)
+
+infixr 9 .:
+
+alu :: Num a =&gt; OPC a -&gt; a -&gt; a -&gt; Maybe a
+alu ADD     = Just .: (+)
+alu MUL     = Just .: (*)
+alu (Imm i) = const . const (Just i)
+alu _       = const . const Nothing
+
+pu :: (Num a, Num b)
+   =&gt; (OPC a -&gt; a -&gt; a -&gt; Maybe a)
+   -&gt; (a, a, b)       -- Current state
+   -&gt; (a, OPC a)      -- Input
+   -&gt; ( (a, a, b)     -- New state
+      , (b, Maybe a)  -- Output
+      )
+pu alu (op1,op2,cnt) (dmem,Pop)  = ((dmem,op1,cnt-1),(cnt,Nothing))
+pu alu (op1,op2,cnt) (dmem,Push) = ((op1,op2,cnt+1) ,(cnt,Nothing))
+pu alu (op1,op2,cnt) (dmem,opc)  = ((op1,op2,cnt)   ,(cnt,alu opc op1 op2))
+
+datamem :: (KnownNat n, Integral i)
+        =&gt; Vec n a       -- Current state
+        -&gt; (i, Maybe a)  -- Input
+        -&gt; (Vec n a, a)  -- (New state, Output)
+datamem mem (addr,Nothing)  = (mem                  ,mem ! addr)
+datamem mem (addr,Just val) = (vreplace mem addr val,mem ! addr)
+
+topEntity :: Signal (OPC Word) -&gt; Signal (Maybe Word)
+topEntity i = val
+  where
+    (addr,val) = (pu alu &lt;^&gt; (0,0,0 :: Unsigned 3)) (mem,i)
+    mem        = (datamem &lt;^&gt; initMem) (addr,val)
+    initMem    = vcopy d8 0
+</pre><p>Here we can finally see the advantage of having the <code><a href="CLaSH-Prelude.html#v:-60--94--62-">&lt;^&gt;</a></code> return a function
+of type: <code>(<code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> i -&gt; <code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> o)</code> (instead of:
+<code>(<code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> i -&gt; <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> o)</code>):</p><ul><li>We can use normal pattern matching to get parts of the result, and,</li><li>We can use normal tuple-constructors to build the input values for the
+    circuits.</li></ul></div><h1 id="g:11">Conclusion</h1><div class="doc"><p>For now, this is the end of this tutorial. We will be adding updates over time,
+so check back from time to time. For now we recommend that you continue with
+exploring the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module however, and like that hopefully get a feel
+of what C&#955;aSH is capable of.</p></div><h1 id="g:12">Troubleshooting</h1><div class="doc"><p>A list often encountered errors and their solutions:</p><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
   <strong>&#8216;(Signal a, Signal b)&#8217;</strong>:<p>Signals of product types and product types (to which tuples belong) of
-signals are <strong>isomorphic</strong>, but not (structurally) equal. Use the
-<code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function to convert from a product type to the
-signal type. So if your code which gives the error looks like:</p><pre>... = f a b (c,d)
+signals are <strong>isomorphic</strong> due to synchronisity principle, but are not
+(structurally) equal. Use the <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function to convert from a product type
+to the signal type. So if your code which gives the error looks like:</p><pre>... = f a b (c,d)
 </pre><p>add the <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function like so:</p><pre>... = f a b (pack (c,d))
-</pre><p>Product types supported by <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> are:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>NB: Use <code><a href="CLaSH-Signal-Explicit.html#v:cpack">cpack</a></code> when you are using explicitly
-clocked <code><a href="CLaSH-Signal-Explicit.html#t:CSignal">CSignal</a></code>s</p></li><li><strong>Type error: Couldn't match expected type &#8216;(Signal a, Signal b)&#8217; with</strong>
+</pre><p>Product types supported by <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> are:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>NB: Use <code><a href="CLaSH-Signal-Explicit.html#v:cpack">cpack</a></code> when you are using explicitly clocked <code><a href="CLaSH-Signal-Explicit.html#t:CSignal">CSignal</a></code>s</p></li><li><strong>Type error: Couldn't match expected type &#8216;(Signal a, Signal b)&#8217; with</strong>
   <strong> actual type &#8216;Signal (a,b)&#8217;</strong>:<p>Product types (to which tuples belong) of signals and signals of product
-types are <strong>isomorphic</strong>, but not (structurally) equal. Use the
-<code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> function to convert from a signal type to the
-product type. So if your code which gives the error looks like:</p><pre>(c,d) = f a b
+types are <strong>isomorphic</strong> due to synchronisity principle, but are not
+(structurally) equal. Use the <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> function to convert from a signal
+type to the product type. So if your code which gives the error looks like:</p><pre>(c,d) = f a b
 </pre><p>add the <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> function like so:</p><pre>(c,d) = unpack (f a b)
-</pre><p>Product types supported by <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> are:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>NB: Use <code><a href="CLaSH-Signal-Explicit.html#v:cunpack">cunpack</a></code> when you are using explicitly
-clocked <code><a href="CLaSH-Signal-Explicit.html#t:CSignal">CSignal</a></code>s</p></li><li><strong>CLaSH.Normalize(94): Expr belonging to bndr: &lt;FUNCTION&gt; remains</strong>
+</pre><p>Product types supported by <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> are:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>NB: Use <code><a href="CLaSH-Signal-Explicit.html#v:cunpack">cunpack</a></code> when you are using explicitly clocked <code><a href="CLaSH-Signal-Explicit.html#t:CSignal">CSignal</a></code>s</p></li><li><strong>CLaSH.Normalize(94): Expr belonging to bndr: &lt;FUNCTION&gt; remains</strong>
   <strong>recursive after normalization</strong>:<ul><li>If you actually wrote a recursive function, rewrite it to a non-recursive
-  one :-)</li><li>You defined a recursively defined value, but left it polymorphic:</li></ul><pre>topEntity x y = acc
-where
-  acc = register 3 (x*y + acc)
+  one using e.g. one of the higher-order functions in <a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a> :-)</li><li>You defined a recursively defined value, but left it polymorphic:</li></ul><pre>topEntity x y = acc
+  where
+    acc = register 3 (acc + x * y)
 </pre><p>The above function, works for any number-like type. This means that <code>acc</code> is
 a recursively defined <strong>polymorphic</strong> value. Adding a monomorphic type
-annotation makes the error go away.</p><pre>topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
+annotation makes the error go away:</p><pre>topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
 topEntity x y = acc
-where
-  acc = register 3 (x*y + acc)
+  where
+    acc = register 3 (acc + x * y)
+</pre><p>Or, alternatively:</p><pre>topEntity x y = acc
+  where
+    acc = register (3 :: Signed 8) (acc + x * y)
 </pre></li><li><strong>CLaSH.Normalize.Transformations(155): InlineNonRep: &lt;FUNCTION&gt; already</strong>
   <strong>inlined 100 times in:&lt;FUNCTION&gt;, &lt;TYPE&gt;</strong>:<p>You left the <code>topEntity</code> function polymorphic or higher-order: use
 <code>:t topEntity</code> to check if the type is indeed polymorphic or higher-order.
 If it is, add a monomorphic type signature, and / or supply higher-order
 arguments.</p></li><li><strong>Can't make testbench for: &lt;LONG_VERBATIM_COMPONENT_DESCRIPTION&gt;</strong>:<ul><li>Don't worry, it's actually only a warning.</li><li>The <code>topEntity</code> function does <strong>not</strong> have exactly 1 argument. If your
   <code>topEntity</code> has no arguments, you're out of luck for now. If it has
-  multiple arguments, consider bundling them in a tuple.</li></ul></li></ul></div><h1 id="g:6">Haskell stuff that the C&#955;aSH compiler does not support</h1><div class="doc"><p><a name="unsupported"></a>
+  multiple arguments, consider bundling them in a tuple.</li></ul></li><li><strong>&lt;*** Exception: &lt;&lt;loop&gt;&gt;</strong><p>You are using value-recursion, but one of the <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor functions that you
+are using is too <em>strict</em> in one of the recursive arguments. For example:</p><pre>-- Bubble sort for 1 iteration
+sortV xs = vmap fst sorted &lt;: (snd (vlast sorted))
+ where
+   lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+   rights = vtail xs
+   sorted = vzipWith compareSwapL lefts rights
+
+-- Compare and swap
+compareSwapL a b = if a &lt; b then (a,b)
+                            else (b,a)
+</pre><p>Will not terminate because <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code> is too strict in its left argument:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+</code></strong>&lt;*** Exception: &lt;&lt;loop&gt;&gt;
+</pre><p>In this case, adding <code><a href="CLaSH-Sized-Vector.html#v:lazyV">lazyV</a></code> on <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code>s left argument:</p><pre>sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+ where
+   lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+   rights = vtail xs
+   sorted = vzipWith compareSwapL (lazyV lefts) rights
+</pre><p>Results in a successful computation:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortVL (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+</code></strong>&lt;1,2,3,4&gt;
+</pre></li></ul></div><h1 id="g:13">Unsupported Haskell features</h1><div class="doc"><p><a name="unsupported"></a>
 Here is a list of Haskell features which the C&#955;aSH compiler cannot synthesize
 to VHDL (for now):</p><dl><dt><code>Recursive functions</code></dt><dd><p>Although it seems rather bad that a compiler for a
 functional language does not support recursion, this bug/feature of the
@@ -61,10 +381,27 @@ that will be represented in the eventual circuit. More specifically, we need
 to know the maximum number of bits needed to represent a value. While this
 is trivial for values of the elementary types, sum types, and product types,
 putting a fixed upper bound on recursive types is not (always) feasible.
-The only recursive type that is currently supported by the C&#955;aSH compiler
-is the <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type, for which the compiler has
-hard-coded knowledge.</p></dd><dt><code>GADT pattern matching</code></dt><dd><p>While pattern matching for regular ADTs is supported, pattern matching for
-GADTs is <strong>not</strong>. The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type, which is also a
-GADT, is <strong>no</strong> exception! You can use the extraction and indexing functions
-of <a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a> to get access to individual ranges / elements of a
-<code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor.</p></dd></dl></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.14.2</p></div></body></html>
+This means that the ubiquitous list type is unsupported! The only recursive
+type that is currently supported by the C&#955;aSH compiler is the <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type,
+for which the compiler has hard-coded knowledge.</p><p>For &quot;easy&quot; <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor literals you should use Template Haskell splices and
+the <code><a href="CLaSH-Sized-Vector.html#v:v">v</a></code> <em>meta</em>-function that as we have seen earlier in this tutorial.</p></dd><dt><code>GADT pattern matching</code></dt><dd><p>While pattern matching for regular ADTs is supported, pattern matching for
+GADTs is <strong>not</strong>. The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type, which is also a GADT, is <strong>no</strong>
+exception! You can use the extraction and indexing functions of
+<a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a> to get access to individual ranges / elements of a
+<code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor.</p></dd><dt><code>Floating point types</code></dt><dd><p>There is no support for the <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Float">Float</a></code> and <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Double">Double</a></code> types, if you need numbers
+with a <em>fractional</em> part you can use the <code><a href="CLaSH-Sized-Fixed.html#t:Fixed">Fixed</a></code> point type.</p></dd></dl></div><h1 id="g:14">C&#955;aSH vs Lava</h1><div class="doc"><p>In Haskell land the most well-known way of describing digital circuits is the
+Lava family of languages:</p><ul><li><a href="http://hackage.haskell.org/package/chalmers-lava2000">Chalmers Lava</a></li><li><a href="http://hackage.haskell.org/package/xilinx-lava">Xilinx Lava</a></li><li><a href="http://hackage.haskell.org/package/york-lava">York Lava</a></li><li><a href="http://hackage.haskell.org/package/kansas-lava">Kansas Lava</a></li></ul><p>The big difference between C&#955;aSH and Lava is that C&#955;aSH uses a &quot;standard&quot;
+compiler (static analysis) approach towards synthesis, where Lava is an
+embedded domain specific language. One downside of static analysis vs. the
+embedded language approach is already clearly visible: synthesis of recursive
+descriptions does not come for &quot;free&quot;. This will be implemented in C&#955;aSH in
+due time, but that doesn't help the circuit designer right now. As already
+mentioned earlier, the lack of support for recursive functions is amortized by
+the built-in support for the higher-order in <a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a>.</p><p>The big upside of C&#955;aSH and its static analysis approach is that C&#955;aSH can
+do synthesis of <em>normal</em> functions: there is no forced encasing datatype (often
+called <em>Signal</em> in Lava) on all the arguments and results of a synthesizable
+function. This enables the following features not available to Lava:</p><ul><li>Automatic synthesis for user-defined ADTs</li><li>Synthesis of all choice constructs (pattern matching, guards, etc.)</li><li><code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#t:Applicative">Applicative</a></code> instance for the <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> type</li><li>Working with pure function allows the use of e.g. the
+  <a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a>
+  monad to describe the functionality of a circuit.</li></ul><p>Although there are Lava alternatives to some of the above features (e.g.
+first-class patterns to replace pattern matching) they are not as &quot;beautiful&quot;
+and / or easy to use as the standard Haskell features.</p></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.14.3</p></div></body></html>
