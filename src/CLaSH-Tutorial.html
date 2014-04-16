@@ -81,13 +81,13 @@
 <a name="line-72"></a>consequences on how we view /recursive/ functions: structurally, a recursive
 <a name="line-73"></a>function would denote an /infinitely/ deep / structured component, something
 <a name="line-74"></a>that cannot be turned into an actual circuit (See also &lt;#unsupported Unsupported Haskell features&gt;).
-<a name="line-75"></a>Of course there are variants of recursion that cab be completely unfolded at
+<a name="line-75"></a>Of course there are variants of recursion that could be completely unfolded at
 <a name="line-76"></a>compile-time with a finite amount of steps and hence could be converted to a
 <a name="line-77"></a>realisable circuit. Sadly, this last feature is missing in the current version
 <a name="line-78"></a>of the compiler.
 <a name="line-79"></a>
-<a name="line-80"></a>On the other hand, Haskell's by-default non-strict evaluation corresponds very
-<a name="line-81"></a>well to the simulation of the feedback loops which are ubiquitous in digital
+<a name="line-80"></a>On the other hand, Haskell's by-default non-strict evaluation works very well
+<a name="line-81"></a>for the simulation of the feedback loops, which are ubiquitous in digital
 <a name="line-82"></a>circuits. That is, when we take our structural view to circuit descriptions,
 <a name="line-83"></a>value-recursion corresponds directly to a feedback loop:
 <a name="line-84"></a>
@@ -97,10 +97,10 @@
 <a name="line-88"></a>    s = register 0 (s + 1)
 <a name="line-89"></a>@
 <a name="line-90"></a>
-<a name="line-91"></a>Over time, you will get a better feeling of what exact the consequences are of
-<a name="line-92"></a>taking a \structural\ view on circuit descriptions. What is always important to
+<a name="line-91"></a>Over time, you will get a better feeling for the consequences of taking a
+<a name="line-92"></a>/structural/ view on circuit descriptions. What is always important to
 <a name="line-93"></a>remember is that every applied functions results in an instantiated component,
-<a name="line-94"></a>and also that the compiler will never infer / invent more logic than what is
+<a name="line-94"></a>and also that the compiler will /never/ infer / invent more logic than what is
 <a name="line-95"></a>specified in the circuit description.
 <a name="line-96"></a>
 <a name="line-97"></a>With that out of the way, let us continue with installing CλaSH and building
@@ -578,527 +578,531 @@
 <a name="line-569"></a>    position of the arguments and result:
 <a name="line-570"></a>
 <a name="line-571"></a>    @
-<a name="line-572"></a>    asStateM f i = g \&lt;^\&gt; i
-<a name="line-573"></a>      where
-<a name="line-574"></a>        g s x = let (o,s') = runState (f x) s
-<a name="line-575"></a>                in  (s',o)
-<a name="line-576"></a>    @
-<a name="line-577"></a>
-<a name="line-578"></a>    We can then create the complete 'mac' circuit as:
-<a name="line-579"></a>
+<a name="line-572"></a>    asStateM :: (Pack o, Pack i)
+<a name="line-573"></a>             =&gt; (i -&gt; State s o)
+<a name="line-574"></a>             -&gt; s
+<a name="line-575"></a>             -&gt; (SignalP i -&gt; SignalP o)
+<a name="line-576"></a>    asStateM f i = g \&lt;^\&gt; i
+<a name="line-577"></a>      where
+<a name="line-578"></a>        g s x = let (o,s') = runState (f x) s
+<a name="line-579"></a>                in  (s',o)
 <a name="line-580"></a>    @
-<a name="line-581"></a>    macS = asStateM macTS 0
-<a name="line-582"></a>    @
-<a name="line-583"></a>-}</span>
-<a name="line-584"></a>
-<a name="line-585"></a><span class='hs-comment'>{- $higher_order
-<a name="line-586"></a>An FIR filter is defined as: the dot-product of a set of filter coefficients and
-<a name="line-587"></a>a window over the input, where the size of the window matches the number
-<a name="line-588"></a>of coefficients.
-<a name="line-589"></a>
-<a name="line-590"></a>@
-<a name="line-591"></a>dotp as bs = vfoldl (+) 0 (vzipWith (*) as bs)
-<a name="line-592"></a>
-<a name="line-593"></a>fir coeffs x_t = y_t
-<a name="line-594"></a>  where
-<a name="line-595"></a>    y_t = dotp coeffs xs
-<a name="line-596"></a>    xs  = window x_t
-<a name="line-597"></a>
-<a name="line-598"></a>topEntity :: Signal (Signed 16) -&gt; Signal (Signed 16)
-<a name="line-599"></a>topEntity = fir $(v [0::Signal (Signed 16),1,2,3])
-<a name="line-600"></a>@
+<a name="line-581"></a>
+<a name="line-582"></a>    We can then create the complete 'mac' circuit as:
+<a name="line-583"></a>
+<a name="line-584"></a>    @
+<a name="line-585"></a>    macS = asStateM macTS 0
+<a name="line-586"></a>    @
+<a name="line-587"></a>-}</span>
+<a name="line-588"></a>
+<a name="line-589"></a><span class='hs-comment'>{- $higher_order
+<a name="line-590"></a>An FIR filter is defined as: the dot-product of a set of filter coefficients and
+<a name="line-591"></a>a window over the input, where the size of the window matches the number
+<a name="line-592"></a>of coefficients.
+<a name="line-593"></a>
+<a name="line-594"></a>@
+<a name="line-595"></a>dotp as bs = vfoldl (+) 0 (vzipWith (*) as bs)
+<a name="line-596"></a>
+<a name="line-597"></a>fir coeffs x_t = y_t
+<a name="line-598"></a>  where
+<a name="line-599"></a>    y_t = dotp coeffs xs
+<a name="line-600"></a>    xs  = window x_t
 <a name="line-601"></a>
-<a name="line-602"></a>Here we can see that, although the CλaSH compiler does not support recursion,
-<a name="line-603"></a>many of the regular patterns that we often encounter in circuit design are
-<a name="line-604"></a>already captured by the higher-order functions that are present for the 'Vec'tor
-<a name="line-605"></a>type.
-<a name="line-606"></a>-}</span>
-<a name="line-607"></a>
-<a name="line-608"></a><span class='hs-comment'>{- $composition_sequential
-<a name="line-609"></a>
-<a name="line-610"></a>First we define some types:
+<a name="line-602"></a>topEntity :: Signal (Signed 16) -&gt; Signal (Signed 16)
+<a name="line-603"></a>topEntity = fir $(v [0::Signal (Signed 16),1,2,3])
+<a name="line-604"></a>@
+<a name="line-605"></a>
+<a name="line-606"></a>Here we can see that, although the CλaSH compiler does not support recursion,
+<a name="line-607"></a>many of the regular patterns that we often encounter in circuit design are
+<a name="line-608"></a>already captured by the higher-order functions that are present for the 'Vec'tor
+<a name="line-609"></a>type.
+<a name="line-610"></a>-}</span>
 <a name="line-611"></a>
-<a name="line-612"></a>@
-<a name="line-613"></a>module CalculatorTypes where
-<a name="line-614"></a>
-<a name="line-615"></a>import CLaSH.Prelude
-<a name="line-616"></a>
-<a name="line-617"></a>type Word = Signed 4
-<a name="line-618"></a>data OPC a = ADD | MUL | Imm a | Pop | Push
-<a name="line-619"></a>
-<a name="line-620"></a>deriveLift ''OPC
-<a name="line-621"></a>@
-<a name="line-622"></a>
-<a name="line-623"></a>Now we define the actual calculator:
-<a name="line-624"></a>
+<a name="line-612"></a><span class='hs-comment'>{- $composition_sequential
+<a name="line-613"></a>
+<a name="line-614"></a>First we define some types:
+<a name="line-615"></a>
+<a name="line-616"></a>@
+<a name="line-617"></a>module CalculatorTypes where
+<a name="line-618"></a>
+<a name="line-619"></a>import CLaSH.Prelude
+<a name="line-620"></a>
+<a name="line-621"></a>type Word = Signed 4
+<a name="line-622"></a>data OPC a = ADD | MUL | Imm a | Pop | Push
+<a name="line-623"></a>
+<a name="line-624"></a>deriveLift ''OPC
 <a name="line-625"></a>@
-<a name="line-626"></a>module Calculator where
-<a name="line-627"></a>
-<a name="line-628"></a>import CLaSH.Prelude
-<a name="line-629"></a>import CalculatorTypes
-<a name="line-630"></a>
-<a name="line-631"></a>(.:) :: (c -&gt; d) -&gt; (a -&gt; b -&gt; c) -&gt; a -&gt; b -&gt; d
-<a name="line-632"></a>(f .: g) a b = f (g a b)
-<a name="line-633"></a>
-<a name="line-634"></a>infixr 9 .:
-<a name="line-635"></a>
-<a name="line-636"></a>alu :: Num a =&gt; OPC a -&gt; a -&gt; a -&gt; Maybe a
-<a name="line-637"></a>alu ADD     = Just .: (+)
-<a name="line-638"></a>alu MUL     = Just .: (*)
-<a name="line-639"></a>alu (Imm i) = const . const (Just i)
-<a name="line-640"></a>alu _       = const . const Nothing
-<a name="line-641"></a>
-<a name="line-642"></a>pu :: (Num a, Num b)
-<a name="line-643"></a>   =&gt; (OPC a -&gt; a -&gt; a -&gt; Maybe a)
-<a name="line-644"></a>   -&gt; (a, a, b)       -- Current state
-<a name="line-645"></a>   -&gt; (a, OPC a)      -- Input
-<a name="line-646"></a>   -&gt; ( (a, a, b)     -- New state
-<a name="line-647"></a>      , (b, Maybe a)  -- Output
-<a name="line-648"></a>      )
-<a name="line-649"></a>pu alu (op1,op2,cnt) (dmem,Pop)  = ((dmem,op1,cnt-1),(cnt,Nothing))
-<a name="line-650"></a>pu alu (op1,op2,cnt) (dmem,Push) = ((op1,op2,cnt+1) ,(cnt,Nothing))
-<a name="line-651"></a>pu alu (op1,op2,cnt) (dmem,opc)  = ((op1,op2,cnt)   ,(cnt,alu opc op1 op2))
-<a name="line-652"></a>
-<a name="line-653"></a>datamem :: (KnownNat n, Integral i)
-<a name="line-654"></a>        =&gt; Vec n a       -- Current state
-<a name="line-655"></a>        -&gt; (i, Maybe a)  -- Input
-<a name="line-656"></a>        -&gt; (Vec n a, a)  -- (New state, Output)
-<a name="line-657"></a>datamem mem (addr,Nothing)  = (mem                  ,mem ! addr)
-<a name="line-658"></a>datamem mem (addr,Just val) = (vreplace mem addr val,mem ! addr)
-<a name="line-659"></a>
-<a name="line-660"></a>topEntity :: Signal (OPC Word) -&gt; Signal (Maybe Word)
-<a name="line-661"></a>topEntity i = val
-<a name="line-662"></a>  where
-<a name="line-663"></a>    (addr,val) = (pu alu \&lt;^\&gt; (0,0,0 :: Unsigned 3)) (mem,i)
-<a name="line-664"></a>    mem        = (datamem \&lt;^\&gt; initMem) (addr,val)
-<a name="line-665"></a>    initMem    = vcopy d8 0
-<a name="line-666"></a>@
-<a name="line-667"></a>
-<a name="line-668"></a>Here we can finally see the advantage of having the '&lt;^&gt;' return a function
-<a name="line-669"></a>of type: @('SignalP' i -&gt; 'SignalP' o)@ (instead of:
-<a name="line-670"></a>@('Signal' i -&gt; 'Signal' o)@):
+<a name="line-626"></a>
+<a name="line-627"></a>Now we define the actual calculator:
+<a name="line-628"></a>
+<a name="line-629"></a>@
+<a name="line-630"></a>module Calculator where
+<a name="line-631"></a>
+<a name="line-632"></a>import CLaSH.Prelude
+<a name="line-633"></a>import CalculatorTypes
+<a name="line-634"></a>
+<a name="line-635"></a>(.:) :: (c -&gt; d) -&gt; (a -&gt; b -&gt; c) -&gt; a -&gt; b -&gt; d
+<a name="line-636"></a>(f .: g) a b = f (g a b)
+<a name="line-637"></a>
+<a name="line-638"></a>infixr 9 .:
+<a name="line-639"></a>
+<a name="line-640"></a>alu :: Num a =&gt; OPC a -&gt; a -&gt; a -&gt; Maybe a
+<a name="line-641"></a>alu ADD     = Just .: (+)
+<a name="line-642"></a>alu MUL     = Just .: (*)
+<a name="line-643"></a>alu (Imm i) = const . const (Just i)
+<a name="line-644"></a>alu _       = const . const Nothing
+<a name="line-645"></a>
+<a name="line-646"></a>pu :: (Num a, Num b)
+<a name="line-647"></a>   =&gt; (OPC a -&gt; a -&gt; a -&gt; Maybe a)
+<a name="line-648"></a>   -&gt; (a, a, b)       -- Current state
+<a name="line-649"></a>   -&gt; (a, OPC a)      -- Input
+<a name="line-650"></a>   -&gt; ( (a, a, b)     -- New state
+<a name="line-651"></a>      , (b, Maybe a)  -- Output
+<a name="line-652"></a>      )
+<a name="line-653"></a>pu alu (op1,op2,cnt) (dmem,Pop)  = ((dmem,op1,cnt-1),(cnt,Nothing))
+<a name="line-654"></a>pu alu (op1,op2,cnt) (dmem,Push) = ((op1,op2,cnt+1) ,(cnt,Nothing))
+<a name="line-655"></a>pu alu (op1,op2,cnt) (dmem,opc)  = ((op1,op2,cnt)   ,(cnt,alu opc op1 op2))
+<a name="line-656"></a>
+<a name="line-657"></a>datamem :: (KnownNat n, Integral i)
+<a name="line-658"></a>        =&gt; Vec n a       -- Current state
+<a name="line-659"></a>        -&gt; (i, Maybe a)  -- Input
+<a name="line-660"></a>        -&gt; (Vec n a, a)  -- (New state, Output)
+<a name="line-661"></a>datamem mem (addr,Nothing)  = (mem                  ,mem ! addr)
+<a name="line-662"></a>datamem mem (addr,Just val) = (vreplace mem addr val,mem ! addr)
+<a name="line-663"></a>
+<a name="line-664"></a>topEntity :: Signal (OPC Word) -&gt; Signal (Maybe Word)
+<a name="line-665"></a>topEntity i = val
+<a name="line-666"></a>  where
+<a name="line-667"></a>    (addr,val) = (pu alu \&lt;^\&gt; (0,0,0 :: Unsigned 3)) (mem,i)
+<a name="line-668"></a>    mem        = (datamem \&lt;^\&gt; initMem) (addr,val)
+<a name="line-669"></a>    initMem    = vcopy d8 0
+<a name="line-670"></a>@
 <a name="line-671"></a>
-<a name="line-672"></a>  * We can use normal pattern matching to get parts of the result, and,
-<a name="line-673"></a>  * We can use normal tuple-constructors to build the input values for the
-<a name="line-674"></a>    circuits.
-<a name="line-675"></a>-}</span>
-<a name="line-676"></a>
-<a name="line-677"></a><span class='hs-comment'>{- $vhdlprimitives
-<a name="line-678"></a>There are times when you already have an existing piece of IP, or there are
-<a name="line-679"></a>times where you need the VHDL to have a specific shape so that the VHDL
-<a name="line-680"></a>synthesis tool can infer a specific component. In these specific cases you can
-<a name="line-681"></a>resort to defining your own VHDL primitives. Actually, most of the primitives
-<a name="line-682"></a>in CλaSH are specified in the same way as you will read about in this section.
-<a name="line-683"></a>There are perhaps 10 (at most) functions which are truly hard-coded into the
-<a name="line-684"></a>CλaSH compiler. You can take a look at the files in
-<a name="line-685"></a>&lt;<a href="http://github.com/christiaanb/clash2/tree/master/primitives">http://github.com/christiaanb/clash2/tree/master/primitives</a>&gt;
-<a name="line-686"></a>if you want to know which functions are defined as \"regular\" primitives. The
-<a name="line-687"></a>compiler looks for primitives in two locations:
-<a name="line-688"></a>
-<a name="line-689"></a>* The official install location: e.g.
-<a name="line-690"></a>  @$CABAL_DIR\/share\/\&lt;GHC_VERSION\&gt;\/clash-ghc\-&lt;VERSION\&gt;\/primitives@
-<a name="line-691"></a>* The current directory (the location given by @pwd@)
+<a name="line-672"></a>Here we can finally see the advantage of having the '&lt;^&gt;' return a function
+<a name="line-673"></a>of type: @('SignalP' i -&gt; 'SignalP' o)@ (instead of:
+<a name="line-674"></a>@('Signal' i -&gt; 'Signal' o)@):
+<a name="line-675"></a>
+<a name="line-676"></a>  * We can use normal pattern matching to get parts of the result, and,
+<a name="line-677"></a>  * We can use normal tuple-constructors to build the input values for the
+<a name="line-678"></a>    circuits.
+<a name="line-679"></a>-}</span>
+<a name="line-680"></a>
+<a name="line-681"></a><span class='hs-comment'>{- $vhdlprimitives
+<a name="line-682"></a>There are times when you already have an existing piece of IP, or there are
+<a name="line-683"></a>times where you need the VHDL to have a specific shape so that the VHDL
+<a name="line-684"></a>synthesis tool can infer a specific component. In these specific cases you can
+<a name="line-685"></a>resort to defining your own VHDL primitives. Actually, most of the primitives
+<a name="line-686"></a>in CλaSH are specified in the same way as you will read about in this section.
+<a name="line-687"></a>There are perhaps 10 (at most) functions which are truly hard-coded into the
+<a name="line-688"></a>CλaSH compiler. You can take a look at the files in
+<a name="line-689"></a>&lt;<a href="http://github.com/christiaanb/clash2/tree/master/primitives">http://github.com/christiaanb/clash2/tree/master/primitives</a>&gt;
+<a name="line-690"></a>if you want to know which functions are defined as \"regular\" primitives. The
+<a name="line-691"></a>compiler looks for primitives in two locations:
 <a name="line-692"></a>
-<a name="line-693"></a>Where redefined primitives in the current directory will overwrite those in
-<a name="line-694"></a>the official install location. For now, files containing primitive definitions
-<a name="line-695"></a>must end in the @.json@ file-extension.
+<a name="line-693"></a>* The official install location: e.g.
+<a name="line-694"></a>  @$CABAL_DIR\/share\/\&lt;GHC_VERSION\&gt;\/clash-ghc\-&lt;VERSION\&gt;\/primitives@
+<a name="line-695"></a>* The current directory (the location given by @pwd@)
 <a name="line-696"></a>
-<a name="line-697"></a>CλaSH differentiates between two types of primitives, /expression/ primitives
-<a name="line-698"></a>and /declaration/ primitives, corresponding to whether the primitive is a VHDL
-<a name="line-699"></a>/expression/ or a VHDL /declaration/. We will first explore /expression/
-<a name="line-700"></a>primitives, using 'Signed' multiplication ('*') as an example. The
-<a name="line-701"></a>"CLaSH.Sized.Signed" module specifies multiplication as follows:
-<a name="line-702"></a>
-<a name="line-703"></a>@
-<a name="line-704"></a>{\-# NOINLINE timesS #-\}
-<a name="line-705"></a>timesS :: KnownNat n =&gt; Signed n -&gt; Signed n -&gt; Signed n
-<a name="line-706"></a>timesS (S a) (S b) = fromIntegerS_inlineable (a * b)
+<a name="line-697"></a>Where redefined primitives in the current directory will overwrite those in
+<a name="line-698"></a>the official install location. For now, files containing primitive definitions
+<a name="line-699"></a>must end in the @.json@ file-extension.
+<a name="line-700"></a>
+<a name="line-701"></a>CλaSH differentiates between two types of primitives, /expression/ primitives
+<a name="line-702"></a>and /declaration/ primitives, corresponding to whether the primitive is a VHDL
+<a name="line-703"></a>/expression/ or a VHDL /declaration/. We will first explore /expression/
+<a name="line-704"></a>primitives, using 'Signed' multiplication ('*') as an example. The
+<a name="line-705"></a>"CLaSH.Sized.Signed" module specifies multiplication as follows:
+<a name="line-706"></a>
 <a name="line-707"></a>@
-<a name="line-708"></a>
-<a name="line-709"></a>For which the primitive definition is:
-<a name="line-710"></a>
+<a name="line-708"></a>{\-# NOINLINE timesS #-\}
+<a name="line-709"></a>timesS :: KnownNat n =&gt; Signed n -&gt; Signed n -&gt; Signed n
+<a name="line-710"></a>timesS (S a) (S b) = fromIntegerS_inlineable (a * b)
 <a name="line-711"></a>@
-<a name="line-712"></a>{ \"BlackBox\" :
-<a name="line-713"></a>  { "name"      : "CLaSH.Sized.Signed.timesS"
-<a name="line-714"></a>  , "templateE" : "resize(~ARG[1] * ~ARG[2], ~LIT[0])"
-<a name="line-715"></a>  }
-<a name="line-716"></a>}
-<a name="line-717"></a>@
-<a name="line-718"></a>
-<a name="line-719"></a>The @name@ of the primitive is the /fully qualified/ name of the function you
-<a name="line-720"></a>are creating the primitive for. Because we are creating an \expression\
-<a name="line-721"></a>primitive we define a @template__E__@ field. As the name suggest, it is a VHDL
-<a name="line-722"></a>/template/, meaning that the compiler must fill in the holes heralded by the
-<a name="line-723"></a>tilde (~). Here:
-<a name="line-724"></a>
-<a name="line-725"></a>  * @~ARG[1]@ denotes the second argument given to the @timesS@ function, which
-<a name="line-726"></a>    corresponds to the LHS of the ('*') operator.
-<a name="line-727"></a>  * @~ARG[2]@ denotes the third argument given to the @timesS@ function, which
-<a name="line-728"></a>    corresponds to the RHS of the ('*') operator.
-<a name="line-729"></a>  * @~LIT[0]@ denotes the first argument given to the @timesS@ function, with
-<a name="line-730"></a>    the extra condition that it must be a @LIT@eral. If for some reason this
-<a name="line-731"></a>    first argument does not turn out to be a literal then the compiler will
-<a name="line-732"></a>    raise an error. This first arguments corresponds to the \"@'KnownNat' n@\"
-<a name="line-733"></a>    class constraint.
-<a name="line-734"></a>
-<a name="line-735"></a>An extensive list with all of the template holes will be given the end of this
-<a name="line-736"></a>section. What we immediately notice is that class constraints are counted as
-<a name="line-737"></a>normal arguments in the primitive definition. This is because these class
-<a name="line-738"></a>constraints are actually represented by ordinary record types, with fields
-<a name="line-739"></a>corresponding to the methods of the type class. In the above case, 'KnownNat'
-<a name="line-740"></a>is actually just like a @newtype@ wrapper for 'Integer'.
-<a name="line-741"></a>
-<a name="line-742"></a>The second primitive type that we will explore is the /definition/ primitive.
-<a name="line-743"></a>In this case we will use 'blockRam' as an example. The Haskell/CλaSH code for
-<a name="line-744"></a>which is:
+<a name="line-712"></a>
+<a name="line-713"></a>For which the primitive definition is:
+<a name="line-714"></a>
+<a name="line-715"></a>@
+<a name="line-716"></a>{ \"BlackBox\" :
+<a name="line-717"></a>  { "name"      : "CLaSH.Sized.Signed.timesS"
+<a name="line-718"></a>  , "templateE" : "resize(~ARG[1] * ~ARG[2], ~LIT[0])"
+<a name="line-719"></a>  }
+<a name="line-720"></a>}
+<a name="line-721"></a>@
+<a name="line-722"></a>
+<a name="line-723"></a>The @name@ of the primitive is the /fully qualified/ name of the function you
+<a name="line-724"></a>are creating the primitive for. Because we are creating an \expression\
+<a name="line-725"></a>primitive we define a @template__E__@ field. As the name suggest, it is a VHDL
+<a name="line-726"></a>/template/, meaning that the compiler must fill in the holes heralded by the
+<a name="line-727"></a>tilde (~). Here:
+<a name="line-728"></a>
+<a name="line-729"></a>  * @~ARG[1]@ denotes the second argument given to the @timesS@ function, which
+<a name="line-730"></a>    corresponds to the LHS of the ('*') operator.
+<a name="line-731"></a>  * @~ARG[2]@ denotes the third argument given to the @timesS@ function, which
+<a name="line-732"></a>    corresponds to the RHS of the ('*') operator.
+<a name="line-733"></a>  * @~LIT[0]@ denotes the first argument given to the @timesS@ function, with
+<a name="line-734"></a>    the extra condition that it must be a @LIT@eral. If for some reason this
+<a name="line-735"></a>    first argument does not turn out to be a literal then the compiler will
+<a name="line-736"></a>    raise an error. This first arguments corresponds to the \"@'KnownNat' n@\"
+<a name="line-737"></a>    class constraint.
+<a name="line-738"></a>
+<a name="line-739"></a>An extensive list with all of the template holes will be given the end of this
+<a name="line-740"></a>section. What we immediately notice is that class constraints are counted as
+<a name="line-741"></a>normal arguments in the primitive definition. This is because these class
+<a name="line-742"></a>constraints are actually represented by ordinary record types, with fields
+<a name="line-743"></a>corresponding to the methods of the type class. In the above case, 'KnownNat'
+<a name="line-744"></a>is actually just like a @newtype@ wrapper for 'Integer'.
 <a name="line-745"></a>
-<a name="line-746"></a>@
-<a name="line-747"></a>{\-# NOINLINE blockRam #-\}
-<a name="line-748"></a>-- | Create a blockRAM with space for @n@ elements
-<a name="line-749"></a>--
-<a name="line-750"></a>-- &gt; bram40 :: Signal (Unsigned 6) -&gt; Signal (Unsigned 6) -&gt; Signal Bool -&gt; Signal a -&gt; Signal a
-<a name="line-751"></a>-- &gt; bram40 = blockRam d50
-<a name="line-752"></a>blockRam :: forall n m a . (KnownNat n, KnownNat m, Pack a, Default a)
-<a name="line-753"></a>         =&gt; SNat n              -- ^ Size @n@ of the blockram
-<a name="line-754"></a>         -&gt; Signal (Unsigned m) -- ^ Write address @w@
-<a name="line-755"></a>         -&gt; Signal (Unsigned m) -- ^ Read address @r@
-<a name="line-756"></a>         -&gt; Signal Bool         -- ^ Write enable
-<a name="line-757"></a>         -&gt; Signal a            -- ^ Value to write (at address @w@)
-<a name="line-758"></a>         -&gt; Signal a            -- ^ Value of the 'blockRAM' at address @r@ from the previous clock cycle
-<a name="line-759"></a>blockRam n wr rd en din = pack $ (bram' &lt;^&gt; binit) (wr,rd,en,din)
-<a name="line-760"></a>  where
-<a name="line-761"></a>    binit :: (Vec n a,a)
-<a name="line-762"></a>    binit = (vcopy n def,def)
-<a name="line-763"></a>
-<a name="line-764"></a>    bram' :: (Vec n a,a) -&gt; (Unsigned m, Unsigned m, Bool, a)
-<a name="line-765"></a>          -&gt; (((Vec n a),a),a)
-<a name="line-766"></a>    bram' (ram,o) (w,r,e,d) = ((ram',o'),o)
-<a name="line-767"></a>      where
-<a name="line-768"></a>        ram' | e         = vreplace ram w d
-<a name="line-769"></a>             | otherwise = ram
-<a name="line-770"></a>        o'               = ram ! r
-<a name="line-771"></a>@
-<a name="line-772"></a>
-<a name="line-773"></a>For which the primitive definition is:
-<a name="line-774"></a>
+<a name="line-746"></a>The second primitive type that we will explore is the /definition/ primitive.
+<a name="line-747"></a>In this case we will use 'blockRam' as an example. The Haskell/CλaSH code for
+<a name="line-748"></a>which is:
+<a name="line-749"></a>
+<a name="line-750"></a>@
+<a name="line-751"></a>{\-# NOINLINE blockRam #-\}
+<a name="line-752"></a>-- | Create a blockRAM with space for @n@ elements
+<a name="line-753"></a>--
+<a name="line-754"></a>-- &gt; bram40 :: Signal (Unsigned 6) -&gt; Signal (Unsigned 6) -&gt; Signal Bool -&gt; Signal a -&gt; Signal a
+<a name="line-755"></a>-- &gt; bram40 = blockRam d50
+<a name="line-756"></a>blockRam :: forall n m a . (KnownNat n, KnownNat m, Pack a, Default a)
+<a name="line-757"></a>         =&gt; SNat n              -- ^ Size @n@ of the blockram
+<a name="line-758"></a>         -&gt; Signal (Unsigned m) -- ^ Write address @w@
+<a name="line-759"></a>         -&gt; Signal (Unsigned m) -- ^ Read address @r@
+<a name="line-760"></a>         -&gt; Signal Bool         -- ^ Write enable
+<a name="line-761"></a>         -&gt; Signal a            -- ^ Value to write (at address @w@)
+<a name="line-762"></a>         -&gt; Signal a            -- ^ Value of the 'blockRAM' at address @r@ from the previous clock cycle
+<a name="line-763"></a>blockRam n wr rd en din = pack $ (bram' &lt;^&gt; binit) (wr,rd,en,din)
+<a name="line-764"></a>  where
+<a name="line-765"></a>    binit :: (Vec n a,a)
+<a name="line-766"></a>    binit = (vcopy n def,def)
+<a name="line-767"></a>
+<a name="line-768"></a>    bram' :: (Vec n a,a) -&gt; (Unsigned m, Unsigned m, Bool, a)
+<a name="line-769"></a>          -&gt; (((Vec n a),a),a)
+<a name="line-770"></a>    bram' (ram,o) (w,r,e,d) = ((ram',o'),o)
+<a name="line-771"></a>      where
+<a name="line-772"></a>        ram' | e         = vreplace ram w d
+<a name="line-773"></a>             | otherwise = ram
+<a name="line-774"></a>        o'               = ram ! r
 <a name="line-775"></a>@
-<a name="line-776"></a>{ \"BlackBox\" :
-<a name="line-777"></a>  { "name"      : "CLaSH.Prelude.blockRam"
-<a name="line-778"></a>  , "templateD" :
-<a name="line-779"></a>"~SYM[0]_block : block
-<a name="line-780"></a>  type ram_array is array (natural range &lt;&gt;) of ~TYP[8];
-<a name="line-781"></a>  signal ~SYM[1] : ram_array((~ARG[0]-1) downto 0) := (others =&gt; ~ARG[3]); -- ram
-<a name="line-782"></a>  signal ~SYM[2] : ~TYP[8]; -- inp
-<a name="line-783"></a>  signal ~SYM[3] : ~TYP[8] := ~ARG[3]; -- outp
-<a name="line-784"></a>begin
-<a name="line-785"></a>  ~SYM[2] &lt;= ~ARG[8];
-<a name="line-786"></a>
-<a name="line-787"></a>  process(~CLKO)
-<a name="line-788"></a>  begin
-<a name="line-789"></a>    if rising_edge(~CLKO) then
-<a name="line-790"></a>      if ~ARG[7] then
-<a name="line-791"></a>        ~SYM[1](to_integer(~ARG[5])) &lt;= ~SYM[2];
-<a name="line-792"></a>      end if;
-<a name="line-793"></a>      ~SYM[3] &lt;= ~SYM[1](to_integer(~ARG[6]));
-<a name="line-794"></a>    end if;
-<a name="line-795"></a>  end process;
-<a name="line-796"></a>
-<a name="line-797"></a>  ~RESULT &lt;= ~SYM[3];
-<a name="line-798"></a>end block;"
-<a name="line-799"></a>  }
-<a name="line-800"></a>}
-<a name="line-801"></a>@
-<a name="line-802"></a>
-<a name="line-803"></a>Again, the @name@ of the primitive is the fully qualified name of the function
-<a name="line-804"></a>you are creating the primitive for. Because we are creating a \declaration\
-<a name="line-805"></a>primitive we define a @template__D__@ field. Instead of discussing what the
-<a name="line-806"></a>individual template holes mean in the above context, we will instead just give
-<a name="line-807"></a>a general listing of the available template holes:
-<a name="line-808"></a>
-<a name="line-809"></a>* @~RESULT@: VHDL signal to which the result of a primitive must be assigned
-<a name="line-810"></a>  to. NB: Only used in a /definition/ primitive.
-<a name="line-811"></a>* @~ARG[N]@: @(N+1)@'th argument to the function.
-<a name="line-812"></a>* @~LIT[N]@: @(N+1)@'th argument to the function An extra condition that must
-<a name="line-813"></a>  hold is that this @N@'th argument is an (integer) literal.
-<a name="line-814"></a>* @~CLK[N]@: Clock signal to which the @(N+1)@'th argument is synchronized to.
-<a name="line-815"></a>* @~CLKO@: Clock signal to which the result is synchronized to.
-<a name="line-816"></a>* @~RST[N]@: Asynchronous reset signal to the clock to which the @(N+1)@'th
-<a name="line-817"></a>  argument is synchronized to.
-<a name="line-818"></a>* @~RSTO@: Asynchronous reset signal to the clock to which the result is
-<a name="line-819"></a>  synchronized to.
-<a name="line-820"></a>* @~TYP[N]@: VHDL type of the @(N+1)@'th argument.
-<a name="line-821"></a>* @~TYPO@: VHDL type of the result.
-<a name="line-822"></a>* @~TYPM[N]@: VHDL type/name/ of the @(N+1)@'th argument; used in /type/
-<a name="line-823"></a>  /qualification/.
-<a name="line-824"></a>* @~TYPM@: VHDL type/name/ of the result; used in /type qualification/.
-<a name="line-825"></a>* @~DEF[N]@: Default value for the VHDL type of the @(N+1)@'th argument. NB:
-<a name="line-826"></a>  Does not correspond per se to the value of 'def' of the 'Default' type class
-<a name="line-827"></a>  for the Haskell type.
-<a name="line-828"></a>* @~DEFO@: Default value for the VHDL type of the result. NB: Does not
-<a name="line-829"></a>  correspond per se to the value of the 'def' of the 'Default' type class for
-<a name="line-830"></a>  the Haskell type.
-<a name="line-831"></a>* @~SYM[N]@: Randomly generated, but unique, symbol. Multiple occurrences of
-<a name="line-832"></a>  @~SYM[N]@ in the same primitive definition all refer to the same random, but
-<a name="line-833"></a>  unique, symbol.
-<a name="line-834"></a>
-<a name="line-835"></a>Some final remark to end this section: VHDL primitives only instruct the CλaSH
-<a name="line-836"></a>compiler to use the given VHDL template, instead of trying to do normal
-<a name="line-837"></a>synthesis. You can hence use constructs inside the Haskell definitions that
-<a name="line-838"></a>are normally not synthesizable by the CλaSH compiler. However, VHDL primitives
-<a name="line-839"></a>do not get you /co-simulation/: where you simulate VHDL and Haskell in a
-<a name="line-840"></a>/single/ environment. If you still want to simulate your design in Haskell, you
-<a name="line-841"></a>will have to describe, in a cycle- and bit-accurate way, the behaviour of that
-<a name="line-842"></a>(potentially complex) IP you are trying include in your design.
-<a name="line-843"></a>
-<a name="line-844"></a>Perhaps in the future, someone will figure out how to connect the two simulation
-<a name="line-845"></a>worlds using e.g. VHDL's foreign function interface VHPI.
-<a name="line-846"></a>-}</span>
+<a name="line-776"></a>
+<a name="line-777"></a>For which the primitive definition is:
+<a name="line-778"></a>
+<a name="line-779"></a>@
+<a name="line-780"></a>{ \"BlackBox\" :
+<a name="line-781"></a>  { "name"      : "CLaSH.Prelude.blockRam"
+<a name="line-782"></a>  , "templateD" :
+<a name="line-783"></a>"~SYM[0]_block : block
+<a name="line-784"></a>  type ram_array is array (natural range &lt;&gt;) of ~TYP[8];
+<a name="line-785"></a>  signal ~SYM[1] : ram_array((~ARG[0]-1) downto 0) := (others =&gt; ~ARG[3]); -- ram
+<a name="line-786"></a>  signal ~SYM[2] : ~TYP[8]; -- inp
+<a name="line-787"></a>  signal ~SYM[3] : ~TYP[8] := ~ARG[3]; -- outp
+<a name="line-788"></a>begin
+<a name="line-789"></a>  ~SYM[2] &lt;= ~ARG[8];
+<a name="line-790"></a>
+<a name="line-791"></a>  process(~CLKO)
+<a name="line-792"></a>  begin
+<a name="line-793"></a>    if rising_edge(~CLKO) then
+<a name="line-794"></a>      if ~ARG[7] then
+<a name="line-795"></a>        ~SYM[1](to_integer(~ARG[5])) &lt;= ~SYM[2];
+<a name="line-796"></a>      end if;
+<a name="line-797"></a>      ~SYM[3] &lt;= ~SYM[1](to_integer(~ARG[6]));
+<a name="line-798"></a>    end if;
+<a name="line-799"></a>  end process;
+<a name="line-800"></a>
+<a name="line-801"></a>  ~RESULT &lt;= ~SYM[3];
+<a name="line-802"></a>end block;"
+<a name="line-803"></a>  }
+<a name="line-804"></a>}
+<a name="line-805"></a>@
+<a name="line-806"></a>
+<a name="line-807"></a>Again, the @name@ of the primitive is the fully qualified name of the function
+<a name="line-808"></a>you are creating the primitive for. Because we are creating a \declaration\
+<a name="line-809"></a>primitive we define a @template__D__@ field. Instead of discussing what the
+<a name="line-810"></a>individual template holes mean in the above context, we will instead just give
+<a name="line-811"></a>a general listing of the available template holes:
+<a name="line-812"></a>
+<a name="line-813"></a>* @~RESULT@: VHDL signal to which the result of a primitive must be assigned
+<a name="line-814"></a>  to. NB: Only used in a /definition/ primitive.
+<a name="line-815"></a>* @~ARG[N]@: @(N+1)@'th argument to the function.
+<a name="line-816"></a>* @~LIT[N]@: @(N+1)@'th argument to the function An extra condition that must
+<a name="line-817"></a>  hold is that this @N@'th argument is an (integer) literal.
+<a name="line-818"></a>* @~CLK[N]@: Clock signal to which the @(N+1)@'th argument is synchronized to.
+<a name="line-819"></a>* @~CLKO@: Clock signal to which the result is synchronized to.
+<a name="line-820"></a>* @~RST[N]@: Asynchronous reset signal to the clock to which the @(N+1)@'th
+<a name="line-821"></a>  argument is synchronized to.
+<a name="line-822"></a>* @~RSTO@: Asynchronous reset signal to the clock to which the result is
+<a name="line-823"></a>  synchronized to.
+<a name="line-824"></a>* @~TYP[N]@: VHDL type of the @(N+1)@'th argument.
+<a name="line-825"></a>* @~TYPO@: VHDL type of the result.
+<a name="line-826"></a>* @~TYPM[N]@: VHDL type/name/ of the @(N+1)@'th argument; used in /type/
+<a name="line-827"></a>  /qualification/.
+<a name="line-828"></a>* @~TYPM@: VHDL type/name/ of the result; used in /type qualification/.
+<a name="line-829"></a>* @~DEF[N]@: Default value for the VHDL type of the @(N+1)@'th argument. NB:
+<a name="line-830"></a>  Does not correspond per se to the value of 'def' of the 'Default' type class
+<a name="line-831"></a>  for the Haskell type.
+<a name="line-832"></a>* @~DEFO@: Default value for the VHDL type of the result. NB: Does not
+<a name="line-833"></a>  correspond per se to the value of the 'def' of the 'Default' type class for
+<a name="line-834"></a>  the Haskell type.
+<a name="line-835"></a>* @~SYM[N]@: Randomly generated, but unique, symbol. Multiple occurrences of
+<a name="line-836"></a>  @~SYM[N]@ in the same primitive definition all refer to the same random, but
+<a name="line-837"></a>  unique, symbol.
+<a name="line-838"></a>
+<a name="line-839"></a>Some final remark to end this section: VHDL primitives only instruct the CλaSH
+<a name="line-840"></a>compiler to use the given VHDL template, instead of trying to do normal
+<a name="line-841"></a>synthesis. You can hence use constructs inside the Haskell definitions that
+<a name="line-842"></a>are normally not synthesizable by the CλaSH compiler. However, VHDL primitives
+<a name="line-843"></a>do not get you /co-simulation/: where you simulate VHDL and Haskell in a
+<a name="line-844"></a>/single/ environment. If you still want to simulate your design in Haskell, you
+<a name="line-845"></a>will have to describe, in a cycle- and bit-accurate way, the behaviour of that
+<a name="line-846"></a>(potentially complex) IP you are trying include in your design.
 <a name="line-847"></a>
-<a name="line-848"></a><span class='hs-comment'>{- $conclusion
-<a name="line-849"></a>For now, this is the end of this tutorial. We will be adding updates over time,
-<a name="line-850"></a>so check back from time to time. For now we recommend that you continue with
-<a name="line-851"></a>exploring the "CLaSH.Prelude" module however, and like that hopefully get a feel
-<a name="line-852"></a>of what CλaSH is capable of.
-<a name="line-853"></a>-}</span>
-<a name="line-854"></a>
-<a name="line-855"></a><span class='hs-comment'>{- $errorsandsolutions
-<a name="line-856"></a>A list of often encountered errors and their solutions:
-<a name="line-857"></a>
-<a name="line-858"></a>* __Type error: Couldn't match expected type ‘Signal (a,b)’ with actual type__
-<a name="line-859"></a>  __‘(Signal a, Signal b)’__:
-<a name="line-860"></a>
-<a name="line-861"></a>    Signals of product types and product types (to which tuples belong) of
-<a name="line-862"></a>    signals are __isomorphic__ due to synchronisity principle, but are not
-<a name="line-863"></a>    (structurally) equal. Use the 'pack' function to convert from a product type
-<a name="line-864"></a>    to the signal type. So if your code which gives the error looks like:
-<a name="line-865"></a>
-<a name="line-866"></a>    @
-<a name="line-867"></a>    ... = f a b (c,d)
-<a name="line-868"></a>    @
+<a name="line-848"></a>Perhaps in the future, someone will figure out how to connect the two simulation
+<a name="line-849"></a>worlds using e.g. VHDL's foreign function interface VHPI.
+<a name="line-850"></a>-}</span>
+<a name="line-851"></a>
+<a name="line-852"></a><span class='hs-comment'>{- $conclusion
+<a name="line-853"></a>For now, this is the end of this tutorial. We will be adding updates over time,
+<a name="line-854"></a>so check back from time to time. For now we recommend that you continue with
+<a name="line-855"></a>exploring the "CLaSH.Prelude" module however, and like that hopefully get a feel
+<a name="line-856"></a>of what CλaSH is capable of.
+<a name="line-857"></a>-}</span>
+<a name="line-858"></a>
+<a name="line-859"></a><span class='hs-comment'>{- $errorsandsolutions
+<a name="line-860"></a>A list of often encountered errors and their solutions:
+<a name="line-861"></a>
+<a name="line-862"></a>* __Type error: Couldn't match expected type ‘Signal (a,b)’ with actual type__
+<a name="line-863"></a>  __‘(Signal a, Signal b)’__:
+<a name="line-864"></a>
+<a name="line-865"></a>    Signals of product types and product types (to which tuples belong) of
+<a name="line-866"></a>    signals are __isomorphic__ due to synchronisity principle, but are not
+<a name="line-867"></a>    (structurally) equal. Use the 'pack' function to convert from a product type
+<a name="line-868"></a>    to the signal type. So if your code which gives the error looks like:
 <a name="line-869"></a>
-<a name="line-870"></a>    add the 'pack' function like so:
-<a name="line-871"></a>
+<a name="line-870"></a>    @
+<a name="line-871"></a>    ... = f a b (c,d)
 <a name="line-872"></a>    @
-<a name="line-873"></a>    ... = f a b (pack (c,d))
-<a name="line-874"></a>    @
+<a name="line-873"></a>
+<a name="line-874"></a>    add the 'pack' function like so:
 <a name="line-875"></a>
-<a name="line-876"></a>    Product types supported by 'pack' are:
-<a name="line-877"></a>
-<a name="line-878"></a>    * All tuples until and including 8-tuples
-<a name="line-879"></a>    * The 'Vec'tor type
-<a name="line-880"></a>
-<a name="line-881"></a>    NB: Use 'cpack' when you are using explicitly clocked 'CSignal's
-<a name="line-882"></a>
-<a name="line-883"></a>* __Type error: Couldn't match expected type ‘(Signal a, Signal b)’ with__
-<a name="line-884"></a>  __ actual type ‘Signal (a,b)’__:
-<a name="line-885"></a>
-<a name="line-886"></a>    Product types (to which tuples belong) of signals and signals of product
-<a name="line-887"></a>    types are __isomorphic__ due to synchronicity principle, but are not
-<a name="line-888"></a>    (structurally) equal. Use the 'unpack' function to convert from a signal
-<a name="line-889"></a>    type to the product type. So if your code which gives the error looks like:
-<a name="line-890"></a>
-<a name="line-891"></a>    @
-<a name="line-892"></a>    (c,d) = f a b
-<a name="line-893"></a>    @
+<a name="line-876"></a>    @
+<a name="line-877"></a>    ... = f a b (pack (c,d))
+<a name="line-878"></a>    @
+<a name="line-879"></a>
+<a name="line-880"></a>    Product types supported by 'pack' are:
+<a name="line-881"></a>
+<a name="line-882"></a>    * All tuples until and including 8-tuples
+<a name="line-883"></a>    * The 'Vec'tor type
+<a name="line-884"></a>
+<a name="line-885"></a>    NB: Use 'cpack' when you are using explicitly clocked 'CSignal's
+<a name="line-886"></a>
+<a name="line-887"></a>* __Type error: Couldn't match expected type ‘(Signal a, Signal b)’ with__
+<a name="line-888"></a>  __ actual type ‘Signal (a,b)’__:
+<a name="line-889"></a>
+<a name="line-890"></a>    Product types (to which tuples belong) of signals and signals of product
+<a name="line-891"></a>    types are __isomorphic__ due to synchronicity principle, but are not
+<a name="line-892"></a>    (structurally) equal. Use the 'unpack' function to convert from a signal
+<a name="line-893"></a>    type to the product type. So if your code which gives the error looks like:
 <a name="line-894"></a>
-<a name="line-895"></a>    add the 'unpack' function like so:
-<a name="line-896"></a>
+<a name="line-895"></a>    @
+<a name="line-896"></a>    (c,d) = f a b
 <a name="line-897"></a>    @
-<a name="line-898"></a>    (c,d) = unpack (f a b)
-<a name="line-899"></a>    @
+<a name="line-898"></a>
+<a name="line-899"></a>    add the 'unpack' function like so:
 <a name="line-900"></a>
-<a name="line-901"></a>    Product types supported by 'unpack' are:
-<a name="line-902"></a>
-<a name="line-903"></a>    * All tuples until and including 8-tuples
-<a name="line-904"></a>    * The 'Vec'tor type
-<a name="line-905"></a>
-<a name="line-906"></a>    NB: Use 'cunpack' when you are using explicitly clocked 'CSignal's
-<a name="line-907"></a>
-<a name="line-908"></a>* __CLaSH.Normalize(94): Expr belonging to bndr: \&lt;FUNCTION\&gt; remains__
-<a name="line-909"></a>  __recursive after normalization__:
-<a name="line-910"></a>
-<a name="line-911"></a>    * If you actually wrote a recursive function, rewrite it to a non-recursive
-<a name="line-912"></a>      one using e.g. one of the higher-order functions in "CLaSH.Sized.Vector" :-)
-<a name="line-913"></a>
-<a name="line-914"></a>    * You defined a recursively defined value, but left it polymorphic:
-<a name="line-915"></a>
-<a name="line-916"></a>    @
-<a name="line-917"></a>    topEntity x y = acc
-<a name="line-918"></a>      where
-<a name="line-919"></a>        acc = register 3 (acc + x * y)
+<a name="line-901"></a>    @
+<a name="line-902"></a>    (c,d) = unpack (f a b)
+<a name="line-903"></a>    @
+<a name="line-904"></a>
+<a name="line-905"></a>    Product types supported by 'unpack' are:
+<a name="line-906"></a>
+<a name="line-907"></a>    * All tuples until and including 8-tuples
+<a name="line-908"></a>    * The 'Vec'tor type
+<a name="line-909"></a>
+<a name="line-910"></a>    NB: Use 'cunpack' when you are using explicitly clocked 'CSignal's
+<a name="line-911"></a>
+<a name="line-912"></a>* __CLaSH.Normalize(94): Expr belonging to bndr: \&lt;FUNCTION\&gt; remains__
+<a name="line-913"></a>  __recursive after normalization__:
+<a name="line-914"></a>
+<a name="line-915"></a>    * If you actually wrote a recursive function, rewrite it to a non-recursive
+<a name="line-916"></a>      one using e.g. one of the higher-order functions in "CLaSH.Sized.Vector" :-)
+<a name="line-917"></a>
+<a name="line-918"></a>    * You defined a recursively defined value, but left it polymorphic:
+<a name="line-919"></a>
 <a name="line-920"></a>    @
-<a name="line-921"></a>
-<a name="line-922"></a>    The above function, works for any number-like type. This means that @acc@ is
-<a name="line-923"></a>    a recursively defined __polymorphic__ value. Adding a monomorphic type
-<a name="line-924"></a>    annotation makes the error go away:
+<a name="line-921"></a>    topEntity x y = acc
+<a name="line-922"></a>      where
+<a name="line-923"></a>        acc = register 3 (acc + x * y)
+<a name="line-924"></a>    @
 <a name="line-925"></a>
-<a name="line-926"></a>    @
-<a name="line-927"></a>    topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
-<a name="line-928"></a>    topEntity x y = acc
-<a name="line-929"></a>      where
-<a name="line-930"></a>        acc = register 3 (acc + x * y)
-<a name="line-931"></a>    @
-<a name="line-932"></a>
-<a name="line-933"></a>    Or, alternatively:
-<a name="line-934"></a>
+<a name="line-926"></a>    The above function, works for any number-like type. This means that @acc@ is
+<a name="line-927"></a>    a recursively defined __polymorphic__ value. Adding a monomorphic type
+<a name="line-928"></a>    annotation makes the error go away:
+<a name="line-929"></a>
+<a name="line-930"></a>    @
+<a name="line-931"></a>    topEntity :: Signal (Signed 8) -&gt; Signal (Signed 8) -&gt; Signal (Signed 8)
+<a name="line-932"></a>    topEntity x y = acc
+<a name="line-933"></a>      where
+<a name="line-934"></a>        acc = register 3 (acc + x * y)
 <a name="line-935"></a>    @
-<a name="line-936"></a>    topEntity x y = acc
-<a name="line-937"></a>      where
-<a name="line-938"></a>        acc = register (3 :: Signed 8) (acc + x * y)
+<a name="line-936"></a>
+<a name="line-937"></a>    Or, alternatively:
+<a name="line-938"></a>
 <a name="line-939"></a>    @
-<a name="line-940"></a>
-<a name="line-941"></a>* __CLaSH.Normalize.Transformations(155): InlineNonRep: \&lt;FUNCTION\&gt; already__
-<a name="line-942"></a>  __inlined 100 times in:\&lt;FUNCTION\&gt;, \&lt;TYPE\&gt;__:
-<a name="line-943"></a>
-<a name="line-944"></a>    You left the @topEntity@ function polymorphic or higher-order: use
-<a name="line-945"></a>    @:t topEntity@ to check if the type is indeed polymorphic or higher-order.
-<a name="line-946"></a>    If it is, add a monomorphic type signature, and / or supply higher-order
-<a name="line-947"></a>    arguments.
-<a name="line-948"></a>
-<a name="line-949"></a>* __Can't make testbench for: \&lt;LONG_VERBATIM_COMPONENT_DESCRIPTION\&gt;__:
-<a name="line-950"></a>
-<a name="line-951"></a>    * Don't worry, it's actually only a warning.
+<a name="line-940"></a>    topEntity x y = acc
+<a name="line-941"></a>      where
+<a name="line-942"></a>        acc = register (3 :: Signed 8) (acc + x * y)
+<a name="line-943"></a>    @
+<a name="line-944"></a>
+<a name="line-945"></a>* __CLaSH.Normalize.Transformations(155): InlineNonRep: \&lt;FUNCTION\&gt; already__
+<a name="line-946"></a>  __inlined 100 times in:\&lt;FUNCTION\&gt;, \&lt;TYPE\&gt;__:
+<a name="line-947"></a>
+<a name="line-948"></a>    You left the @topEntity@ function polymorphic or higher-order: use
+<a name="line-949"></a>    @:t topEntity@ to check if the type is indeed polymorphic or higher-order.
+<a name="line-950"></a>    If it is, add a monomorphic type signature, and / or supply higher-order
+<a name="line-951"></a>    arguments.
 <a name="line-952"></a>
-<a name="line-953"></a>    * The @topEntity@ function does __not__ have exactly 1 argument. If your
-<a name="line-954"></a>      @topEntity@ has no arguments, you're out of luck for now. If it has
-<a name="line-955"></a>      multiple arguments, consider bundling them in a tuple.
+<a name="line-953"></a>* __Can't make testbench for: \&lt;LONG_VERBATIM_COMPONENT_DESCRIPTION\&gt;__:
+<a name="line-954"></a>
+<a name="line-955"></a>    * Don't worry, it's actually only a warning.
 <a name="line-956"></a>
-<a name="line-957"></a>*  __\&lt;*** Exception: \&lt;\&lt;loop\&gt;\&gt;__
-<a name="line-958"></a>
-<a name="line-959"></a>    You are using value-recursion, but one of the 'Vec'tor functions that you
-<a name="line-960"></a>    are using is too /strict/ in one of the recursive arguments. For example:
-<a name="line-961"></a>
-<a name="line-962"></a>    @
-<a name="line-963"></a>    -- Bubble sort for 1 iteration
-<a name="line-964"></a>    sortV xs = vmap fst sorted &lt;: (snd (vlast sorted))
-<a name="line-965"></a>     where
-<a name="line-966"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
-<a name="line-967"></a>       rights = vtail xs
-<a name="line-968"></a>       sorted = vzipWith compareSwapL lefts rights
-<a name="line-969"></a>
-<a name="line-970"></a>    -- Compare and swap
-<a name="line-971"></a>    compareSwapL a b = if a &lt; b then (a,b)
-<a name="line-972"></a>                                else (b,a)
-<a name="line-973"></a>    @
-<a name="line-974"></a>
-<a name="line-975"></a>    Will not terminate because 'vzipWith' is too strict in its second argument:
-<a name="line-976"></a>
-<a name="line-977"></a>    &gt;&gt;&gt; sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
-<a name="line-978"></a>    &lt;*** Exception: &lt;&lt;loop&gt;&gt;
-<a name="line-979"></a>
-<a name="line-980"></a>    In this case, adding 'lazyV' on 'vzipWith's second argument:
-<a name="line-981"></a>
-<a name="line-982"></a>    @
-<a name="line-983"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
-<a name="line-984"></a>     where
-<a name="line-985"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
-<a name="line-986"></a>       rights = vtail xs
-<a name="line-987"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
-<a name="line-988"></a>    @
-<a name="line-989"></a>
-<a name="line-990"></a>    Results in a successful computation:
-<a name="line-991"></a>
-<a name="line-992"></a>    &gt;&gt;&gt; sortVL (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
-<a name="line-993"></a>    &lt;1,2,3,4&gt;
-<a name="line-994"></a>-}</span>
+<a name="line-957"></a>    * The @topEntity@ function does __not__ have exactly 1 argument. If your
+<a name="line-958"></a>      @topEntity@ has no arguments, you're out of luck for now. If it has
+<a name="line-959"></a>      multiple arguments, consider bundling them in a tuple.
+<a name="line-960"></a>
+<a name="line-961"></a>*  __\&lt;*** Exception: \&lt;\&lt;loop\&gt;\&gt;__
+<a name="line-962"></a>
+<a name="line-963"></a>    You are using value-recursion, but one of the 'Vec'tor functions that you
+<a name="line-964"></a>    are using is too /strict/ in one of the recursive arguments. For example:
+<a name="line-965"></a>
+<a name="line-966"></a>    @
+<a name="line-967"></a>    -- Bubble sort for 1 iteration
+<a name="line-968"></a>    sortV xs = vmap fst sorted &lt;: (snd (vlast sorted))
+<a name="line-969"></a>     where
+<a name="line-970"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+<a name="line-971"></a>       rights = vtail xs
+<a name="line-972"></a>       sorted = vzipWith compareSwapL lefts rights
+<a name="line-973"></a>
+<a name="line-974"></a>    -- Compare and swap
+<a name="line-975"></a>    compareSwapL a b = if a &lt; b then (a,b)
+<a name="line-976"></a>                                else (b,a)
+<a name="line-977"></a>    @
+<a name="line-978"></a>
+<a name="line-979"></a>    Will not terminate because 'vzipWith' is too strict in its second argument:
+<a name="line-980"></a>
+<a name="line-981"></a>    &gt;&gt;&gt; sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+<a name="line-982"></a>    &lt;*** Exception: &lt;&lt;loop&gt;&gt;
+<a name="line-983"></a>
+<a name="line-984"></a>    In this case, adding 'lazyV' on 'vzipWith's second argument:
+<a name="line-985"></a>
+<a name="line-986"></a>    @
+<a name="line-987"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+<a name="line-988"></a>     where
+<a name="line-989"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+<a name="line-990"></a>       rights = vtail xs
+<a name="line-991"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
+<a name="line-992"></a>    @
+<a name="line-993"></a>
+<a name="line-994"></a>    Results in a successful computation:
 <a name="line-995"></a>
-<a name="line-996"></a><span class='hs-comment'>{- $unsupported #unsupported#
-<a name="line-997"></a>Here is a list of Haskell features which the CλaSH compiler cannot synthesize
-<a name="line-998"></a>to VHDL (for now):
+<a name="line-996"></a>    &gt;&gt;&gt; sortVL (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+<a name="line-997"></a>    &lt;1,2,3,4&gt;
+<a name="line-998"></a>-}</span>
 <a name="line-999"></a>
-<a name="line-1000"></a>  [@Recursive functions@]
-<a name="line-1001"></a>
-<a name="line-1002"></a>    Although it seems rather bad that a compiler for a
-<a name="line-1003"></a>    functional language does not support recursion, this bug/feature of the
-<a name="line-1004"></a>    CλaSH compiler is amortized by the builtin knowledge of all the functions
-<a name="line-1005"></a>    listed in "CLaSH.Sized.Vector". And as you saw in this tutorial, the
-<a name="line-1006"></a>    higher-order functions of "CLaSH.Sized.Vector" can cope with many of the
-<a name="line-1007"></a>    recursive design patterns found in circuit design.
-<a name="line-1008"></a>
-<a name="line-1009"></a>    Also note that although recursive functions are not supported, recursively
-<a name="line-1010"></a>    (tying-the-knot) defined values are supported (as long as these values do
-<a name="line-1011"></a>    not have a function type). An example that uses recursively defined values
-<a name="line-1012"></a>    is the following function that performs one iteration of bubble sort:
-<a name="line-1013"></a>
-<a name="line-1014"></a>    @
-<a name="line-1015"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
-<a name="line-1016"></a>     where
-<a name="line-1017"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
-<a name="line-1018"></a>       rights = vtail xs
-<a name="line-1019"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
-<a name="line-1020"></a>    @
-<a name="line-1021"></a>
-<a name="line-1022"></a>    Where we can clearly see that 'lefts' and 'sorted' are defined in terms of
-<a name="line-1023"></a>    each other.
-<a name="line-1024"></a>
-<a name="line-1025"></a>  [@Recursive datatypes@]
-<a name="line-1026"></a>
-<a name="line-1027"></a>    The CλaSH compiler needs to be able to determine a bit-size for any value
-<a name="line-1028"></a>    that will be represented in the eventual circuit. More specifically, we need
-<a name="line-1029"></a>    to know the maximum number of bits needed to represent a value. While this
-<a name="line-1030"></a>    is trivial for values of the elementary types, sum types, and product types,
-<a name="line-1031"></a>    putting a fixed upper bound on recursive types is not (always) feasible.
-<a name="line-1032"></a>    This means that the ubiquitous list type is unsupported! The only recursive
-<a name="line-1033"></a>    type that is currently supported by the CλaSH compiler is the 'Vec'tor type,
-<a name="line-1034"></a>    for which the compiler has hard-coded knowledge.
-<a name="line-1035"></a>
-<a name="line-1036"></a>    For \"easy\" 'Vec'tor literals you should use Template Haskell splices and
-<a name="line-1037"></a>    the 'v' /meta/-function that as we have seen earlier in this tutorial.
-<a name="line-1038"></a>
-<a name="line-1039"></a>  [@GADT pattern matching@]
-<a name="line-1040"></a>
-<a name="line-1041"></a>    While pattern matching for regular ADTs is supported, pattern matching for
-<a name="line-1042"></a>    GADTs is __not__. The 'Vec'tor type, which is also a GADT, is __no__
-<a name="line-1043"></a>    exception! You can use the extraction and indexing functions of
-<a name="line-1044"></a>    "CLaSH.Sized.Vector" to get access to individual ranges / elements of a
-<a name="line-1045"></a>    'Vec'tor.
-<a name="line-1046"></a>
-<a name="line-1047"></a>  [@Floating point types@]
-<a name="line-1048"></a>
-<a name="line-1049"></a>    There is no support for the 'Float' and 'Double' types, if you need numbers
-<a name="line-1050"></a>    with a /fractional/ part you can use the 'Fixed' point type.
-<a name="line-1051"></a>
-<a name="line-1052"></a>  [@Side-effects: 'IO', &lt;<a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST</a> ST&gt;, etc.@]
-<a name="line-1053"></a>
-<a name="line-1054"></a>    There is no support for side-effecting computations such as those in the
-<a name="line-1055"></a>    'IO' or @&lt;<a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST</a> ST&gt;@
-<a name="line-1056"></a>    monad. There is also no support for Haskell's
-<a name="line-1057"></a>    &lt;<a href="http://www.haskell.org/haskellwiki/Foreign_Function_Interface">http://www.haskell.org/haskellwiki/Foreign_Function_Interface</a> FFI&gt;.
-<a name="line-1058"></a>-}</span>
-<a name="line-1059"></a>
-<a name="line-1060"></a><span class='hs-comment'>{- $vslava
-<a name="line-1061"></a>In Haskell land the most well-known way of describing digital circuits is the
-<a name="line-1062"></a>Lava family of languages:
+<a name="line-1000"></a><span class='hs-comment'>{- $unsupported #unsupported#
+<a name="line-1001"></a>Here is a list of Haskell features which the CλaSH compiler cannot synthesize
+<a name="line-1002"></a>to VHDL (for now):
+<a name="line-1003"></a>
+<a name="line-1004"></a>  [@Recursive functions@]
+<a name="line-1005"></a>
+<a name="line-1006"></a>    Although it seems rather bad that a compiler for a
+<a name="line-1007"></a>    functional language does not support recursion, this bug/feature of the
+<a name="line-1008"></a>    CλaSH compiler is amortized by the builtin knowledge of all the functions
+<a name="line-1009"></a>    listed in "CLaSH.Sized.Vector". And as you saw in this tutorial, the
+<a name="line-1010"></a>    higher-order functions of "CLaSH.Sized.Vector" can cope with many of the
+<a name="line-1011"></a>    recursive design patterns found in circuit design.
+<a name="line-1012"></a>
+<a name="line-1013"></a>    Also note that although recursive functions are not supported, recursively
+<a name="line-1014"></a>    (tying-the-knot) defined values are supported (as long as these values do
+<a name="line-1015"></a>    not have a function type). An example that uses recursively defined values
+<a name="line-1016"></a>    is the following function that performs one iteration of bubble sort:
+<a name="line-1017"></a>
+<a name="line-1018"></a>    @
+<a name="line-1019"></a>    sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+<a name="line-1020"></a>     where
+<a name="line-1021"></a>       lefts  = vhead xs :&gt; vmap snd (vinit sorted)
+<a name="line-1022"></a>       rights = vtail xs
+<a name="line-1023"></a>       sorted = vzipWith compareSwapL (lazyV lefts) rights
+<a name="line-1024"></a>    @
+<a name="line-1025"></a>
+<a name="line-1026"></a>    Where we can clearly see that 'lefts' and 'sorted' are defined in terms of
+<a name="line-1027"></a>    each other.
+<a name="line-1028"></a>
+<a name="line-1029"></a>  [@Recursive datatypes@]
+<a name="line-1030"></a>
+<a name="line-1031"></a>    The CλaSH compiler needs to be able to determine a bit-size for any value
+<a name="line-1032"></a>    that will be represented in the eventual circuit. More specifically, we need
+<a name="line-1033"></a>    to know the maximum number of bits needed to represent a value. While this
+<a name="line-1034"></a>    is trivial for values of the elementary types, sum types, and product types,
+<a name="line-1035"></a>    putting a fixed upper bound on recursive types is not (always) feasible.
+<a name="line-1036"></a>    This means that the ubiquitous list type is unsupported! The only recursive
+<a name="line-1037"></a>    type that is currently supported by the CλaSH compiler is the 'Vec'tor type,
+<a name="line-1038"></a>    for which the compiler has hard-coded knowledge.
+<a name="line-1039"></a>
+<a name="line-1040"></a>    For \"easy\" 'Vec'tor literals you should use Template Haskell splices and
+<a name="line-1041"></a>    the 'v' /meta/-function that as we have seen earlier in this tutorial.
+<a name="line-1042"></a>
+<a name="line-1043"></a>  [@GADT pattern matching@]
+<a name="line-1044"></a>
+<a name="line-1045"></a>    While pattern matching for regular ADTs is supported, pattern matching for
+<a name="line-1046"></a>    GADTs is __not__. The 'Vec'tor type, which is also a GADT, is __no__
+<a name="line-1047"></a>    exception! You can use the extraction and indexing functions of
+<a name="line-1048"></a>    "CLaSH.Sized.Vector" to get access to individual ranges / elements of a
+<a name="line-1049"></a>    'Vec'tor.
+<a name="line-1050"></a>
+<a name="line-1051"></a>  [@Floating point types@]
+<a name="line-1052"></a>
+<a name="line-1053"></a>    There is no support for the 'Float' and 'Double' types, if you need numbers
+<a name="line-1054"></a>    with a /fractional/ part you can use the 'Fixed' point type.
+<a name="line-1055"></a>
+<a name="line-1056"></a>  [@Side-effects: 'IO', &lt;<a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST</a> ST&gt;, etc.@]
+<a name="line-1057"></a>
+<a name="line-1058"></a>    There is no support for side-effecting computations such as those in the
+<a name="line-1059"></a>    'IO' or @&lt;<a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST</a> ST&gt;@
+<a name="line-1060"></a>    monad. There is also no support for Haskell's
+<a name="line-1061"></a>    &lt;<a href="http://www.haskell.org/haskellwiki/Foreign_Function_Interface">http://www.haskell.org/haskellwiki/Foreign_Function_Interface</a> FFI&gt;.
+<a name="line-1062"></a>-}</span>
 <a name="line-1063"></a>
-<a name="line-1064"></a>* &lt;<a href="http://hackage.haskell.org/package/chalmers-lava2000">http://hackage.haskell.org/package/chalmers-lava2000</a> Chalmers Lava&gt;
-<a name="line-1065"></a>* &lt;<a href="http://hackage.haskell.org/package/xilinx-lava">http://hackage.haskell.org/package/xilinx-lava</a> Xilinx Lava&gt;
-<a name="line-1066"></a>* &lt;<a href="http://hackage.haskell.org/package/york-lava">http://hackage.haskell.org/package/york-lava</a> York Lava&gt;
-<a name="line-1067"></a>* &lt;<a href="http://hackage.haskell.org/package/kansas-lava">http://hackage.haskell.org/package/kansas-lava</a> Kansas Lava&gt;
-<a name="line-1068"></a>
-<a name="line-1069"></a>The big difference between CλaSH and Lava is that CλaSH uses a \"standard\"
-<a name="line-1070"></a>compiler (static analysis) approach towards synthesis, where Lava is an
-<a name="line-1071"></a>embedded domain specific language. One downside of static analysis vs. the
-<a name="line-1072"></a>embedded language approach is already clearly visible: synthesis of recursive
-<a name="line-1073"></a>descriptions does not come for \"free\". This will be implemented in CλaSH in
-<a name="line-1074"></a>due time, but that doesn't help the circuit designer right now. As already
-<a name="line-1075"></a>mentioned earlier, the lack of support for recursive functions is amortized by
-<a name="line-1076"></a>the built-in support for the higher-order in "CLaSH.Sized.Vector".
-<a name="line-1077"></a>
-<a name="line-1078"></a>The big upside of CλaSH and its static analysis approach is that CλaSH can
-<a name="line-1079"></a>do synthesis of \"normal\" functions: there is no forced encasing datatype (often
-<a name="line-1080"></a>called /Signal/ in Lava) on all the arguments and results of a synthesizable
-<a name="line-1081"></a>function. This enables the following features not available to Lava:
-<a name="line-1082"></a>
-<a name="line-1083"></a>* Automatic synthesis for user-defined ADTs
-<a name="line-1084"></a>* Synthesis of all choice constructs (pattern matching, guards, etc.)
-<a name="line-1085"></a>* 'Applicative' instance for the 'Signal' type
-<a name="line-1086"></a>* Working with \"normal\" functions permits the use of e.g. the
-<a name="line-1087"></a>  &lt;<a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State</a> State&gt;
-<a name="line-1088"></a>  monad to describe the functionality of a circuit.
-<a name="line-1089"></a>
-<a name="line-1090"></a>Although there are Lava alternatives to some of the above features (e.g.
-<a name="line-1091"></a>first-class patterns to replace pattern matching) they are not as \"beautiful\"
-<a name="line-1092"></a>and / or easy to use as the standard Haskell features.
-<a name="line-1093"></a>-}</span>
+<a name="line-1064"></a><span class='hs-comment'>{- $vslava
+<a name="line-1065"></a>In Haskell land the most well-known way of describing digital circuits is the
+<a name="line-1066"></a>Lava family of languages:
+<a name="line-1067"></a>
+<a name="line-1068"></a>* &lt;<a href="http://hackage.haskell.org/package/chalmers-lava2000">http://hackage.haskell.org/package/chalmers-lava2000</a> Chalmers Lava&gt;
+<a name="line-1069"></a>* &lt;<a href="http://hackage.haskell.org/package/xilinx-lava">http://hackage.haskell.org/package/xilinx-lava</a> Xilinx Lava&gt;
+<a name="line-1070"></a>* &lt;<a href="http://hackage.haskell.org/package/york-lava">http://hackage.haskell.org/package/york-lava</a> York Lava&gt;
+<a name="line-1071"></a>* &lt;<a href="http://hackage.haskell.org/package/kansas-lava">http://hackage.haskell.org/package/kansas-lava</a> Kansas Lava&gt;
+<a name="line-1072"></a>
+<a name="line-1073"></a>The big difference between CλaSH and Lava is that CλaSH uses a \"standard\"
+<a name="line-1074"></a>compiler (static analysis) approach towards synthesis, where Lava is an
+<a name="line-1075"></a>embedded domain specific language. One downside of static analysis vs. the
+<a name="line-1076"></a>embedded language approach is already clearly visible: synthesis of recursive
+<a name="line-1077"></a>descriptions does not come for \"free\". This will be implemented in CλaSH in
+<a name="line-1078"></a>due time, but that doesn't help the circuit designer right now. As already
+<a name="line-1079"></a>mentioned earlier, the lack of support for recursive functions is amortized by
+<a name="line-1080"></a>the built-in support for the higher-order in "CLaSH.Sized.Vector".
+<a name="line-1081"></a>
+<a name="line-1082"></a>The big upside of CλaSH and its static analysis approach is that CλaSH can
+<a name="line-1083"></a>do synthesis of \"normal\" functions: there is no forced encasing datatype (often
+<a name="line-1084"></a>called /Signal/ in Lava) on all the arguments and results of a synthesizable
+<a name="line-1085"></a>function. This enables the following features not available to Lava:
+<a name="line-1086"></a>
+<a name="line-1087"></a>* Automatic synthesis for user-defined ADTs
+<a name="line-1088"></a>* Synthesis of all choice constructs (pattern matching, guards, etc.)
+<a name="line-1089"></a>* 'Applicative' instance for the 'Signal' type
+<a name="line-1090"></a>* Working with \"normal\" functions permits the use of e.g. the
+<a name="line-1091"></a>  &lt;<a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State</a> State&gt;
+<a name="line-1092"></a>  monad to describe the functionality of a circuit.
+<a name="line-1093"></a>
+<a name="line-1094"></a>Although there are Lava alternatives to some of the above features (e.g.
+<a name="line-1095"></a>first-class patterns to replace pattern matching) they are not as \"beautiful\"
+<a name="line-1096"></a>and / or easy to use as the standard Haskell features.
+<a name="line-1097"></a>-}</span>
 </pre></body>
 </html>
