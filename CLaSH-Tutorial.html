@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CLaSH.Tutorial</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
 window.onload = function () {pageLoad();setSynopsis("mini_CLaSH-Tutorial.html");};
 //]]>
-</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/CLaSH-Tutorial.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">clash-prelude-0.5: CAES Language for Synchronous Hardware - Prelude library</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>&#169; Christiaan Baaij, 2014</td></tr><tr><th>License</th><td>Creative Commons 4.0 (CC BY-NC 4.0) (http://creativecommons.org/licenses/by-nc/4.0/)</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">CLaSH.Tutorial</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Introduction</a></li><li><a href="#g:2">Installation</a></li><li><a href="#g:3">Working with this tutorial</a></li><li><a href="#g:4">Your first circuit</a><ul><li><a href="#g:5">Sequential circuit</a></li><li><a href="#g:6">Creating VHDL</a></li><li><a href="#g:7">Circuit testbench</a></li><li><a href="#g:8">Alternative specifications</a></li></ul></li><li><a href="#g:9">Higher-order functions</a></li><li><a href="#g:10">Composition of sequential circuits</a></li><li><a href="#g:11">Conclusion</a></li><li><a href="#g:12">Troubleshooting</a></li><li><a href="#g:13">Unsupported Haskell features</a></li><li><a href="#g:14">C&#955;aSH vs Lava</a></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc empty">&nbsp;</div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"></ul></div><div id="interface"><h1 id="g:1">Introduction</h1><div class="doc"><p>C&#955;aSH (pronounced &#8216;clash&#8217;) is a functional hardware description language that
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="src/CLaSH-Tutorial.html">Source</a></li><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">clash-prelude-0.5: CAES Language for Synchronous Hardware - Prelude library</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Copyright</th><td>&#169; Christiaan Baaij, 2014</td></tr><tr><th>License</th><td>Creative Commons 4.0 (CC BY-NC 4.0) (http://creativecommons.org/licenses/by-nc/4.0/)</td></tr><tr><th>Safe Haskell</th><td>None</td></tr><tr><th>Language</th><td>Haskell2010</td></tr></table><p class="caption">CLaSH.Tutorial</p></div><div id="table-of-contents"><p class="caption">Contents</p><ul><li><a href="#g:1">Introduction</a></li><li><a href="#g:2">Installation</a></li><li><a href="#g:3">Working with this tutorial</a></li><li><a href="#g:4">Your first circuit</a><ul><li><a href="#g:5">Sequential circuit</a></li><li><a href="#g:6">Creating VHDL</a></li><li><a href="#g:7">Circuit testbench</a></li><li><a href="#g:8">Alternative specifications</a></li></ul></li><li><a href="#g:9">Higher-order functions</a></li><li><a href="#g:10">Composition of sequential circuits</a></li><li><a href="#g:11">Advanced: VHDL primitives</a></li><li><a href="#g:12">Conclusion</a></li><li><a href="#g:13">Troubleshooting</a></li><li><a href="#g:14">Unsupported Haskell features</a></li><li><a href="#g:15">C&#955;aSH vs Lava</a></li></ul></div><div id="description"><p class="caption">Description</p><div class="doc empty">&nbsp;</div></div><div id="synopsis"><p id="control.syn" class="caption expander" onclick="toggleSection('syn')">Synopsis</p><ul id="section.syn" class="hide" onclick="toggleSection('syn')"></ul></div><div id="interface"><h1 id="g:1">Introduction</h1><div class="doc"><p>C&#955;aSH (pronounced &#8216;clash&#8217;) is a functional hardware description language that
 borrows both its syntax and semantics from the functional programming language
 Haskell. The merits of using a functional language to describe hardware comes
 from the fact that combinational circuits can be directly modeled as
@@ -118,7 +118,7 @@ the type of our <code>mac</code> circuit:</p><pre class="screen"><code class="pr
 </code></strong>mac :: (Pack o, Num o) =&gt; (Signal o, Signal o) -&gt; SignalP o
 </pre><p>We see that our <code>mac</code> function work on a two-tuple of <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s and not on a
 <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> of a two-tuple. Indeed, the C&#955;aSH prelude library defines that:</p><pre>type instance SignalP (a,b) = (Signal a, Signal b)
-</pre><p><code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> is an <a href="http://www.haskell.org/ghc/docs/latest/html/users_guide/type-families.html#assoc-decl">associcated type family</a>
+</pre><p><code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> is an <a href="http://www.haskell.org/ghc/docs/latest/html/users_guide/type-families.html#assoc-decl">associated type family</a>
 belonging to the <code><a href="CLaSH-Signal-Implicit.html#t:Pack">Pack</a></code> <a href="http://en.wikipedia.org/wiki/Type_class">type class</a>,
 which, together with <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> and <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> defines the isomorphism between a
 product type of <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code>s and a <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> of a product type. That is, while
@@ -171,7 +171,7 @@ ultimately contains all the generated VHDL files. You can now load these files
     the Haskell / C&#955;aSH specification.</li></ul><p>For these purposes, you can have C&#955;aSH compiler generate a <code>testbench.vhdl</code>
 file which contains a stimulus generator and an expected output verifier. The
 C&#955;aSH compiler looks for the following functions to generate these to aspects:</p><ol><li><code>testInput</code> for the stimulus generator.</li><li><code>expectedOutput</code> for the output verification.</li></ol><p>Given a <code>topEntity</code> with the type:</p><pre>topEntity :: SignalP a -&gt; SignalP b
-</pre><p>Where <code>a</code> and <code>b</code> are placeholders for monomorphics types: the <code>topEntity</code> is
+</pre><p>Where <code>a</code> and <code>b</code> are placeholders for monomorphic types: the <code>topEntity</code> is
 not allowed to be polymorphic. So given the above type for the <code>topEntity</code>, the
 type of <code>testInput</code> should be:</p><pre>testInput :: Signal a
 </pre><p>And the type of <code>expectedOutput</code> should be:</p><pre>expectedOutput :: Signal b -&gt; Signal Bool
@@ -227,7 +227,8 @@ class:</p><pre>macA (x,y) = acc
   where
     acc  = register 0 acc'
     acc' = ma &lt;$&gt; acc &lt;*&gt; pack (x,y)
-</pre></li><li><strong><a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a> Monad</strong><p>We can also implement the original <code>macT</code> function as a <a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a>
+</pre></li><li><strong><a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a> Monad</strong><p>We can also implement the original <code>macT</code> function as a
+<code><a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a></code>
 monadic computation. First we must an extra import statement, right after
 the import of <a href="CLaSH-Prelude.html">CLaSH.Prelude</a>:</p><pre>import Control.Monad.State
 </pre><p>We can then implement macT as follows:</p><pre>macTS (x,y) = do
@@ -305,10 +306,123 @@ topEntity i = val
 </pre><p>Here we can finally see the advantage of having the <code><a href="CLaSH-Prelude.html#v:-60--94--62-">&lt;^&gt;</a></code> return a function
 of type: <code>(<code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> i -&gt; <code><a href="CLaSH-Signal-Implicit.html#t:SignalP">SignalP</a></code> o)</code> (instead of:
 <code>(<code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> i -&gt; <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> o)</code>):</p><ul><li>We can use normal pattern matching to get parts of the result, and,</li><li>We can use normal tuple-constructors to build the input values for the
-    circuits.</li></ul></div><h1 id="g:11">Conclusion</h1><div class="doc"><p>For now, this is the end of this tutorial. We will be adding updates over time,
+    circuits.</li></ul></div><h1 id="g:11">Advanced: VHDL primitives</h1><div class="doc"><p>There are times when you already have an existing piece of IP, or there are
+times where you need the VHDL to have a specific shape so that the VHDL
+synthesis tool can infer a specific component. In these specific cases you can
+resort to defining your own VHDL primitives. Actually, most of the primitives
+in C&#955;aSH are specified in the same way as you will read about in this section.
+There are perhaps 10 (at most) functions which are truly hard-coded into the
+C&#955;aSH compiler. You can take a look at the files in
+<a href="http://github.com/christiaanb/clash2/tree/master/primitives">http://github.com/christiaanb/clash2/tree/master/primitives</a>
+if you want to know which functions are defined as &quot;regular&quot; primitives. The
+compiler looks for primitives in two locations:</p><ul><li>The official install location: e.g.
+  <code>$CABAL_DIR/share/&lt;GHC_VERSION&gt;/clash-ghc-&lt;VERSION&gt;/primitives</code></li><li>The current directory (the location given by <code>pwd</code>)</li></ul><p>Where redefined primitives in the current directory will overwrite those in
+the official install location. For now, files containing primitive definitions
+must end in the <code>.json</code> file-extension.</p><p>C&#955;aSH differentiates between two types of primitives, <em>expression</em> primitives
+and <em>declaration</em> primitives, corresponding to whether the primitive is a VHDL
+<em>expression</em> or a VHDL <em>declaration</em>. We will first explore <em>expression</em>
+primitives, using <code><a href="CLaSH-Sized-Signed.html#t:Signed">Signed</a></code> multiplication (<code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:-42-">*</a></code>) as an example. The
+<a href="CLaSH-Sized-Signed.html">CLaSH.Sized.Signed</a> module specifies multiplication as follows:</p><pre>{-# NOINLINE timesS #-}
+timesS :: KnownNat n =&gt; Signed n -&gt; Signed n -&gt; Signed n
+timesS (S a) (S b) = fromIntegerS_inlineable (a * b)
+</pre><p>For which the primitive definition is:</p><pre>{ &quot;BlackBox&quot; :
+  { &quot;name&quot;      : &quot;CLaSH.Sized.Signed.timesS&quot;
+  , &quot;templateE&quot; : &quot;resize(~ARG[1] * ~ARG[2], ~LIT[0])&quot;
+  }
+}
+</pre><p>The <code>name</code> of the primitive is the <em>fully qualified</em> name of the function you
+are creating the primitive for. Because we are creating an expression
+primitive we define a <code>template<strong>E</strong></code> field. As the name suggest, it is a VHDL
+<em>template</em>, meaning that the compiler must fill in the holes heralded by the
+tilde (~). Here:</p><ul><li><code>~ARG[1]</code> denotes the second argument given to the <code>timesS</code> function, which
+    corresponds to the LHS of the (<code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:-42-">*</a></code>) operator.</li><li><code>~ARG[2]</code> denotes the third argument given to the <code>timesS</code> function, which
+    corresponds to the RHS of the (<code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#v:-42-">*</a></code>) operator.</li><li><code>~LIT[0]</code> denotes the first argument given to the <code>timesS</code> function, with
+    the extra condition that it must be a <code>LIT</code>eral. If for some reason this
+    first argument does not turn out to be a literal then the compiler will
+    raise an error. This first arguments corresponds to the &quot;<code><code><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html#t:KnownNat">KnownNat</a></code> n</code>&quot;
+    class constraint.</li></ul><p>An extensive list with all of the template holes will be given the end of this
+section. What we immediately notice is that class constraints are counted as
+normal arguments in the primitive definition. This is because these class
+constraints are actually represented by ordinary record types, with fields
+corresponding to the methods of the type class. In the above case, <code><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html#t:KnownNat">KnownNat</a></code>
+is actually just like a <code>newtype</code> wrapper for <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Integer">Integer</a></code>.</p><p>The second primitive type that we will explore is the <em>definition</em> primitive.
+In this case we will use <code><a href="CLaSH-Prelude.html#v:blockRam">blockRam</a></code> as an example. The Haskell/C&#955;aSH code for
+which is:</p><pre>{-# NOINLINE blockRam #-}
+-- | Create a blockRAM with space for <code>n</code> elements
+--
+-- &gt; bram40 :: Signal (Unsigned 6) -&gt; Signal (Unsigned 6) -&gt; Signal Bool -&gt; Signal a -&gt; Signal a
+-- &gt; bram40 = blockRam d50
+blockRam :: forall n m a . (KnownNat n, KnownNat m, Pack a, Default a)
+         =&gt; SNat n              -- ^ Size <code>n</code> of the blockram
+         -&gt; Signal (Unsigned m) -- ^ Write address <code>w</code>
+         -&gt; Signal (Unsigned m) -- ^ Read address <code>r</code>
+         -&gt; Signal Bool         -- ^ Write enable
+         -&gt; Signal a            -- ^ Value to write (at address <code>w</code>)
+         -&gt; Signal a            -- ^ Value of the <code>blockRAM</code> at address <code>r</code> from the previous clock cycle
+blockRam n wr rd en din = pack $ (bram' <a href="^">^</a> binit) (wr,rd,en,din)
+  where
+    binit :: (Vec n a,a)
+    binit = (vcopy n def,def)
+
+    bram' :: (Vec n a,a) -&gt; (Unsigned m, Unsigned m, Bool, a)
+          -&gt; (((Vec n a),a),a)
+    bram' (ram,o) (w,r,e,d) = ((ram',o'),o)
+      where
+        ram' | e         = vreplace ram w d
+             | otherwise = ram
+        o'               = ram ! r
+</pre><p>For which the primitive definition is:</p><pre>{ &quot;BlackBox&quot; :
+  { &quot;name&quot;      : &quot;CLaSH.Prelude.blockRam&quot;
+  , &quot;templateD&quot; :
+&quot;~SYM[0]_block : block
+  type ram_array is array (natural range &lt;&gt;) of ~TYP[8];
+  signal ~SYM[1] : ram_array((~ARG[0]-1) downto 0) := (others =&gt; ~ARG[3]); -- ram
+  signal ~SYM[2] : ~TYP[8]; -- inp
+  signal ~SYM[3] : ~TYP[8] := ~ARG[3]; -- outp
+begin
+  ~SYM[2] &lt;= ~ARG[8];
+
+  process(~CLKO)
+  begin
+    if rising_edge(~CLKO) then
+      if ~ARG[7] then
+        ~SYM[1](to_integer(~ARG[5])) &lt;= ~SYM[2];
+      end if;
+      ~SYM[3] &lt;= ~SYM[1](to_integer(~ARG[6]));
+    end if;
+  end process;
+
+  ~RESULT &lt;= ~SYM[3];
+end block;&quot;
+  }
+}
+</pre><p>Again, the <code>name</code> of the primitive is the fully qualified name of the function
+you are creating the primitive for. Because we are creating a declaration
+primitive we define a <code>template<strong>D</strong></code> field. Instead of discussing what the
+individual template holes mean in the above context, we will instead just give
+a general listing of the available template holes:</p><ul><li><code>~RESULT</code>: VHDL signal to which the result of a primitive must be assigned
+  to. NB: Only used in a <em>definition</em> primitive.</li><li><code>~ARG[N]</code>: <code>(N+1)</code>'th argument to the function.</li><li><code>~LIT[N]</code>: <code>(N+1)</code>'th argument to the function An extra condition that must
+  hold is that this <code>N</code>'th argument is an (integer) literal.</li><li><code>~CLK[N]</code>: Clock signal to which the <code>(N+1)</code>'th argument is synchronized to.</li><li><code>~CLKO</code>: Clock signal to which the result is synchronized to.</li><li><code>~RST[N]</code>: Asynchronous reset signal to the clock to which the <code>(N+1)</code>'th
+  argument is synchronized to.</li><li><code>~RSTO</code>: Asynchronous reset signal to the clock to which the result is
+  synchronized to.</li><li><code>~TYP[N]</code>: VHDL type of the <code>(N+1)</code>'th argument.</li><li><code>~TYPO</code>: VHDL type of the result.</li><li><code>~TYPM[N]</code>: VHDL type<em>name</em> of the <code>(N+1)</code>'th argument; used in <em>type</em>
+  <em>qualification</em>.</li><li><code>~TYPM</code>: VHDL type<em>name</em> of the result; used in <em>type qualification</em>.</li><li><code>~DEF[N]</code>: Default value for the VHDL type of the <code>(N+1)</code>'th argument. NB:
+  Does not correspond per se to the value of <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#v:def">def</a></code> of the <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#t:Default">Default</a></code> type class
+  for the Haskell type.</li><li><code>~DEFO</code>: Default value for the VHDL type of the result. NB: Does not
+  correspond per se to the value of the <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#v:def">def</a></code> of the <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#t:Default">Default</a></code> type class for
+  the Haskell type.</li><li><code>~SYM[N]</code>: Randomly generated, but unique, symbol. Multiple occurrences of
+  <code>~SYM[N]</code> in the same primitive definition all refer to the same random, but
+  unique, symbol.</li></ul><p>Some final remark to end this section: VHDL primitives only instruct the C&#955;aSH
+compiler to use the given VHDL template, instead of trying to do normal
+synthesis. You can hence use constructs inside the Haskell definitions that
+are normally not synthesizable by the C&#955;aSH compiler. However, VHDL primitives
+do not get you <em>co-simulation</em>: where you simulate VHDL and Haskell in a
+<em>single</em> environment. If you still want to simulate your design in Haskell, you
+will have to describe, in a cycle- and bit-accurate way, the behaviour of that
+(potentially complex) IP you are trying include in your design.</p><p>Perhaps in the future, someone will figure out how to connect the two simulation
+worlds using e.g. VHDL's foreign function interface VHPI.</p></div><h1 id="g:12">Conclusion</h1><div class="doc"><p>For now, this is the end of this tutorial. We will be adding updates over time,
 so check back from time to time. For now we recommend that you continue with
 exploring the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module however, and like that hopefully get a feel
-of what C&#955;aSH is capable of.</p></div><h1 id="g:12">Troubleshooting</h1><div class="doc"><p>A list often encountered errors and their solutions:</p><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
+of what C&#955;aSH is capable of.</p></div><h1 id="g:13">Troubleshooting</h1><div class="doc"><p>A list of often encountered errors and their solutions:</p><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
   <strong>&#8216;(Signal a, Signal b)&#8217;</strong>:<p>Signals of product types and product types (to which tuples belong) of
 signals are <strong>isomorphic</strong> due to synchronisity principle, but are not
 (structurally) equal. Use the <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function to convert from a product type
@@ -316,7 +430,7 @@ to the signal type. So if your code which gives the error looks like:</p><pre>..
 </pre><p>add the <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function like so:</p><pre>... = f a b (pack (c,d))
 </pre><p>Product types supported by <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> are:</p><ul><li>All tuples until and including 8-tuples</li><li>The <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor type</li></ul><p>NB: Use <code><a href="CLaSH-Signal-Explicit.html#v:cpack">cpack</a></code> when you are using explicitly clocked <code><a href="CLaSH-Signal-Explicit.html#t:CSignal">CSignal</a></code>s</p></li><li><strong>Type error: Couldn't match expected type &#8216;(Signal a, Signal b)&#8217; with</strong>
   <strong> actual type &#8216;Signal (a,b)&#8217;</strong>:<p>Product types (to which tuples belong) of signals and signals of product
-types are <strong>isomorphic</strong> due to synchronisity principle, but are not
+types are <strong>isomorphic</strong> due to synchronicity principle, but are not
 (structurally) equal. Use the <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> function to convert from a signal
 type to the product type. So if your code which gives the error looks like:</p><pre>(c,d) = f a b
 </pre><p>add the <code><a href="CLaSH-Signal-Implicit.html#v:unpack">unpack</a></code> function like so:</p><pre>(c,d) = unpack (f a b)
@@ -351,16 +465,16 @@ sortV xs = vmap fst sorted &lt;: (snd (vlast sorted))
 -- Compare and swap
 compareSwapL a b = if a &lt; b then (a,b)
                             else (b,a)
-</pre><p>Will not terminate because <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code> is too strict in its left argument:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+</pre><p>Will not terminate because <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code> is too strict in its second argument:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
 </code></strong>&lt;*** Exception: &lt;&lt;loop&gt;&gt;
-</pre><p>In this case, adding <code><a href="CLaSH-Sized-Vector.html#v:lazyV">lazyV</a></code> on <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code>s left argument:</p><pre>sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+</pre><p>In this case, adding <code><a href="CLaSH-Sized-Vector.html#v:lazyV">lazyV</a></code> on <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code>s second argument:</p><pre>sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
  where
    lefts  = vhead xs :&gt; vmap snd (vinit sorted)
    rights = vtail xs
    sorted = vzipWith compareSwapL (lazyV lefts) rights
 </pre><p>Results in a successful computation:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortVL (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
 </code></strong>&lt;1,2,3,4&gt;
-</pre></li></ul></div><h1 id="g:13">Unsupported Haskell features</h1><div class="doc"><p><a name="unsupported"></a>
+</pre></li></ul></div><h1 id="g:14">Unsupported Haskell features</h1><div class="doc"><p><a name="unsupported"></a>
 Here is a list of Haskell features which the C&#955;aSH compiler cannot synthesize
 to VHDL (for now):</p><dl><dt><code>Recursive functions</code></dt><dd><p>Although it seems rather bad that a compiler for a
 functional language does not support recursion, this bug/feature of the
@@ -389,7 +503,10 @@ GADTs is <strong>not</strong>. The <code><a href="CLaSH-Sized-Vector.html#t:Vec"
 exception! You can use the extraction and indexing functions of
 <a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a> to get access to individual ranges / elements of a
 <code><a href="CLaSH-Sized-Vector.html#t:Vec">Vec</a></code>tor.</p></dd><dt><code>Floating point types</code></dt><dd><p>There is no support for the <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Float">Float</a></code> and <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Double">Double</a></code> types, if you need numbers
-with a <em>fractional</em> part you can use the <code><a href="CLaSH-Sized-Fixed.html#t:Fixed">Fixed</a></code> point type.</p></dd></dl></div><h1 id="g:14">C&#955;aSH vs Lava</h1><div class="doc"><p>In Haskell land the most well-known way of describing digital circuits is the
+with a <em>fractional</em> part you can use the <code><a href="CLaSH-Sized-Fixed.html#t:Fixed">Fixed</a></code> point type.</p></dd><dt><code>Side-effects: <code><a href="http://hackage.haskell.org/package/base/docs/System-IO.html#t:IO">IO</a></code>, <a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">ST</a>, etc.</code></dt><dd><p>There is no support for side-effecting computations such as those in the
+<code><a href="http://hackage.haskell.org/package/base/docs/System-IO.html#t:IO">IO</a></code> or <code><a href="http://hackage.haskell.org/package/base/docs/Control-Monad-ST.html#t:ST">ST</a></code>
+monad. There is also no support for Haskell's
+<a href="http://www.haskell.org/haskellwiki/Foreign_Function_Interface">FFI</a>.</p></dd></dl></div><h1 id="g:15">C&#955;aSH vs Lava</h1><div class="doc"><p>In Haskell land the most well-known way of describing digital circuits is the
 Lava family of languages:</p><ul><li><a href="http://hackage.haskell.org/package/chalmers-lava2000">Chalmers Lava</a></li><li><a href="http://hackage.haskell.org/package/xilinx-lava">Xilinx Lava</a></li><li><a href="http://hackage.haskell.org/package/york-lava">York Lava</a></li><li><a href="http://hackage.haskell.org/package/kansas-lava">Kansas Lava</a></li></ul><p>The big difference between C&#955;aSH and Lava is that C&#955;aSH uses a &quot;standard&quot;
 compiler (static analysis) approach towards synthesis, where Lava is an
 embedded domain specific language. One downside of static analysis vs. the
@@ -398,9 +515,9 @@ descriptions does not come for &quot;free&quot;. This will be implemented in C&#
 due time, but that doesn't help the circuit designer right now. As already
 mentioned earlier, the lack of support for recursive functions is amortized by
 the built-in support for the higher-order in <a href="CLaSH-Sized-Vector.html">CLaSH.Sized.Vector</a>.</p><p>The big upside of C&#955;aSH and its static analysis approach is that C&#955;aSH can
-do synthesis of <em>normal</em> functions: there is no forced encasing datatype (often
+do synthesis of &quot;normal&quot; functions: there is no forced encasing datatype (often
 called <em>Signal</em> in Lava) on all the arguments and results of a synthesizable
-function. This enables the following features not available to Lava:</p><ul><li>Automatic synthesis for user-defined ADTs</li><li>Synthesis of all choice constructs (pattern matching, guards, etc.)</li><li><code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#t:Applicative">Applicative</a></code> instance for the <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> type</li><li>Working with pure function allows the use of e.g. the
+function. This enables the following features not available to Lava:</p><ul><li>Automatic synthesis for user-defined ADTs</li><li>Synthesis of all choice constructs (pattern matching, guards, etc.)</li><li><code><a href="http://hackage.haskell.org/package/base/docs/Control-Applicative.html#t:Applicative">Applicative</a></code> instance for the <code><a href="CLaSH-Signal-Implicit.html#t:Signal">Signal</a></code> type</li><li>Working with &quot;normal&quot; functions permits the use of e.g. the
   <a href="http://hackage.haskell.org/package/mtl/docs/Control-Monad-State-Lazy.html#t:State">State</a>
   monad to describe the functionality of a circuit.</li></ul><p>Although there are Lava alternatives to some of the above features (e.g.
 first-class patterns to replace pattern matching) they are not as &quot;beautiful&quot;

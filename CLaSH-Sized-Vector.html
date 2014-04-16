@@ -190,9 +190,9 @@ sortV xs = vmap fst sorted &lt;: (snd (vlast sorted))
 
 -- Compare and swap
 compareSwapL a b = if a &lt; b then (a,b)
-                            else (b,a)</pre><p>Will not terminate because <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code> is too strict in its left argument:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
+                            else (b,a)</pre><p>Will not terminate because <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code> is too strict in its second argument:</p><pre class="screen"><code class="prompt">&gt;&gt;&gt; </code><strong class="userinput"><code>sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)
 </code></strong>&lt;*** Exception: &lt;&lt;loop&gt;&gt;
-</pre><p>In this case, adding <code><a href="CLaSH-Sized-Vector.html#v:lazyV">lazyV</a></code> on <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code>s left argument:</p><pre>sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
+</pre><p>In this case, adding <code><a href="CLaSH-Sized-Vector.html#v:lazyV">lazyV</a></code> on <code><a href="CLaSH-Sized-Vector.html#v:vzipWith">vzipWith</a></code>s second argument:</p><pre>sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))
  where
    lefts  = vhead xs :&gt; vmap snd (vinit sorted)
    rights = vtail xs

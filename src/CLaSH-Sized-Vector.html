@@ -394,7 +394,7 @@
 <a name="line-385"></a><span class='hs-definition'>vindex_integer</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>KnownNat</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
 <a name="line-386"></a><span class='hs-definition'>vindex_integer</span> <span class='hs-varid'>xs</span> <span class='hs-varid'>i</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-varid'>vindexM_integer</span> <span class='hs-varid'>xs</span> <span class='hs-layout'>(</span><span class='hs-varid'>maxIndex</span> <span class='hs-varid'>xs</span> <span class='hs-comment'>-</span> <span class='hs-varid'>i</span><span class='hs-layout'>)</span> <span class='hs-keyword'>of</span>
 <a name="line-387"></a>    <span class='hs-conid'>Just</span> <span class='hs-varid'>a</span>  <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span>
-<a name="line-388"></a>    <span class='hs-conid'>Nothing</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>error</span> <span class='hs-str'>"index out of bounds"</span>
+<a name="line-388"></a>    <span class='hs-conid'>Nothing</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>error</span> <span class='hs-layout'>(</span><span class='hs-str'>"(!): Index "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>i</span> <span class='hs-varop'>++</span> <span class='hs-str'>" is out of bounds 0 and "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-layout'>(</span><span class='hs-varid'>maxIndex</span> <span class='hs-varid'>xs</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
 <a name="line-389"></a>
 <a name="line-390"></a><a name="!"></a><span class='hs-comment'>{-# INLINEABLE (!) #-}</span>
 <a name="line-391"></a><span class='hs-comment'>-- | Vector index (subscript) operator, descending from 'maxIndex', where the</span>
@@ -439,7 +439,7 @@
 <a name="line-430"></a><span class='hs-definition'>vreplace_integer</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>KnownNat</span> <span class='hs-varid'>n</span> <span class='hs-keyglyph'>=&gt;</span> <span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Integer</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Vec</span> <span class='hs-varid'>n</span> <span class='hs-varid'>a</span>
 <a name="line-431"></a><span class='hs-definition'>vreplace_integer</span> <span class='hs-varid'>xs</span> <span class='hs-varid'>i</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-varid'>vreplaceM_integer</span> <span class='hs-varid'>xs</span> <span class='hs-layout'>(</span><span class='hs-varid'>maxIndex</span> <span class='hs-varid'>xs</span> <span class='hs-comment'>-</span> <span class='hs-varid'>i</span><span class='hs-layout'>)</span> <span class='hs-varid'>a</span> <span class='hs-keyword'>of</span>
 <a name="line-432"></a>  <span class='hs-conid'>Just</span> <span class='hs-varid'>ys</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>ys</span>
-<a name="line-433"></a>  <span class='hs-conid'>Nothing</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>error</span> <span class='hs-str'>"index out of bounds"</span>
+<a name="line-433"></a>  <span class='hs-conid'>Nothing</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>error</span> <span class='hs-layout'>(</span><span class='hs-str'>"vreplace: Index "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>i</span> <span class='hs-varop'>++</span> <span class='hs-str'>" is out of bounds 0 and "</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-layout'>(</span><span class='hs-varid'>maxIndex</span> <span class='hs-varid'>xs</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
 <a name="line-434"></a>
 <a name="line-435"></a><a name="vreplace"></a><span class='hs-comment'>{-# INLINEABLE vreplace #-}</span>
 <a name="line-436"></a><span class='hs-comment'>-- | Replace an element of a vector at the given index (subscript).</span>
@@ -658,12 +658,12 @@
 <a name="line-649"></a><span class='hs-comment'>-- &gt; compareSwapL a b = if a &lt; b then (a,b)</span>
 <a name="line-650"></a><span class='hs-comment'>-- &gt;                             else (b,a)</span>
 <a name="line-651"></a><span class='hs-comment'>--</span>
-<a name="line-652"></a><span class='hs-comment'>-- Will not terminate because 'vzipWith' is too strict in its left argument:</span>
+<a name="line-652"></a><span class='hs-comment'>-- Will not terminate because 'vzipWith' is too strict in its second argument:</span>
 <a name="line-653"></a><span class='hs-comment'>--</span>
 <a name="line-654"></a><span class='hs-comment'>-- &gt;&gt;&gt; sortV (4 :&gt; 1 :&gt; 2 :&gt; 3 :&gt; Nil)</span>
 <a name="line-655"></a><span class='hs-comment'>-- &lt;*** Exception: &lt;&lt;loop&gt;&gt;</span>
 <a name="line-656"></a><span class='hs-comment'>--</span>
-<a name="line-657"></a><span class='hs-comment'>-- In this case, adding 'lazyV' on 'vzipWith's left argument:</span>
+<a name="line-657"></a><span class='hs-comment'>-- In this case, adding 'lazyV' on 'vzipWith's second argument:</span>
 <a name="line-658"></a><span class='hs-comment'>--</span>
 <a name="line-659"></a><span class='hs-comment'>-- &gt; sortVL xs = vmap fst sorted &lt;: (snd (vlast sorted))</span>
 <a name="line-660"></a><span class='hs-comment'>-- &gt;  where</span>
