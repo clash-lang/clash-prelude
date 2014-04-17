@@ -329,13 +329,13 @@ primitives, using <code><a href="CLaSH-Sized-Signed.html#t:Signed">Signed</a></c
 <a href="CLaSH-Sized-Signed.html">CLaSH.Sized.Signed</a> module specifies multiplication as follows:</p><pre>{-# NOINLINE timesS #-}
 timesS :: KnownNat n =&gt; Signed n -&gt; Signed n -&gt; Signed n
 timesS (S a) (S b) = fromIntegerS_inlineable (a * b)
-</pre><p>For which the primitive definition is:</p><pre>{ &quot;BlackBox&quot; :
+</pre><p>For which the <em>expression</em> primitive is:</p><pre>{ &quot;BlackBox&quot; :
   { &quot;name&quot;      : &quot;CLaSH.Sized.Signed.timesS&quot;
   , &quot;templateE&quot; : &quot;resize(~ARG[1] * ~ARG[2], ~LIT[0])&quot;
   }
 }
 </pre><p>The <code>name</code> of the primitive is the <em>fully qualified</em> name of the function you
-are creating the primitive for. Because we are creating an expression
+are creating the primitive for. Because we are creating an <em>expression</em>
 primitive we define a <code>template<strong>E</strong></code> field. As the name suggest, it is a VHDL
 <em>template</em>, meaning that the compiler must fill in the holes heralded by the
 tilde (~). Here:</p><ul><li><code>~ARG[1]</code> denotes the second argument given to the <code>timesS</code> function, which
@@ -349,21 +349,22 @@ section. What we immediately notice is that class constraints are counted as
 normal arguments in the primitive definition. This is because these class
 constraints are actually represented by ordinary record types, with fields
 corresponding to the methods of the type class. In the above case, <code><a href="http://hackage.haskell.org/package/base/docs/GHC-TypeLits.html#t:KnownNat">KnownNat</a></code>
-is actually just like a <code>newtype</code> wrapper for <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Integer">Integer</a></code>.</p><p>The second primitive type that we will explore is the <em>definition</em> primitive.
-In this case we will use <code><a href="CLaSH-Prelude.html#v:blockRam">blockRam</a></code> as an example. The Haskell/C&#955;aSH code for
-which is:</p><pre>{-# NOINLINE blockRam #-}
--- | Create a blockRAM with space for <code>n</code> elements
+is actually just like a <code>newtype</code> wrapper for <code><a href="http://hackage.haskell.org/package/base/docs/Prelude.html#t:Integer">Integer</a></code>.</p><p>The second kind of primitive that we will explore is the <em>declaration</em> primitive.
+We will use <code><a href="CLaSH-Prelude.html#v:blockRam">blockRam</a></code> as an example, for which the Haskell/C&#955;aSH code is:</p><pre>{-# NOINLINE blockRam #-}
+-- | Create a blockRAM with space for @n@ elements
+--
+-- NB: Read value is delayed by 1 cycle
 --
 -- &gt; bram40 :: Signal (Unsigned 6) -&gt; Signal (Unsigned 6) -&gt; Signal Bool -&gt; Signal a -&gt; Signal a
 -- &gt; bram40 = blockRam d50
 blockRam :: forall n m a . (KnownNat n, KnownNat m, Pack a, Default a)
-         =&gt; SNat n              -- ^ Size <code>n</code> of the blockram
-         -&gt; Signal (Unsigned m) -- ^ Write address <code>w</code>
-         -&gt; Signal (Unsigned m) -- ^ Read address <code>r</code>
+         =&gt; SNat n              -- ^ Size @n@ of the blockram
+         -&gt; Signal (Unsigned m) -- ^ Write address @w@
+         -&gt; Signal (Unsigned m) -- ^ Read address @r@
          -&gt; Signal Bool         -- ^ Write enable
-         -&gt; Signal a            -- ^ Value to write (at address <code>w</code>)
-         -&gt; Signal a            -- ^ Value of the <code>blockRAM</code> at address <code>r</code> from the previous clock cycle
-blockRam n wr rd en din = pack $ (bram' <a href="^">^</a> binit) (wr,rd,en,din)
+         -&gt; Signal a            -- ^ Value to write (at address @w@)
+         -&gt; Signal a            -- ^ Value of the <code>blockRAM</code> at address @r@ from the previous clock cycle
+blockRam n wr rd en din = pack $ (bram' &lt;^&gt; binit) (wr,rd,en,din)
   where
     binit :: (Vec n a,a)
     binit = (vcopy n def,def)
@@ -375,7 +376,7 @@ blockRam n wr rd en din = pack $ (bram' <a href="^">^</a> binit) (wr,rd,en,din)
         ram' | e         = vreplace ram w d
              | otherwise = ram
         o'               = ram ! r
-</pre><p>For which the primitive definition is:</p><pre>{ &quot;BlackBox&quot; :
+</pre><p>And for which the <em>definition</em> primitive is:</p><pre>{ &quot;BlackBox&quot; :
   { &quot;name&quot;      : &quot;CLaSH.Prelude.blockRam&quot;
   , &quot;templateD&quot; :
 &quot;~SYM[0]_block : block
@@ -401,12 +402,12 @@ end block;&quot;
   }
 }
 </pre><p>Again, the <code>name</code> of the primitive is the fully qualified name of the function
-you are creating the primitive for. Because we are creating a declaration
+you are creating the primitive for. Because we are creating a <em>declaration</em>
 primitive we define a <code>template<strong>D</strong></code> field. Instead of discussing what the
 individual template holes mean in the above context, we will instead just give
 a general listing of the available template holes:</p><ul><li><code>~RESULT</code>: VHDL signal to which the result of a primitive must be assigned
   to. NB: Only used in a <em>definition</em> primitive.</li><li><code>~ARG[N]</code>: <code>(N+1)</code>'th argument to the function.</li><li><code>~LIT[N]</code>: <code>(N+1)</code>'th argument to the function An extra condition that must
-  hold is that this <code>N</code>'th argument is an (integer) literal.</li><li><code>~CLK[N]</code>: Clock signal to which the <code>(N+1)</code>'th argument is synchronized to.</li><li><code>~CLKO</code>: Clock signal to which the result is synchronized to.</li><li><code>~RST[N]</code>: Asynchronous reset signal to the clock to which the <code>(N+1)</code>'th
+  hold is that this <code>(N+1)</code>'th argument is an (integer) literal.</li><li><code>~CLK[N]</code>: Clock signal to which the <code>(N+1)</code>'th argument is synchronized to.</li><li><code>~CLKO</code>: Clock signal to which the result is synchronized to.</li><li><code>~RST[N]</code>: Asynchronous reset signal to the clock to which the <code>(N+1)</code>'th
   argument is synchronized to.</li><li><code>~RSTO</code>: Asynchronous reset signal to the clock to which the result is
   synchronized to.</li><li><code>~TYP[N]</code>: VHDL type of the <code>(N+1)</code>'th argument.</li><li><code>~TYPO</code>: VHDL type of the result.</li><li><code>~TYPM[N]</code>: VHDL type<em>name</em> of the <code>(N+1)</code>'th argument; used in <em>type</em>
   <em>qualification</em>.</li><li><code>~TYPM</code>: VHDL type<em>name</em> of the result; used in <em>type qualification</em>.</li><li><code>~DEF[N]</code>: Default value for the VHDL type of the <code>(N+1)</code>'th argument. NB:
@@ -415,18 +416,19 @@ a general listing of the available template holes:</p><ul><li><code>~RESULT</cod
   correspond per se to the value of the <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#v:def">def</a></code> of the <code><a href="http://hackage.haskell.org/package/data-default/docs/Data-Default.html#t:Default">Default</a></code> type class for
   the Haskell type.</li><li><code>~SYM[N]</code>: Randomly generated, but unique, symbol. Multiple occurrences of
   <code>~SYM[N]</code> in the same primitive definition all refer to the same random, but
-  unique, symbol.</li></ul><p>Some final remark to end this section: VHDL primitives only instruct the C&#955;aSH
-compiler to use the given VHDL template, instead of trying to do normal
-synthesis. You can hence use constructs inside the Haskell definitions that
-are normally not synthesizable by the C&#955;aSH compiler. However, VHDL primitives
-do not get you <em>co-simulation</em>: where you simulate VHDL and Haskell in a
-<em>single</em> environment. If you still want to simulate your design in Haskell, you
-will have to describe, in a cycle- and bit-accurate way, the behaviour of that
-(potentially complex) IP you are trying include in your design.</p><p>Perhaps in the future, someone will figure out how to connect the two simulation
-worlds using e.g. VHDL's foreign function interface VHPI.</p></div><h1 id="g:12">Conclusion</h1><div class="doc"><p>For now, this is the end of this tutorial. We will be adding updates over time,
-so check back from time to time. For now we recommend that you continue with
-exploring the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module however, and like that hopefully get a feel
-of what C&#955;aSH is capable of.</p></div><h1 id="g:13">Troubleshooting</h1><div class="doc"><p>A list of often encountered errors and their solutions:</p><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
+  unique, symbol.</li></ul><p>Some final remarks to end this section: VHDL primitives are there tp instruct the
+C&#955;aSH compiler to use the given VHDL template, instead of trying to do normal
+synthesis. As a consequence you can use constructs inside the Haskell
+definitions that are normally not synthesizable by the C&#955;aSH compiler. However,
+VHDL primitives do not give us <em>co-simulation</em>: where you would be able to
+simulate VHDL and Haskell in a <em>single</em> environment. If you still want to
+simulate your design in Haskell, you will have to describe, in a cycle- and
+bit-accurate way, the behaviour of that (potentially complex) IP you are trying
+to include in your design.</p><p>Perhaps in the future, someone will figure out how to connect the two simulation
+worlds, using e.g. VHDL's foreign function interface VHPI.</p></div><h1 id="g:12">Conclusion</h1><div class="doc"><p>For now, this is the end of this tutorial. We will be adding updates over time,
+so check back from time to time. For now, we recommend that you continue with
+exploring the <a href="CLaSH-Prelude.html">CLaSH.Prelude</a> module, and get a better understanding of the
+capabilities of C&#955;aSH in the process.</p></div><h1 id="g:13">Troubleshooting</h1><div class="doc"><p>A list of often encountered errors and their solutions:</p><ul><li><strong>Type error: Couldn't match expected type &#8216;Signal (a,b)&#8217; with actual type</strong>
   <strong>&#8216;(Signal a, Signal b)&#8217;</strong>:<p>Signals of product types and product types (to which tuples belong) of
 signals are <strong>isomorphic</strong> due to synchronisity principle, but are not
 (structurally) equal. Use the <code><a href="CLaSH-Signal-Implicit.html#v:pack">pack</a></code> function to convert from a product type
