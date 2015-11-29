@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ImplicitParams #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs     #-}
 {-# LANGUAGE MagicHash #-}
@@ -27,12 +29,12 @@ module CLaSH.Signal.Explicit
     -- ** Synchronisation primitive
   , unsafeSynchronizer
     -- * Basic circuit functions
-  , register'
-  , regEn'
+  , register
+  , regEn
     -- * Product/Signal isomorphism
   , Bundle (..)
     -- * Simulation functions (not synthesisable)
-  , simulateB'
+  , simulateB
   )
 where
 
@@ -130,6 +132,11 @@ withSClock :: (KnownSymbol name, KnownNat period)
            => (SClock ('Clk name period) -> a)
            -> a
 withSClock f = f (SClock ssymbol snat)
+
+{-# INLINE period #-}
+period :: SClock clk
+       -> Integer
+period (SClock _ p) = snatToInteger p
 
 -- | The standard system clock with a period of 1000
 type SystemClock = 'Clk "system" 1000
@@ -239,14 +246,14 @@ freqCalc xs = map (`div` g) ys
 -- [99,50,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10]
 -- >>> sampleN 12 (almostId (fromList [1..10]))
 -- [70,99,1,2,3,4,5,6,7,8,9,10]
-unsafeSynchronizer :: SClock clk1 -- ^ 'Clock' of the incoming signal
-                   -> SClock clk2 -- ^ 'Clock' of the outgoing signal
-                   -> Signal' clk1 a
+unsafeSynchronizer :: (?clk1 :: SClock clk1) -- ^ 'Clock' of the incoming signal
+                   => (?clk2 :: SClock clk2) -- ^ 'Clock' of the outgoing signal
+                   => Signal' clk1 a
                    -> Signal' clk2 a
-unsafeSynchronizer (SClock _ period1) (SClock _ period2) s = s'
+unsafeSynchronizer s = s'
   where
-    t1    = fromInteger (snatToInteger period1)
-    t2    = fromInteger (snatToInteger period2)
+    t1    = fromInteger $ period ?clk1
+    t2    = fromInteger $ period ?clk2
     s' | t1 < t2   = compress   t2 t1 s
        | t1 > t2   = oversample t1 t2 s
        | otherwise = same s
@@ -287,7 +294,7 @@ repSchedule high low = take low $ repSchedule' low high 1
 
 -- * Basic circuit functions
 
-{-# INLINE register' #-}
+{-# INLINE register #-}
 -- | \"@'register'' i s@\" delays the values in 'Signal'' @s@ for one cycle,
 -- and sets the value at time 0 to @i@
 --
@@ -298,12 +305,14 @@ repSchedule high low = take low $ repSchedule' low high 1
 -- clkA = 'sclock'
 -- @
 --
--- >>> sampleN 3 (register' clkA 8 (fromList [1,2,3,4]))
+-- >>> sampleN 3 (register ?clkA 8 (fromList [1,2,3,4]))
 -- [8,1,2]
-register' :: SClock clk -> a -> Signal' clk a -> Signal' clk a
-register' = register#
+-- >>> sampleN 3 (register 8 (fromList [1,2,3,4]))
+-- [8,1,2]
+register :: (?clk :: SClock clk) => a -> Signal' clk a -> Signal' clk a
+register = register# ?clk
 
-{-# INLINE regEn' #-}
+{-# INLINE regEn #-}
 -- | Version of 'register'' that only updates its content when its second
 -- argument is asserted. So given:
 --
@@ -322,21 +331,24 @@ register' = register#
 -- [False,True,False,True,False,True,False,True]
 -- >>> sampleN 8 count
 -- [0,0,1,1,2,2,3,3]
-regEn' :: SClock clk -> a -> Signal' clk Bool -> Signal' clk a -> Signal' clk a
-regEn' = regEn#
+regEn :: (?clk :: SClock clk) => a -> Signal' clk Bool -> Signal' clk a -> Signal' clk a
+regEn = regEn# ?clk
 
 -- * Simulation functions
 
 -- | Simulate a (@'Unbundled'' clk1 a -> 'Unbundled'' clk2 b@) function given a
 -- list of samples of type @a@
 --
--- >>> simulateB' clkA clkA (unbundle' clkA . register' clkA (8,8) . bundle' clkA) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
+-- >>> simulateB' ?clkA ?clkA (unbundle' ?clkA . register (8,8) . bundle' ?clkA) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
+-- [(8,8),(1,1),(2,2),(3,3)...
+--
+-- >>> simulateB (unbundle . register (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
 --
 -- __NB__: This function is not synthesisable
-simulateB' :: (Bundle a, Bundle b)
-           => SClock clk1 -- ^ 'Clock' of the incoming signal
-           -> SClock clk2 -- ^ 'Clock' of the outgoing signal
-           -> (Unbundled' clk1 a -> Unbundled' clk2 b) -- ^ Function to simulate
+simulateB :: (Bundle a, Bundle b)
+           => (?clk1 :: SClock clk1) -- ^ 'Clock' of the incoming signal
+           => (?clk2 :: SClock clk2) -- ^ 'Clock' of the outgoing signal
+           => (Unbundled' clk1 a -> Unbundled' clk2 b) -- ^ Function to simulate
            -> [a] -> [b]
-simulateB' clk1 clk2 f = simulate (bundle' clk2 . f . unbundle' clk1)
+simulateB f = simulate (bundle' ?clk2 . f . unbundle' ?clk1)

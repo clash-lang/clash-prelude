@@ -117,7 +117,7 @@ import CLaSH.Class.Resize
 import CLaSH.Prelude.BitIndex
 import CLaSH.Prelude.BitReduction
 import CLaSH.Prelude.BlockRam      (blockRam, blockRamPow2)
-import CLaSH.Prelude.Explicit.Safe (registerB', isRising', isFalling')
+import CLaSH.Prelude.Explicit.Safe (registerB, isRising, isFalling)
 import CLaSH.Prelude.Mealy         (mealy, mealyB, (<^>))
 import CLaSH.Prelude.Moore         (moore, mooreB)
 import CLaSH.Prelude.RAM           (asyncRam,asyncRamPow2)
@@ -150,30 +150,3 @@ splitAt, tail, take, unzip, unzip3, zip, zip3, zipWith, zipWith3.
 It instead exports the identically named functions defined in terms of
 'CLaSH.Sized.Vector.Vec' at "CLaSH.Sized.Vector".
 -}
-
-{-# INLINE registerB #-}
--- | Create a 'register' function for product-type like signals (e.g. '(Signal a, Signal b)')
---
--- > rP :: (Signal Int,Signal Int) -> (Signal Int, Signal Int)
--- > rP = registerB (8,8)
---
--- >>> simulateB rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
--- [(8,8),(1,1),(2,2),(3,3)...
-registerB :: Bundle a => a -> Unbundled a -> Unbundled a
-registerB = registerB' systemClock
-
-{-# INLINE isRising #-}
--- | Give a pulse when the 'Signal' goes from 'minBound' to 'maxBound'
-isRising :: (Bounded a, Eq a)
-         => a -- ^ Starting value
-         -> Signal a
-         -> Signal Bool
-isRising = isRising' systemClock
-
-{-# INLINE isFalling #-}
--- | Give a pulse when the 'Signal' goes from 'maxBound' to 'minBound'
-isFalling :: (Bounded a, Eq a)
-          => a -- ^ Starting value
-          -> Signal a
-          -> Signal Bool
-isFalling = isFalling' systemClock

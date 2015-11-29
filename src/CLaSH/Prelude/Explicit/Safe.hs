@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams   #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators    #-}
@@ -23,26 +24,26 @@ using explicitly clocked signals.
 -}
 module CLaSH.Prelude.Explicit.Safe
   ( -- * Creating synchronous sequential circuits
-    mealy'
-  , mealyB'
-  , moore'
-  , mooreB'
-  , registerB'
+    mealy
+  , mealyB
+  , moore
+  , mooreB
+  , registerB
     -- * Synchronizer circuits for safe clock domain crossing
   , dualFlipFlopSynchronizer
   , asyncFIFOSynchronizer
     -- * ROMs
-  , rom'
-  , romPow2'
+  , rom
+  , romPow2
     -- * RAM primitives with a combinational read port
-  , asyncRam'
-  , asyncRamPow2'
+  , asyncRam
+  , asyncRamPow2
     -- * BlockRAM primitives
-  , blockRam'
-  , blockRamPow2'
+  , blockRam
+  , blockRamPow2
     -- * Utility functions
-  , isRising'
-  , isFalling'
+  , isRising
+  , isFalling
     -- * Exported modules
     -- ** Explicitly clocked synchronous signals
   , module CLaSH.Signal.Explicit
@@ -52,11 +53,11 @@ where
 import Control.Applicative        (liftA2)
 import Prelude                    hiding (repeat)
 
-import CLaSH.Prelude.BlockRam     (blockRam', blockRamPow2')
-import CLaSH.Prelude.Mealy        (mealy', mealyB')
-import CLaSH.Prelude.Moore        (moore', mooreB')
-import CLaSH.Prelude.RAM          (asyncRam',asyncRamPow2')
-import CLaSH.Prelude.ROM          (rom', romPow2')
+import CLaSH.Prelude.BlockRam     (blockRam, blockRamPow2)
+import CLaSH.Prelude.Mealy        (mealy, mealyB)
+import CLaSH.Prelude.Moore        (moore, mooreB)
+import CLaSH.Prelude.RAM          (asyncRam,asyncRamPow2)
+import CLaSH.Prelude.ROM          (rom, romPow2)
 import CLaSH.Prelude.Synchronizer (dualFlipFlopSynchronizer,
                                    asyncFIFOSynchronizer)
 import CLaSH.Signal.Explicit
@@ -65,10 +66,10 @@ import CLaSH.Signal.Explicit
 >>> :set -XDataKinds
 >>> type ClkA = Clk "A" 100
 >>> let clkA = sclock :: SClock ClkA
->>> let rP = registerB' clkA (8::Int,8::Int)
+>>> let rP = registerB clkA (8::Int,8::Int)
 -}
 
-{-# INLINE registerB' #-}
+{-# INLINE registerB #-}
 -- | Create a 'register' function for product-type like signals (e.g.
 -- @('Signal' a, 'Signal' b)@)
 --
@@ -84,29 +85,33 @@ import CLaSH.Signal.Explicit
 --
 -- >>> simulateB' clkA clkA rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
-registerB' :: Bundle a => SClock clk -> a -> Unbundled' clk a -> Unbundled' clk a
-registerB' clk i = unbundle' clk Prelude.. register' clk i Prelude.. bundle' clk
+registerB :: Bundle a
+          => (?clk :: SClock clk)
+          => a
+          -> Unbundled' clk a
+          -> Unbundled' clk a
+registerB i = unbundle' ?clk Prelude.. register i Prelude.. bundle' ?clk
 
-{-# INLINABLE isRising' #-}
+{-# INLINABLE isRising #-}
 -- | Give a pulse when the 'Signal'' goes from 'minBound' to 'maxBound'
-isRising' :: (Bounded a, Eq a)
-          => SClock clk
-          -> a -- ^ Starting value
-          -> Signal' clk a
-          -> Signal' clk Bool
-isRising' clk is s = liftA2 edgeDetect prev s
+isRising :: (Bounded a, Eq a)
+         => (?clk :: SClock clk)
+         => a -- ^ Starting value
+         -> Signal' clk a
+         -> Signal' clk Bool
+isRising is s = liftA2 edgeDetect prev s
   where
-    prev = register' clk is s
+    prev = register is s
     edgeDetect old new = old == minBound && new == maxBound
 
-{-# INLINABLE isFalling' #-}
+{-# INLINABLE isFalling #-}
 -- | Give a pulse when the 'Signal'' goes from 'maxBound' to 'minBound'
-isFalling' :: (Bounded a, Eq a)
-           => SClock clk
-           -> a -- ^ Starting value
-           -> Signal' clk a
-           -> Signal' clk Bool
-isFalling' clk is s = liftA2 edgeDetect prev s
+isFalling :: (Bounded a, Eq a)
+          => (?clk :: SClock clk)
+          => a -- ^ Starting value
+          -> Signal' clk a
+          -> Signal' clk Bool
+isFalling is s = liftA2 edgeDetect prev s
   where
-    prev = register' clk is s
+    prev = register is s
     edgeDetect old new = old == maxBound && new == minBound

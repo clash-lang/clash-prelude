@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams   #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MagicHash        #-}
@@ -344,12 +345,9 @@ This concludes the short introduction to using 'blockRam'.
 
 -}
 module CLaSH.Prelude.BlockRam
-  ( -- * BlockRAM synchronised to the system clock
+  ( -- * BlockRAM synchronised to an arbitrary clock
     blockRam
   , blockRamPow2
-    -- * BlockRAM synchronised to an arbitrary clock
-  , blockRam'
-  , blockRamPow2'
     -- * Internal
   , blockRam#
   )
@@ -361,73 +359,12 @@ import Data.Array.MArray.Safe (newListArray,readArray,writeArray)
 import Data.Array.ST.Safe     (STArray)
 import GHC.TypeLits           (KnownNat, type (^))
 
-import CLaSH.Signal           (Signal)
-import CLaSH.Signal.Explicit  (Signal', SClock, register', systemClock)
+import CLaSH.Signal.Explicit  (Signal', SClock, register)
 import CLaSH.Signal.Bundle    (bundle')
 import CLaSH.Sized.Unsigned   (Unsigned)
 import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
 
 {-# INLINE blockRam #-}
--- | Create a blockRAM with space for @n@ elements.
---
--- * __NB__: Read value is delayed by 1 cycle
--- * __NB__: Initial output value is 'undefined'
---
--- @
--- bram40 :: 'Signal' ('Unsigned' 6) -> Signal ('Unsigned' 6) -> 'Signal' Bool
---        -> 'Signal' 'CLaSH.Sized.BitVector.Bit' -> Signal 'CLaSH.Sized.BitVector.Bit'
--- bram40 = 'blockRam' ('CLaSH.Sized.Vector.replicate' d40 1)
--- @
---
--- Additional helpful information:
---
--- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
--- Block RAM.
-blockRam :: (KnownNat n, Enum addr)
-         => Vec n a     -- ^ Initial content of the BRAM, also
-                        -- determines the size, @n@, of the BRAM.
-                        --
-                        -- __NB__: __MUST__ be a constant.
-         -> Signal addr -- ^ Write address @w@
-         -> Signal addr -- ^ Read address @r@
-         -> Signal Bool -- ^ Write enable
-         -> Signal a    -- ^ Value to write (at address @w@)
-         -> Signal a
-         -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
-         -- cycle
-blockRam = blockRam' systemClock
-
-{-# INLINE blockRamPow2 #-}
--- | Create a blockRAM with space for 2^@n@ elements
---
--- * __NB__: Read value is delayed by 1 cycle
--- * __NB__: Initial output value is 'undefined'
---
--- @
--- bram32 :: 'Signal' ('Unsigned' 5) -> Signal ('Unsigned' 5) -> 'Signal' Bool
---        -> 'Signal' 'CLaSH.Sized.BitVector.Bit' -> 'Signal' 'CLaSH.Sized.BitVector.Bit'
--- bram32 = 'blockRamPow2' ('CLaSH.Sized.Vector.replicate' d32 1)
--- @
---
--- Additional helpful information:
---
--- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
--- Block RAM.
-blockRamPow2 :: (KnownNat (2^n), KnownNat n)
-             => Vec (2^n) a         -- ^ Initial content of the BRAM, also
-                                    -- determines the size, @2^n@, of the BRAM.
-                                    --
-                                    -- __NB__: __MUST__ be a constant.
-             -> Signal (Unsigned n) -- ^ Write address @w@
-             -> Signal (Unsigned n) -- ^ Read address @r@
-             -> Signal Bool         -- ^ Write enable
-             -> Signal a            -- ^ Value to write (at address @w@)
-             -> Signal a
-             -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
-             -- cycle
-blockRamPow2 = blockRam
-
-{-# INLINE blockRam' #-}
 -- | Create a blockRAM with space for @n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -448,23 +385,23 @@ blockRamPow2 = blockRam
 --
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
-blockRam' :: (KnownNat n, Enum addr)
-          => SClock clk       -- ^ 'Clock' to synchronize to
-          -> Vec n a          -- ^ Initial content of the BRAM, also
-                              -- determines the size, @n@, of the BRAM.
-                              --
-                              -- __NB__: __MUST__ be a constant.
-          -> Signal' clk addr -- ^ Write address @w@
-          -> Signal' clk addr -- ^ Read address @r@
-          -> Signal' clk Bool -- ^ Write enable
-          -> Signal' clk a    -- ^ Value to write (at address @w@)
-          -> Signal' clk a
-          -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
-          -- cycle
-blockRam' clk content wr rd en din = blockRam# clk content (fromEnum <$> wr)
-                                               (fromEnum <$> rd) en din
+blockRam :: (KnownNat n, Enum addr)
+         => (?clk :: SClock clk) -- ^ 'Clock' to synchronize to
+         => Vec n a              -- ^ Initial content of the BRAM, also
+                                 -- determines the size, @n@, of the BRAM.
+                                 --
+                                 -- __NB__: __MUST__ be a constant.
+         -> Signal' clk addr     -- ^ Write address @w@
+         -> Signal' clk addr     -- ^ Read address @r@
+         -> Signal' clk Bool     -- ^ Write enable
+         -> Signal' clk a        -- ^ Value to write (at address @w@)
+         -> Signal' clk a
+         -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
+         -- cycle
+blockRam content wr rd en din = blockRam# ?clk content (fromEnum <$> wr)
+                                          (fromEnum <$> rd) en din
 
-{-# INLINE blockRamPow2' #-}
+{-# INLINE blockRamPow2 #-}
 -- | Create a blockRAM with space for 2^@n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -485,21 +422,21 @@ blockRam' clk content wr rd en din = blockRam# clk content (fromEnum <$> wr)
 --
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
-blockRamPow2' :: (KnownNat n, KnownNat (2^n))
-              => SClock clk               -- ^ 'Clock' to synchronize to
-              -> Vec (2^n) a              -- ^ Initial content of the BRAM, also
-                                          -- determines the size, @2^n@, of
-                                          -- the BRAM.
-                                          --
-                                          -- __NB__: __MUST__ be a constant.
-              -> Signal' clk (Unsigned n) -- ^ Write address @w@
-              -> Signal' clk (Unsigned n) -- ^ Read address @r@
-              -> Signal' clk Bool         -- ^ Write enable
-              -> Signal' clk a            -- ^ Value to write (at address @w@)
-              -> Signal' clk a
-              -- ^ Value of the @blockRAM@ at address @r@ from the previous
-              -- clock cycle
-blockRamPow2' = blockRam'
+blockRamPow2 :: (KnownNat n, KnownNat (2^n))
+             => (?clk :: SClock clk)     -- ^ 'Clock' to synchronize to
+             => Vec (2^n) a              -- ^ Initial content of the BRAM, also
+                                         -- determines the size, @2^n@, of
+                                         -- the BRAM.
+                                         --
+                                         -- __NB__: __MUST__ be a constant.
+             -> Signal' clk (Unsigned n) -- ^ Write address @w@
+             -> Signal' clk (Unsigned n) -- ^ Read address @r@
+             -> Signal' clk Bool         -- ^ Write enable
+             -> Signal' clk a            -- ^ Value to write (at address @w@)
+             -> Signal' clk a
+             -- ^ Value of the @blockRAM@ at address @r@ from the previous
+             -- clock cycle
+blockRamPow2 = blockRam
 
 {-# NOINLINE blockRam# #-}
 -- | blockRAM primitive
@@ -516,7 +453,7 @@ blockRam# :: KnownNat n
           -> Signal' clk a
           -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
           -- cycle
-blockRam# clk content wr rd en din = register' clk undefined dout
+blockRam# clk content wr rd en din = let ?clk = clk in register undefined dout
   where
     szI  = maxIndex content
     dout = runST $ do

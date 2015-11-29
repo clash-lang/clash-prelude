@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams        #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -30,12 +31,12 @@ import GHC.TypeLits                (KnownNat, type (+))
 import CLaSH.Class.BitPack         (pack)
 import CLaSH.Class.Resize          (zeroExtend)
 import CLaSH.Prelude.BitIndex      (slice)
-import CLaSH.Prelude.Mealy         (mealyB')
-import CLaSH.Prelude.RAM           (asyncRam')
+import CLaSH.Prelude.Mealy         (mealyB)
+import CLaSH.Prelude.RAM           (asyncRam)
 import CLaSH.Promoted.Nat          (SNat, powSNat, subSNat)
 import CLaSH.Promoted.Nat.Literals (d0, d1, d2)
 import CLaSH.Signal                ((.&&.), not1)
-import CLaSH.Signal.Explicit       (Signal', SClock, register',
+import CLaSH.Signal.Explicit       (Signal', SClock, register,
                                     unsafeSynchronizer)
 import CLaSH.Sized.BitVector       (BitVector, (++#))
 
@@ -63,36 +64,36 @@ import CLaSH.Sized.BitVector       (BitVector, (++#))
 --
 --      If you want to have /safe/ __word__-synchronisation use
 --      'asyncFIFOSynchronizer'.
-dualFlipFlopSynchronizer :: SClock clk1    -- ^ 'Clock' to which the incoming
-                                           -- data is synchronised
-                         -> SClock clk2    -- ^ 'Clock' to which the outgoing
-                                           -- data is synchronised
-                         -> a              -- ^ Initial value of the two
-                                           -- synchronisation registers
-                         -> Signal' clk1 a -- ^ Incoming data
-                         -> Signal' clk2 a -- ^ Outgoing, synchronised, data
-dualFlipFlopSynchronizer clk1 clk2 i = register' clk2 i
-                                     . register' clk2 i
-                                     . unsafeSynchronizer clk1 clk2
+dualFlipFlopSynchronizer :: (?clk1 :: SClock clk1) -- ^ 'Clock' to which the incoming
+                                                   -- data is synchronised
+                         => (?clk2 :: SClock clk2) -- ^ 'Clock' to which the outgoing
+                                                   -- data is synchronised
+                         => a                      -- ^ Initial value of the two
+                                                   -- synchronisation registers
+                         -> Signal' clk1 a         -- ^ Incoming data
+                         -> Signal' clk2 a         -- ^ Outgoing, synchronised, data
+dualFlipFlopSynchronizer i = register i
+                           . register i
+                           . unsafeSynchronizer
+  where ?clk = ?clk2
 
 -- * Asynchronous FIFO synchronizer
 
 fifoMem :: _
-        => SClock wclk
-        -> SClock rclk
-        -> SNat addrSize
+        => (?wclk :: SClock wclk)
+        => (?rclk :: SClock rclk)
+        => SNat addrSize
         -> Signal' wclk (BitVector addrSize)
         -> Signal' rclk (BitVector addrSize)
         -> Signal' wclk Bool
         -> Signal' wclk Bool
         -> Signal' wclk a
         -> Signal' rclk a
-fifoMem wclk rclk addrSize waddr raddr winc wfull wdata =
-  asyncRam' wclk rclk
-            (d2 `powSNat` addrSize)
-            waddr raddr
-            (winc .&&. not1 wfull)
-            wdata
+fifoMem addrSize waddr raddr winc wfull wdata =
+  asyncRam (d2 `powSNat` addrSize)
+           waddr raddr
+           (winc .&&. not1 wfull)
+           wdata
 
 boolToBV :: (KnownNat n, KnownNat (n+1)) => Bool -> BitVector (n + 1)
 boolToBV = zeroExtend . pack
@@ -145,13 +146,17 @@ asyncFIFOSynchronizer :: _
                       -- ^ (Oldest element in the FIFO, @empty@ flag, @full@ flag)
 asyncFIFOSynchronizer addrSize wclk rclk wdata winc rinc = (rdata,rempty,wfull)
   where
-    s_rptr = dualFlipFlopSynchronizer rclk wclk 0 rptr
-    s_wptr = dualFlipFlopSynchronizer wclk rclk 0 wptr
+    s_rptr = let ?clk1 = rclk; ?clk2 = wclk; in dualFlipFlopSynchronizer 0 rptr
+    s_wptr = let ?clk1 = wclk; ?clk2 = rclk; in dualFlipFlopSynchronizer 0 wptr
 
-    rdata = fifoMem wclk rclk addrSize waddr raddr winc wfull wdata
+    rdata = fifoMem addrSize waddr raddr winc wfull wdata
+      where ?wclk = wclk
+            ?rclk = rclk
 
-    (rempty,raddr,rptr) = mealyB' rclk (ptrCompareT addrSize (==)) (0,0,True)
-                                  (s_wptr,rinc)
+    (rempty,raddr,rptr) = mealyB (ptrCompareT addrSize (==)) (0,0,True)
+                                 (s_wptr,rinc)
+      where ?clk = rclk
 
-    (wfull,waddr,wptr)  = mealyB' wclk (ptrCompareT addrSize (isFull addrSize))
-                                  (0,0,False) (s_rptr,winc)
+    (wfull,waddr,wptr)  = mealyB (ptrCompareT addrSize (isFull addrSize))
+                                 (0,0,False) (s_rptr,winc)
+      where ?clk = wclk

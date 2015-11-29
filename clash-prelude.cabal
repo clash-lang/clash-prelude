@@ -149,6 +149,7 @@ Library
                       TypeFamilies
                       TypeOperators
                       UndecidableInstances
+                      ImplicitParams
 
   Build-depends:      array                     >= 0.5.1.0,
                       base                      >= 4.8.0.0 && < 5,

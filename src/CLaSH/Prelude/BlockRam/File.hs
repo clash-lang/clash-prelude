@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams      #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MagicHash           #-}
@@ -73,12 +74,9 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 
 -}
 module CLaSH.Prelude.BlockRam.File
-  ( -- * BlockRAM synchronised to the system clock
+  ( -- * BlockRAM synchronised to an arbitrary clock
     blockRamFile
   , blockRamFilePow2
-    -- * BlockRAM synchronised to an arbitrary clock
-  , blockRamFile'
-  , blockRamFilePow2'
     -- * Internal
   , blockRamFile#
   , initMem
@@ -98,10 +96,48 @@ import System.IO.Unsafe      (unsafePerformIO)
 
 import CLaSH.Promoted.Nat    (SNat,snat,snatToInteger)
 import CLaSH.Sized.BitVector (BitVector)
-import CLaSH.Signal          (Signal)
-import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
+import CLaSH.Signal.Explicit (Signal', SClock, register)
 import CLaSH.Signal.Bundle   (bundle')
 import CLaSH.Sized.Unsigned  (Unsigned)
+
+{-# INLINE blockRamFilePow2 #-}
+-- | Create a blockRAM with space for 2^@n@ elements
+--
+-- * __NB__: Read value is delayed by 1 cycle
+-- * __NB__: Initial output value is 'undefined'
+-- * __NB__: This function might not work for specific combinations of
+-- code-generation backends and hardware targets. Please check the support table
+-- below:
+--
+--     @
+--                    | VHDL     | Verilog  | SystemVerilog |
+--     ===============+==========+==========+===============+
+--     Altera/Quartus | Broken   | Works    | Works         |
+--     Xilinx/ISE     | Works    | Works    | Works         |
+--     ASIC           | Untested | Untested | Untested      |
+--     ===============+==========+==========+===============+
+--     @
+--
+-- Additional helpful information:
+--
+-- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
+-- Block RAM.
+-- * See "CLaSH.Prelude.BlockRam.File#usingramfiles" for more information on how
+-- to instantiate a Block RAM with the contents of a data file.
+-- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
+-- own data files.
+blockRamFilePow2 :: forall clk n m . (KnownNat m, KnownNat n, KnownNat (2^n))
+                 => (?clk :: SClock clk)      -- ^ 'Clock' to synchronize to
+                 => FilePath                  -- ^ File describing the initial
+                                              -- content of the blockRAM
+                 -> Signal' clk (Unsigned n)  -- ^ Write address @w@
+                 -> Signal' clk (Unsigned n)  -- ^ Read address @r@
+                 -> Signal' clk Bool          -- ^ Write enable
+                 -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
+                 -> Signal' clk (BitVector m)
+                 -- ^ Value of the @blockRAM@ at address @r@ from the previous
+                 -- clock cycle
+blockRamFilePow2 = blockRamFile (snat :: SNat (2^n))
 
 {-# INLINE blockRamFile #-}
 -- | Create a blockRAM with space for @n@ elements
@@ -130,137 +166,21 @@ import CLaSH.Sized.Unsigned  (Unsigned)
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
 blockRamFile :: (KnownNat m, Enum addr)
-             => SNat n               -- ^ Size of the blockRAM
-             -> FilePath             -- ^ File describing the initial content
-                                     -- of the blockRAM
-             -> Signal addr          -- ^ Write address @w@
-             -> Signal addr          -- ^ Read address @r@
-             -> Signal Bool          -- ^ Write enable
-             -> Signal (BitVector m) -- ^ Value to write (at address @w@)
-             -> Signal (BitVector m)
-             -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
-             -- cycle
-blockRamFile = blockRamFile' systemClock
-
-{-# INLINE blockRamFilePow2 #-}
--- | Create a blockRAM with space for 2^@n@ elements
---
--- * __NB__: Read value is delayed by 1 cycle
--- * __NB__: Initial output value is 'undefined'
--- * __NB__: This function might not work for specific combinations of
--- code-generation backends and hardware targets. Please check the support table
--- below:
---
---     @
---                    | VHDL     | Verilog  | SystemVerilog |
---     ===============+==========+==========+===============+
---     Altera/Quartus | Broken   | Works    | Works         |
---     Xilinx/ISE     | Works    | Works    | Works         |
---     ASIC           | Untested | Untested | Untested      |
---     ===============+==========+==========+===============+
---     @
---
--- Additional helpful information:
---
--- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
--- Block RAM.
--- * See "CLaSH.Prelude.BlockRam.File#usingramfiles" for more information on how
--- to instantiate a Block RAM with the contents of a data file.
--- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
--- own data files.
-blockRamFilePow2 :: forall n m . (KnownNat m, KnownNat n, KnownNat (2^n))
-                 => FilePath             -- ^ File describing the initial
-                                         -- content of the blockRAM
-                 -> Signal (Unsigned n)  -- ^ Write address @w@
-                 -> Signal (Unsigned n)  -- ^ Read address @r@
-                 -> Signal Bool          -- ^ Write enable
-                 -> Signal (BitVector m) -- ^ Value to write (at address @w@)
-                 -> Signal (BitVector m)
-                 -- ^ Value of the @blockRAM@ at address @r@ from the previous
-                 -- clock cycle
-blockRamFilePow2 = blockRamFile' systemClock (snat :: SNat (2^n))
-
-{-# INLINE blockRamFilePow2' #-}
--- | Create a blockRAM with space for 2^@n@ elements
---
--- * __NB__: Read value is delayed by 1 cycle
--- * __NB__: Initial output value is 'undefined'
--- * __NB__: This function might not work for specific combinations of
--- code-generation backends and hardware targets. Please check the support table
--- below:
---
---     @
---                    | VHDL     | Verilog  | SystemVerilog |
---     ===============+==========+==========+===============+
---     Altera/Quartus | Broken   | Works    | Works         |
---     Xilinx/ISE     | Works    | Works    | Works         |
---     ASIC           | Untested | Untested | Untested      |
---     ===============+==========+==========+===============+
---     @
---
--- Additional helpful information:
---
--- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
--- Block RAM.
--- * See "CLaSH.Prelude.BlockRam.File#usingramfiles" for more information on how
--- to instantiate a Block RAM with the contents of a data file.
--- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
--- own data files.
-blockRamFilePow2' :: forall clk n m . (KnownNat m, KnownNat n, KnownNat (2^n))
-                  => SClock clk                -- ^ 'Clock' to synchronize to
-                  -> FilePath                  -- ^ File describing the initial
-                                               -- content of the blockRAM
-                  -> Signal' clk (Unsigned n)  -- ^ Write address @w@
-                  -> Signal' clk (Unsigned n)  -- ^ Read address @r@
-                  -> Signal' clk Bool          -- ^ Write enable
-                  -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
-                  -> Signal' clk (BitVector m)
-                  -- ^ Value of the @blockRAM@ at address @r@ from the previous
-                  -- clock cycle
-blockRamFilePow2' clk = blockRamFile' clk (snat :: SNat (2^n))
-
-{-# INLINE blockRamFile' #-}
--- | Create a blockRAM with space for @n@ elements
---
--- * __NB__: Read value is delayed by 1 cycle
--- * __NB__: Initial output value is 'undefined'
--- * __NB__: This function might not work for specific combinations of
--- code-generation backends and hardware targets. Please check the support table
--- below:
---
---     @
---                    | VHDL     | Verilog  | SystemVerilog |
---     ===============+==========+==========+===============+
---     Altera/Quartus | Broken   | Works    | Works         |
---     Xilinx/ISE     | Works    | Works    | Works         |
---     ASIC           | Untested | Untested | Untested      |
---     ===============+==========+==========+===============+
---     @
---
--- Additional helpful information:
---
--- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
--- Block RAM.
--- * See "CLaSH.Prelude.BlockRam.File#usingramfiles" for more information on how
--- to instantiate a Block RAM with the contents of a data file.
--- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
--- own data files.
-blockRamFile' :: (KnownNat m, Enum addr)
-              => SClock clk                -- ^ 'Clock' to synchronize to
-              -> SNat n                    -- ^ Size of the blockRAM
-              -> FilePath                  -- ^ File describing the initial
-                                           -- content of the blockRAM
-              -> Signal' clk addr          -- ^ Write address @w@
-              -> Signal' clk addr          -- ^ Read address @r@
-              -> Signal' clk Bool          -- ^ Write enable
-              -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
-              -> Signal' clk (BitVector m)
-              -- ^ Value of the @blockRAM@ at address @r@ from the previous
-              -- clock cycle
-blockRamFile' clk sz file wr rd en din = blockRamFile# clk sz file
-                                                       (fromEnum <$> wr)
-                                                       (fromEnum <$> rd)
-                                                       en din
+             => (?clk :: SClock clk)      -- ^ 'Clock' to synchronize to
+             => SNat n                    -- ^ Size of the blockRAM
+             -> FilePath                  -- ^ File describing the initial
+                                          -- content of the blockRAM
+             -> Signal' clk addr          -- ^ Write address @w@
+             -> Signal' clk addr          -- ^ Read address @r@
+             -> Signal' clk Bool          -- ^ Write enable
+             -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
+             -> Signal' clk (BitVector m)
+             -- ^ Value of the @blockRAM@ at address @r@ from the previous
+             -- clock cycle
+blockRamFile sz file wr rd en din = blockRamFile# ?clk sz file
+                                                  (fromEnum <$> wr)
+                                                  (fromEnum <$> rd)
+                                                  en din
 
 {-# NOINLINE blockRamFile# #-}
 -- | blockRamFile primitive
@@ -276,7 +196,7 @@ blockRamFile# :: KnownNat m
               -> Signal' clk (BitVector m)
               -- ^ Value of the @blockRAM@ at address @r@ from the previous
               -- clock cycle
-blockRamFile# clk sz file wr rd en din = register' clk undefined dout
+blockRamFile# clk sz file wr rd en din = let ?clk = clk in register undefined dout
   where
     szI  = fromInteger $ snatToInteger sz
     dout = runST $ do
