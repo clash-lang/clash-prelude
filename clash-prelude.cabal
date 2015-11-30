@@ -93,6 +93,7 @@ Library
                       CLaSH.Prelude.DataFlow
                       CLaSH.Prelude.Explicit
                       CLaSH.Prelude.Explicit.Safe
+                      CLaSH.Prelude.ElimClocks
                       CLaSH.Prelude.Mealy
                       CLaSH.Prelude.Moore
                       CLaSH.Prelude.RAM
