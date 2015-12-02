@@ -93,6 +93,7 @@ Library
                       CLaSH.Prelude.DataFlow
                       CLaSH.Prelude.Explicit
                       CLaSH.Prelude.Explicit.Safe
+                      CLaSH.Prelude.ElimClocks
                       CLaSH.Prelude.Mealy
                       CLaSH.Prelude.Moore
                       CLaSH.Prelude.RAM
@@ -149,6 +150,7 @@ Library
                       TypeFamilies
                       TypeOperators
                       UndecidableInstances
+                      ImplicitParams
 
   Build-depends:      array                     >= 0.5.1.0,
                       base                      >= 4.8.0.0 && < 5,

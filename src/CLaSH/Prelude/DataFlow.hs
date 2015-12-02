@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams        #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -41,7 +42,7 @@ import GHC.TypeLits          (KnownNat, KnownSymbol)
 
 import CLaSH.Signal          ((.&&.), regEn, unbundle)
 import CLaSH.Signal.Bundle   (Bundle (..))
-import CLaSH.Signal.Explicit (Clock (..), Signal', SystemClock, sclock)
+import CLaSH.Signal.Explicit (SClock, Clock (..), Signal', SystemClock, sclock)
 
 {- | Dataflow circuit with bidirectional synchronisation channels.
 
@@ -124,7 +125,8 @@ liftDF = DF
 
 -- | Create a 'DataFlow' circuit from a Mealy machine description as those of
 -- "CLaSH.Prelude.Mealy"
-mealyDF :: (s -> i -> (s,o))
+mealyDF :: (?clk :: SClock SystemClock)
+        => (s -> i -> (s,o))
         -> s
         -> DataFlow Bool Bool i o
 mealyDF f iS = DF (\i iV oR -> let en     = iV .&&. oR
@@ -134,7 +136,8 @@ mealyDF f iS = DF (\i iV oR -> let en     = iV .&&. oR
 
 -- | Create a 'DataFlow' circuit from a Moore machine description as those of
 -- "CLaSH.Prelude.Moore"
-mooreDF :: (s -> i -> s)
+mooreDF :: (?clk :: SClock SystemClock)
+        => (s -> i -> s)
         -> (s -> o)
         -> s
         -> DataFlow Bool Bool i o

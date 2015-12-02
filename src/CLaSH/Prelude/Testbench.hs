@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams      #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# LANGUAGE Unsafe #-}
@@ -10,14 +11,10 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 module CLaSH.Prelude.Testbench
-  ( -- * Testbench functions for circuits synchronised to the system slock
+  ( -- * Testbench functions for circuits synchronised to arbitrary clocks
     assert
   , stimuliGenerator
   , outputVerifier
-    -- * Testbench functions for circuits synchronised to arbitrary clocks
-  , assert'
-  , stimuliGenerator'
-  , outputVerifier'
   )
 where
 
@@ -25,8 +22,8 @@ import Debug.Trace           (trace)
 import GHC.TypeLits          (KnownNat)
 import Prelude               hiding ((!!))
 
-import CLaSH.Signal          (Signal, fromList)
-import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
+import CLaSH.Signal          (fromList)
+import CLaSH.Signal.Explicit (Signal', SClock, register)
 import CLaSH.Signal.Bundle   (unbundle')
 import CLaSH.Sized.Index     (Index)
 import CLaSH.Sized.Vector    (Vec, (!!), maxIndex)
@@ -44,23 +41,37 @@ import CLaSH.Sized.Vector    (Vec, (!!), maxIndex)
 >>> let expectedOutput' = outputVerifier' clkA $(v ([70,99,2,3,4,5,7,8,9,10]::[Int]))
 -}
 
-{-# INLINE assert #-}
--- | Compares the first two 'Signal's for equality and logs a warning when they
--- are not equal. The second 'Signal' is considered the expected value. This
--- function simply returns the third 'Signal' unaltered as its result. This
--- function is used by 'outputVerifier'.
+
+{-# NOINLINE assert #-}
+-- | Compares the first two 'Signal''s for equality and logs a warning when they
+-- are not equal. The second 'Signal'' is considered the expected value. This
+-- function simply returns the third 'Signal'' unaltered as its result. This
+-- function is used by 'outputVerifier''.
 --
 --
 -- __NB__: This function /can/ be used in synthesizable designs.
-assert :: (Eq a,Show a)
-       => String   -- ^ Additional message
-       -> Signal a -- ^ Checked value
-       -> Signal a -- ^ Expected value
-       -> Signal b -- ^ Return value
-       -> Signal b
-assert = assert' systemClock
+assert :: (Eq a, Show a)
+       => (?clk :: SClock clk)
+       => String      -- ^ Additional message
+       -> Signal' clk a -- ^ Checked value
+       -> Signal' clk a -- ^ Expected value
+       -> Signal' clk b -- ^ Return value
+       -> Signal' clk b
+assert msg checked expected returned =
+  (\c e cnt r ->
+      if c == e then r
+                else trace (concat [ "\ncycle(" ++ show ?clk ++ "): "
+                                   , show cnt
+                                   , ", "
+                                   , msg
+                                   , "\nexpected value: "
+                                   , show e
+                                   , ", not equal to actual value: "
+                                   , show c
+                                   ]) r)
+  <$> checked <*> expected <*> fromList [(0::Integer)..] <*> returned
 
-{-# INLINE stimuliGenerator #-}
+{-# INLINABLE stimuliGenerator #-}
 -- | To be used as one of the functions to create the \"magical\" 'testInput'
 -- value, which the CλaSH compiler looks for to create the stimulus generator
 -- for the generated VHDL testbench.
@@ -74,12 +85,38 @@ assert = assert' systemClock
 --
 -- >>> sampleN 13 testInput
 -- [1,3,5,7,9,11,13,15,17,19,21,21,21]
-stimuliGenerator :: forall l a . KnownNat l
-                 => Vec l a  -- ^ Samples to generate
-                 -> Signal a -- ^ Signal of given samples
-stimuliGenerator = stimuliGenerator' systemClock
+--
+-- @
+-- type ClkA = 'CLaSH.Signal.Explicit.Clk' \"A\" 100
+--
+-- clkA :: 'SClock' ClkA
+-- clkA = 'CLaSH.Signal.Explicit.sclock'
+--
+-- testInput' :: 'Signal'' clkA Int
+-- testInput' = 'stimuliGenerator'' clkA $('CLaSH.Sized.Vector.v' [(1::Int),3..21])
+-- @
+--
+-- >>> sampleN 13 testInput'
+-- [1,3,5,7,9,11,13,15,17,19,21,21,21]
+stimuliGenerator :: forall l clk a . KnownNat l
+                 => (?clk :: SClock clk) -- ^ Clock to which to synchronize the
+                                         -- output signal
+                 => Vec l a              -- ^ Samples to generate
+                 -> Signal' clk a        -- ^ Signal of given samples
+stimuliGenerator samples =
+    let (r,o) = unbundle' ?clk (genT <$> register 0 r)
+    in  o
+  where
+    genT :: Index l -> (Index l,a)
+    genT s = (s',samples !! s)
+      where
+        maxI = toEnum (maxIndex samples)
 
-{-# INLINE outputVerifier #-}
+        s' = if s < maxI
+                then s + 1
+                else s
+
+{-# INLINABLE outputVerifier #-}
 -- | To be used as one of the functions to generate the \"magical\" 'expectedOutput'
 -- function, which the CλaSH compiler looks for to create the signal verifier
 -- for the generated VHDL testbench.
@@ -112,84 +149,6 @@ stimuliGenerator = stimuliGenerator' systemClock
 -- cycle(system1000): 9, outputVerifier
 -- expected value: 10, not equal to actual value: 9
 -- False,True,True]
-outputVerifier :: forall l a . (KnownNat l, Eq a, Show a)
-               => Vec l a     -- ^ Samples to compare with
-               -> Signal a    -- ^ Signal to verify
-               -> Signal Bool -- ^ Indicator that all samples are verified
-outputVerifier = outputVerifier' systemClock
-
-{-# NOINLINE assert' #-}
--- | Compares the first two 'Signal''s for equality and logs a warning when they
--- are not equal. The second 'Signal'' is considered the expected value. This
--- function simply returns the third 'Signal'' unaltered as its result. This
--- function is used by 'outputVerifier''.
---
---
--- __NB__: This function /can/ be used in synthesizable designs.
-assert' :: (Eq a,Show a)
-        => SClock t
-        -> String      -- ^ Additional message
-        -> Signal' t a -- ^ Checked value
-        -> Signal' t a -- ^ Expected value
-        -> Signal' t b -- ^ Return value
-        -> Signal' t b
-assert' clk msg checked expected returned =
-  (\c e cnt r ->
-      if c == e then r
-                else trace (concat [ "\ncycle(" ++ show clk ++ "): "
-                                   , show cnt
-                                   , ", "
-                                   , msg
-                                   , "\nexpected value: "
-                                   , show e
-                                   , ", not equal to actual value: "
-                                   , show c
-                                   ]) r)
-  <$> checked <*> expected <*> fromList [(0::Integer)..] <*> returned
-
-{-# INLINABLE stimuliGenerator' #-}
--- | To be used as one of the functions to create the \"magical\" 'testInput'
--- value, which the CλaSH compiler looks for to create the stimulus generator
--- for the generated VHDL testbench.
---
--- Example:
---
--- @
--- type ClkA = 'CLaSH.Signal.Explicit.Clk' \"A\" 100
---
--- clkA :: 'SClock' ClkA
--- clkA = 'CLaSH.Signal.Explicit.sclock'
---
--- testInput' :: 'Signal'' clkA Int
--- testInput' = 'stimuliGenerator'' clkA $('CLaSH.Sized.Vector.v' [(1::Int),3..21])
--- @
---
--- >>> sampleN 13 testInput'
--- [1,3,5,7,9,11,13,15,17,19,21,21,21]
-stimuliGenerator' :: forall l clk a . KnownNat l
-                  => SClock clk     -- ^ Clock to which to synchronize the
-                                    -- output signal
-                  -> Vec l a        -- ^ Samples to generate
-                  -> Signal' clk a  -- ^ Signal of given samples
-stimuliGenerator' clk samples =
-    let (r,o) = unbundle' clk (genT <$> register' clk 0 r)
-    in  o
-  where
-    genT :: Index l -> (Index l,a)
-    genT s = (s',samples !! s)
-      where
-        maxI = toEnum (maxIndex samples)
-
-        s' = if s < maxI
-                then s + 1
-                else s
-
-{-# INLINABLE outputVerifier' #-}
--- | To be used as one of the functions to generate the \"magical\" 'expectedOutput'
--- function, which the CλaSH compiler looks for to create the signal verifier
--- for the generated VHDL testbench.
---
--- Example:
 --
 -- @
 -- type ClkA = 'CLaSH.Signal.Explicit.Clk' \"A\" 100
@@ -222,16 +181,16 @@ stimuliGenerator' clk samples =
 -- cycle(A100): 9, outputVerifier
 -- expected value: 10, not equal to actual value: 9
 -- False,True,True]
-outputVerifier' :: forall l clk a . (KnownNat l, Eq a, Show a)
-                => SClock clk       -- ^ Clock to which the input signal is
-                                    -- synchronized to
-                -> Vec l a          -- ^ Samples to compare with
-                -> Signal' clk a    -- ^ Signal to verify
-                -> Signal' clk Bool -- ^ Indicator that all samples are verified
-outputVerifier' clk samples i =
-    let (s,o) = unbundle' clk (genT <$> register' clk 0 s)
-        (e,f) = unbundle' clk o
-    in  assert' clk "outputVerifier" i e (register' clk False f)
+outputVerifier :: forall l clk a . (KnownNat l, Eq a, Show a)
+               => (?clk :: SClock clk) -- ^ Clock to which the input signal is
+                                       -- synchronized to
+               => Vec l a              -- ^ Samples to compare with
+               -> Signal' clk a        -- ^ Signal to verify
+               -> Signal' clk Bool     -- ^ Indicator that all samples are verified
+outputVerifier samples i =
+    let (s,o) = unbundle' ?clk (genT <$> register 0 s)
+        (e,f) = unbundle' ?clk o
+    in  assert "outputVerifier" i e (register False f)
   where
     genT :: Index l -> (Index l,(a,Bool))
     genT s = (s',(samples !! s,finished))

@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams             #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GADTs                      #-}
@@ -51,6 +52,7 @@ import CLaSH.Promoted.Nat         (SNat)
 import CLaSH.Sized.Vector         (Vec, head, length, repeat, shiftInAt0,
                                    singleton)
 import CLaSH.Signal               (Signal, fromList, register, bundle, unbundle)
+import CLaSH.Signal.Explicit      (SClock, SystemClock)
 
 {- $setup
 >>> :set -XDataKinds
@@ -113,6 +115,7 @@ dfromList = coerce . fromList
 -- >>> sampleN 6 (delay3 (dfromList [1..]))
 -- [0,0,0,1,2,3]
 delay :: forall a n d . KnownNat d
+      => (?clk :: SClock SystemClock)
       => Vec d a
       -> DSignal n a
       -> DSignal (n + d) a
@@ -135,6 +138,7 @@ delay m ds = coerce (delay' (coerce ds))
 -- >>> sampleN 6 (delay2 (dfromList [1..]))
 -- [0,0,1,2,3,4]
 delayI :: (Default a, KnownNat d)
+       => (?clk :: SClock SystemClock)
        => DSignal n a
        -> DSignal (n + d) a
 delayI = delay (repeat def)
