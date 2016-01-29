@@ -17,12 +17,11 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Promoted.Nat
-  ( SNat (..), snat, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
+  ( SNat (..), snatProxy, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
   , UNat (..), toUNat, addUNat, multUNat, powUNat
   )
 where
 
-import Data.Proxy      (Proxy (..))
 import Data.Reflection (reifyNat)
 import GHC.TypeLits    (KnownNat, Nat, type (+), type (-), type (*), type (^),
                         natVal)
@@ -33,25 +32,25 @@ import Unsafe.Coerce   (unsafeCoerce)
 -- * "CLaSH.Promoted.Nat.Literals" contains a list of predefined 'SNat' literals
 -- * "CLaSH.Promoted.Nat.TH" has functions to easily create large ranges of new
 --   'SNat' literals
-data SNat (n :: Nat) = KnownNat n => SNat (Proxy n)
+data SNat (n :: Nat) where
+  SNat :: KnownNat n => SNat n
+
+-- | Create an @`SNat` n@ from a proxy for /n/
+snatProxy :: KnownNat n => proxy n -> SNat n
+snatProxy _ = SNat
 
 instance Show (SNat n) where
-  show (SNat p) = 'd' : show (natVal p)
-
-{-# INLINE snat #-}
--- | Create a singleton literal for a type-level natural number
-snat :: KnownNat n => SNat n
-snat = SNat Proxy
+  show p@SNat = 'd' : show (natVal p)
 
 {-# INLINE withSNat #-}
 -- | Supply a function with a singleton natural 'n' according to the context
 withSNat :: KnownNat n => (SNat n -> a) -> a
-withSNat f = f (SNat Proxy)
+withSNat f = f SNat
 
 {-# INLINE snatToInteger #-}
 -- | Reify the type-level 'Nat' @n@ to it's term-level 'Integer' representation.
 snatToInteger :: SNat n -> Integer
-snatToInteger (SNat p) = natVal p
+snatToInteger p@SNat = natVal p
 
 -- | Unary representation of a type-level natural
 --
@@ -64,7 +63,7 @@ data UNat :: Nat -> * where
 --
 -- __NB__: Not synthesisable
 toUNat :: SNat n -> UNat n
-toUNat (SNat p) = fromI (natVal p)
+toUNat p@SNat = fromI (natVal p)
   where
     fromI :: Integer -> UNat m
     fromI 0 = unsafeCoerce UZero
@@ -95,20 +94,24 @@ powUNat x (USucc y) = multUNat x (powUNat x y)
 
 -- | Add two singleton natural numbers
 addSNat :: SNat a -> SNat b -> SNat (a+b)
-addSNat x y = reifyNat (snatToInteger x + snatToInteger y) (unsafeCoerce . SNat)
+addSNat x y = reifyNat (snatToInteger x + snatToInteger y)
+            $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE addSNat #-}
 
 -- | Subtract two singleton natural numbers
 subSNat :: SNat a -> SNat b -> SNat (a-b)
-subSNat x y = reifyNat (snatToInteger x - snatToInteger y) (unsafeCoerce . SNat)
+subSNat x y = reifyNat (snatToInteger x - snatToInteger y)
+            $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE subSNat #-}
 
 -- | Multiply two singleton natural numbers
 mulSNat :: SNat a -> SNat b -> SNat (a*b)
-mulSNat x y = reifyNat (snatToInteger x * snatToInteger y) (unsafeCoerce . SNat)
+mulSNat x y = reifyNat (snatToInteger x * snatToInteger y)
+            $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE mulSNat #-}
 
 -- | Power of two singleton natural numbers
 powSNat :: SNat a -> SNat b -> SNat (a^b)
-powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y) (unsafeCoerce . SNat)
+powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y)
+            $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE powSNat #-}

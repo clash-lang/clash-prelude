@@ -42,7 +42,7 @@ import Data.Array.MArray.Safe (newArray_,readArray,writeArray)
 import Data.Array.ST.Safe     (STArray)
 import GHC.TypeLits           (KnownNat, type (^))
 
-import CLaSH.Promoted.Nat     (SNat,snat,snatToInteger)
+import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
 import CLaSH.Signal           (Signal)
 import CLaSH.Signal.Bundle    (bundle')
 import CLaSH.Signal.Explicit  (Signal', SClock, systemClock, unsafeSynchronizer)
@@ -81,7 +81,7 @@ asyncRamPow2 :: forall n a . (KnownNat (2^n), KnownNat n)
              -> Signal Bool         -- ^ Write enable
              -> Signal a            -- ^ Value to write (at address @w@)
              -> Signal a            -- ^ Value of the @RAM@ at address @r@
-asyncRamPow2 = asyncRam' systemClock systemClock (snat :: SNat (2^n))
+asyncRamPow2 = asyncRam' systemClock systemClock (SNat :: SNat (2^n))
 
 {-# INLINE asyncRamPow2' #-}
 -- | Create a RAM with space for 2^@n@ elements
@@ -105,7 +105,7 @@ asyncRamPow2' :: forall wclk rclk n a .
               -> Signal' wclk a            -- ^ Value to write (at address @w@)
               -> Signal' rclk a
               -- ^ Value of the @RAM@ at address @r@
-asyncRamPow2' wclk rclk = asyncRam' wclk rclk (snat :: SNat (2^n))
+asyncRamPow2' wclk rclk = asyncRam' wclk rclk (SNat :: SNat (2^n))
 
 {-# INLINE asyncRam' #-}
 -- | Create a RAM with space for @n@ elements

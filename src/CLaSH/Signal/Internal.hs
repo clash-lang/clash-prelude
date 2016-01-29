@@ -102,7 +102,7 @@ import CLaSH.Promoted.Symbol      (SSymbol, ssymbolToString)
 >>> import CLaSH.Promoted.Symbol
 >>> type SystemClock = Clk "System" 1000
 >>> type Signal a = Signal' SystemClock a
->>> let register = register# (SClock ssymbol snat :: SClock SystemClock)
+>>> let register = register# (SClock SSymbol SNat :: SClock SystemClock)
 -}
 
 -- | A clock with a name ('Symbol') and period ('Nat')
