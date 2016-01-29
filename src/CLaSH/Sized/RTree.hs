@@ -17,7 +17,7 @@ import Data.Singletons.Prelude     (TyFun,type ($))
 import Data.Proxy                  (Proxy (..))
 import GHC.TypeLits                (KnownNat, Nat, type (+))
 
-import CLaSH.Promoted.Nat          (SNat, snat, subSNat)
+import CLaSH.Promoted.Nat          (SNat (..), subSNat)
 import CLaSH.Promoted.Nat.Literals (d1)
 
 data RTree :: Nat -> * -> * where
@@ -30,7 +30,7 @@ tfold :: forall p k a . KnownNat k
       -> (forall l . SNat l -> (p $ l) -> (p $ l) -> (p $ (l+1)))
       -> RTree k a
       -> (p $ k)
-tfold _ f g = go snat
+tfold _ f g = go SNat
   where
     go :: SNat m -> RTree m a -> (p $ m)
     go _  (LR a)   = f a

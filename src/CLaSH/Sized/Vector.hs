@@ -118,10 +118,9 @@ import qualified Prelude          as P
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary (..))
 import Unsafe.Coerce              (unsafeCoerce)
 
-import CLaSH.Promoted.Nat         (SNat (..), UNat (..), snat, snatToInteger,
-                                   subSNat, withSNat, toUNat)
+import CLaSH.Promoted.Nat         (SNat (..), UNat (..), snatProxy,
+                                   snatToInteger, subSNat, withSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1)
-import CLaSH.Promoted.Nat.Unsafe  (unsafeSNat)
 import CLaSH.Sized.Internal.BitVector (Bit, BitVector, (++#), split#)
 import CLaSH.Sized.Index          (Index)
 
@@ -480,7 +479,7 @@ Nil           ++ ys = ys
 
 -- | Split a vector into two vectors at the given point.
 --
--- >>> splitAt (snat :: SNat 3) (1:>2:>3:>7:>8:>Nil)
+-- >>> splitAt (SNat :: SNat 3) (1:>2:>3:>7:>8:>Nil)
 -- (<1,2,3>,<7,8>)
 -- >>> splitAt d3 (1:>2:>3:>7:>8:>Nil)
 -- (<1,2,3>,<7,8>)
@@ -1061,7 +1060,7 @@ replace i y xs = replace_int xs (fromEnum i) y
 
 -- | \"'take' @n xs@\" returns the /n/-length prefix of /xs/.
 --
--- >>> take (snat :: SNat 3) (1:>2:>3:>4:>5:>Nil)
+-- >>> take (SNat :: SNat 3) (1:>2:>3:>4:>5:>Nil)
 -- <1,2,3>
 -- >>> take d3               (1:>2:>3:>4:>5:>Nil)
 -- <1,2,3>
@@ -1091,7 +1090,7 @@ takeI = withSNat take
 
 -- | \"'drop' @n xs@\" returns the suffix of /xs/ after the first /n/ elements.
 --
--- >>> drop (snat :: SNat 3) (1:>2:>3:>4:>5:>Nil)
+-- >>> drop (SNat :: SNat 3) (1:>2:>3:>4:>5:>Nil)
 -- <4,5>
 -- >>> drop d3               (1:>2:>3:>4:>5:>Nil)
 -- <4,5>
@@ -1121,7 +1120,7 @@ dropI = withSNat drop
 -- __NB__: vector elements have an __ASCENDING__ subscript starting from 0 and
 -- ending at 'maxIndex'.
 --
--- >>> at (snat :: SNat 1) (1:>2:>3:>4:>5:>Nil)
+-- >>> at (SNat :: SNat 1) (1:>2:>3:>4:>5:>Nil)
 -- 2
 -- >>> at d1               (1:>2:>3:>4:>5:>Nil)
 -- 2
@@ -1132,7 +1131,7 @@ at n xs = head $ snd $ splitAt n xs
 -- | \"'select' @f s n xs@\" selects /n/ elements with step-size /s/ and
 -- offset @f@ from /xs/.
 --
--- >>> select (snat :: SNat 1) (snat :: SNat 2) (snat :: SNat 3) (1:>2:>3:>4:>5:>6:>7:>8:>Nil)
+-- >>> select (SNat :: SNat 1) (SNat :: SNat 2) (SNat :: SNat 3) (1:>2:>3:>4:>5:>6:>7:>8:>Nil)
 -- <2,4,6>
 -- >>> select d1 d2 d3 (1:>2:>3:>4:>5:>6:>7:>8:>Nil)
 -- <2,4,6>
@@ -1165,7 +1164,7 @@ selectI f s xs = withSNat (\n -> select f s n xs)
 
 -- | \"'replicate' @n a@\" returns a vector that has /n/ copies of /a/.
 --
--- >>> replicate (snat :: SNat 3) 6
+-- >>> replicate (SNat :: SNat 3) 6
 -- <6,6,6>
 -- >>> replicate d3 6
 -- <6,6,6>
@@ -1199,7 +1198,7 @@ repeat = withSNat replicate
 -- | \"'iterate' @n f x@\" returns a vector starting with /x/ followed by
 -- /n/ repeated applications of /f/ to /x/.
 --
--- > iterate (snat :: SNat 4) f x == (x :> f x :> f (f x) :> f (f (f x)) :> Nil)
+-- > iterate (SNat :: SNat 4) f x == (x :> f x :> f (f x) :> f (f (f x)) :> Nil)
 -- > iterate d4 f x               == (x :> f x :> f (f x) :> f (f (f x)) :> Nil)
 --
 -- >>> iterate d4 (+1) 1
@@ -1209,7 +1208,7 @@ repeat = withSNat replicate
 --
 -- <<doc/iterate.svg>>
 iterate :: SNat n -> (a -> a) -> a -> Vec n a
-iterate (SNat _) = iterateI
+iterate SNat = iterateI
 {-# INLINE iterate #-}
 
 -- | \"'iterate' @f x@\" returns a vector starting with @x@ followed by @n@
@@ -1233,7 +1232,7 @@ iterateI f a = xs
 -- | \"'generate' @n f x@\" returns a vector with @n@ repeated applications of
 -- @f@ to @x@.
 --
--- > generate (snat :: SNat 4) f x == (f x :> f (f x) :> f (f (f x)) :> f (f (f (f x))) :> Nil)
+-- > generate (SNat :: SNat 4) f x == (f x :> f (f x) :> f (f (f x)) :> f (f (f (f x))) :> Nil)
 -- > generate d4 f x               == (f x :> f (f x) :> f (f (f x)) :> f (f (f (f x))) :> Nil)
 --
 -- >>> generate d4 (+1) 1
@@ -1243,7 +1242,7 @@ iterateI f a = xs
 --
 -- <<doc/generate.svg>>
 generate :: SNat n -> (a -> a) -> a -> Vec n a
-generate (SNat _) f a = iterateI f (f a)
+generate SNat f a = iterateI f (f a)
 {-# INLINE generate #-}
 
 -- | \"'generateI' @f x@\" returns a vector with @n@ repeated applications of
@@ -1557,7 +1556,7 @@ asNatProxy _ = Proxy
 
 -- | Length of a 'Vec'tor as an 'SNat' value
 lengthS :: KnownNat n => Vec n a -> SNat n
-lengthS _ = snat
+lengthS _ = SNat
 {-# INLINE lengthS #-}
 
 -- | What you should use when your vector functions are too strict in their
@@ -1692,11 +1691,13 @@ dfold :: forall p k a . KnownNat k
       -> (p $ 0) -- ^ Initial element
       -> Vec k a -- ^ Vector to fold over
       -> (p $ k)
-dfold _ f z xs = go (natVal (asNatProxy xs) - 1) xs
+dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
   where
-    go :: Integer -> Vec n a -> (p $ n)
+    go :: SNat n -> Vec n a -> (p $ n)
     go _ Nil                        = z
-    go i (y `Cons` (ys :: Vec z a)) = f (unsafeSNat i :: SNat z) y (go (i-1) ys)
+    go s (y `Cons` (ys :: Vec z a)) =
+      let s' = s `subSNat` d1
+      in  f s' y (go s' ys)
 {-# NOINLINE dfold #-}
 
 -- | To be used as the motive /p/ for 'dfold', when the /f/ in \"'dfold' @p f@\"
