@@ -39,8 +39,8 @@ where
 
 import GHC.TypeLits           (KnownNat, KnownSymbol)
 
-import CLaSH.Promoted.Nat     (snat, snatToInteger)
-import CLaSH.Promoted.Symbol  (ssymbol)
+import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
+import CLaSH.Promoted.Symbol  (SSymbol (..))
 import CLaSH.Signal.Internal  (Signal' (..), Clock (..), SClock (..), register#,
                                regEn#, simulate)
 import CLaSH.Signal.Bundle    (Bundle (..), Unbundled')
@@ -123,14 +123,14 @@ never create a clock that goes any faster!
 -- @
 sclock :: (KnownSymbol name, KnownNat period)
        => SClock ('Clk name period)
-sclock = SClock ssymbol snat
+sclock = SClock SSymbol SNat
 
 {-# INLINE withSClock #-}
 -- | Supply a function with a singleton clock @clk@ according to the context
 withSClock :: (KnownSymbol name, KnownNat period)
            => (SClock ('Clk name period) -> a)
            -> a
-withSClock f = f (SClock ssymbol snat)
+withSClock f = f (SClock SSymbol SNat)
 
 -- | The standard system clock with a period of 1000
 type SystemClock = 'Clk "system" 1000
