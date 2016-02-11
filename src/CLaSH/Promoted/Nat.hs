@@ -61,6 +61,9 @@ data UNat :: Nat -> * where
   UZero :: UNat 0
   USucc :: UNat n -> UNat (n + 1)
 
+instance KnownNat n => Show (UNat n) where
+  show x = 'u':show (natVal x)
+
 -- | Convert a singleton natural number to its unary representation
 --
 -- __NB__: Not synthesisable
