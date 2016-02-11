@@ -200,8 +200,8 @@ div2Sub1BNat _      = error "impossible"
 -- | Strip non-contributing zero's from a base-2 encoded natural number
 stripZeros :: BNat n -> BNat n
 stripZeros BT      = BT
-stripZeros (B1 x)  = B1 (stripLeadingZeros x)
+stripZeros (B1 x)  = B1 (stripZeros x)
 stripZeros (B0 BT) = BT
-stripZeros (B0 x)  = case stripLeadingZeros x of
+stripZeros (B0 x)  = case stripZeros x of
   BT -> BT
   k  -> B0 k
