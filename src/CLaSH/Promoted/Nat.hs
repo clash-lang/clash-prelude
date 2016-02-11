@@ -19,6 +19,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 module CLaSH.Promoted.Nat
   ( SNat (..), snatProxy, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
   , UNat (..), toUNat, addUNat, multUNat, powUNat
+  , BNat (..), toBNat, succBNat, predBNat, addBNat, mulBNat, powBNat, div2BNat
+  , div2Sub1BNat, showBNat, stripZeros
   )
 where
 
@@ -115,3 +117,91 @@ powSNat :: SNat a -> SNat b -> SNat (a^b)
 powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y)
             $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE powSNat #-}
+
+-- | Base-2 encoded natural
+--
+-- __NB__: LSB is the left-most constructor
+data BNat :: Nat -> * where
+  BT :: BNat 0 -- Terminator
+  B0 :: BNat n -> BNat (2*n)
+  B1 :: BNat n -> BNat ((2*n) + 1)
+
+instance KnownNat n => Show (BNat n) where
+  show x = 'b':show (natVal x)
+
+-- | Show a base-2 encoded natural as a binary literal
+showBNat :: BNat n -> String
+showBNat = go []
+  where
+    go :: String -> BNat m -> String
+    go xs BT  = "0b" ++ xs
+    go xs (B0 x) = go ('0':xs) x
+    go xs (B1 x) = go ('1':xs) x
+
+-- | Convert a singleton natural number to its base-2 representation
+--
+-- __NB__: Not synthesisable
+toBNat :: SNat n -> BNat n
+toBNat s@SNat = toBNat' (natVal s)
+  where
+    toBNat' :: Integer -> BNat m
+    toBNat' 0 = unsafeCoerce BT
+    toBNat' n = case n `divMod` 2 of
+      (n',1) -> unsafeCoerce (B1 (toBNat' n'))
+      (n',_) -> unsafeCoerce (B0 (toBNat' n'))
+
+-- | Add two base-2 encoded natural numbers
+addBNat :: BNat n -> BNat m -> BNat (n+m)
+addBNat (B0 a) (B0 b) = B0 (addBNat a b)
+addBNat (B0 a) (B1 b) = B1 (addBNat a b)
+addBNat (B1 a) (B0 b) = B1 (addBNat a b)
+addBNat (B1 a) (B1 b) = B0 (succBNat (addBNat a b))
+addBNat BT     b      = b
+addBNat a      BT     = a
+
+-- | Multiply two base-2 encoded natural numbers
+mulBNat :: BNat n -> BNat m -> BNat (n*m)
+mulBNat BT      _  = BT
+mulBNat _       BT = BT
+mulBNat (B0 a)  b  = B0 (mulBNat a b)
+mulBNat (B1 a)  b  = addBNat (B0 (mulBNat a b)) b
+
+-- | Power of two base-2 encoded natural numbers
+powBNat :: BNat n -> BNat m -> BNat (n^m)
+powBNat _  BT      = B1 BT
+powBNat a  (B0 b)  = let z = powBNat a b
+                     in  mulBNat z z
+powBNat a  (B1 b)  = let z = powBNat a b
+                     in  mulBNat a (mulBNat z z)
+
+-- | Successor of a base-2 encoded natural number
+succBNat :: BNat n -> BNat (n+1)
+succBNat BT     = B1 BT
+succBNat (B0 a) = B1 a
+succBNat (B1 a) = B0 (succBNat a)
+
+-- | Predecessor of a base-2 encoded natural number
+predBNat :: BNat n -> BNat (n - 1)
+predBNat (B1 a) = B0 a
+predBNat (B0 a) = B1 (predBNat a)
+predBNat BT     = error "impossible"
+
+-- | Divide a base-2 encoded natural number by 2
+div2BNat :: BNat (2*n) -> BNat n
+div2BNat (B0 x) = x
+div2BNat BT     = BT
+div2BNat (B1 _) = error "impossible"
+
+-- | Subtract 1 and divide a base-2 encoded natural number by 2
+div2Sub1BNat :: BNat (2*n+1) -> BNat n
+div2Sub1BNat (B1 x) = x
+div2Sub1BNat _      = error "impossible"
+
+-- | Strip non-contributing zero's from a base-2 encoded natural number
+stripZeros :: BNat n -> BNat n
+stripZeros BT      = BT
+stripZeros (B1 x)  = B1 (stripLeadingZeros x)
+stripZeros (B0 BT) = BT
+stripZeros (B0 x)  = case stripLeadingZeros x of
+  BT -> BT
+  k  -> B0 k
