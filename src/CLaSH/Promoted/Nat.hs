@@ -17,10 +17,34 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Promoted.Nat
-  ( SNat (..), snatProxy, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
-  , UNat (..), toUNat, addUNat, mulUNat, powUNat
-  , BNat (..), toBNat, succBNat, predBNat, addBNat, mulBNat, powBNat, div2BNat
-  , div2Sub1BNat, showBNat, stripZeros
+  ( -- * Singleton natural numbers
+    -- ** Data type
+    SNat (..)
+    -- ** Construction
+  , snatProxy
+  , withSNat
+    -- ** Conversion
+  , snatToInteger
+    -- ** Arithmetic
+  , addSNat, subSNat, mulSNat, powSNat
+    -- * Unary/Peano-encoded natural numbers
+    -- ** Data type
+  , UNat (..)
+    -- ** Construction
+  , toUNat
+    -- ** Arithmetic
+  , addUNat, mulUNat, powUNat
+    -- * Base-2 encoded natural numbers
+    -- ** Data type
+  , BNat (..)
+    -- ** Construction
+  , toBNat
+    -- ** Showing base-2 encoded natural numbers
+  , showBNat
+    -- ** Arithmetic
+  , succBNat, predBNat, addBNat, mulBNat, powBNat, div2BNat, div2Sub1BNat
+    -- ** Normalisation
+  , stripZeros
   )
 where
 
@@ -121,11 +145,34 @@ powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y)
             $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE powSNat #-}
 
--- | Base-2 encoded natural
+-- | Base-2 encoded natural number
 --
--- __NB__: LSB is the left-most constructor
+-- __NB__: LSB is the left-most constructor:
+--
+-- >>> B0 (B1 (B1 BT))
+-- b6
+--
+-- == Constructors
+--
+-- * Starting/Terminating element:
+--
+--      @
+--      __BT__ :: 'BNat' 0
+--      @
+--
+-- * Append a zero (/0/):
+--
+--      @
+--      __B0__ :: 'BNat' n -> 'BNat' (2 '*' n)
+--      @
+--
+-- * Append a one (/1/):
+--
+--      @
+--      __B1__ :: 'BNat' n -> 'BNat' ((2 '*' n) '+' 1)
+--      @
 data BNat :: Nat -> * where
-  BT :: BNat 0 -- Terminator
+  BT :: BNat 0
   B0 :: BNat n -> BNat (2*n)
   B1 :: BNat n -> BNat ((2*n) + 1)
 
@@ -133,6 +180,8 @@ instance KnownNat n => Show (BNat n) where
   show x = 'b':show (natVal x)
 
 -- | Show a base-2 encoded natural as a binary literal
+--
+-- __NB__: LSB is shown as the right-most bit
 showBNat :: BNat n -> String
 showBNat = go []
   where
@@ -201,6 +250,15 @@ div2Sub1BNat (B1 x) = x
 div2Sub1BNat _      = error "impossible"
 
 -- | Strip non-contributing zero's from a base-2 encoded natural number
+--
+-- >>> B1 (B0 (B0 (B0 BT)))
+-- b1
+-- >>> showBNat (B1 (B0 (B0 (B0 BT))))
+-- "0b0001"
+-- >>> showBNat (stripZeros (B1 (B0 (B0 (B0 BT)))))
+-- "0b1"
+-- >>> stripZeros (B1 (B0 (B0 (B0 BT))))
+-- b1
 stripZeros :: BNat n -> BNat n
 stripZeros BT      = BT
 stripZeros (B1 x)  = B1 (stripZeros x)
