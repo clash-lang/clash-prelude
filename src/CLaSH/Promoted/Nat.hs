@@ -32,6 +32,8 @@ module CLaSH.Promoted.Nat
   , UNat (..)
     -- ** Construction
   , toUNat
+    -- ** Conversion
+  , fromUNat
     -- ** Arithmetic
   , addUNat, mulUNat, powUNat
     -- * Base-2 encoded natural numbers
@@ -39,6 +41,8 @@ module CLaSH.Promoted.Nat
   , BNat (..)
     -- ** Construction
   , toBNat
+    -- ** Conversion
+  , fromBNat
     -- ** Showing base-2 encoded natural numbers
   , showBNat
     -- ** Arithmetic
@@ -97,6 +101,11 @@ toUNat p@SNat = fromI (natVal p)
     fromI :: Integer -> UNat m
     fromI 0 = unsafeCoerce UZero
     fromI n = unsafeCoerce (USucc (fromI (n - 1)))
+
+-- | Convert a unary-encoded natural number to its singleton representation
+fromUNat :: UNat n -> SNat n
+fromUNat UZero     = SNat :: SNat 0
+fromUNat (USucc x) = addSNat (fromUNat x) (SNat :: SNat 1)
 
 -- | Add two unary singleton natural numbers
 --
@@ -201,6 +210,12 @@ toBNat s@SNat = toBNat' (natVal s)
     toBNat' n = case n `divMod` 2 of
       (n',1) -> unsafeCoerce (B1 (toBNat' n'))
       (n',_) -> unsafeCoerce (B0 (toBNat' n'))
+
+-- | Convert a base-2 encoded natural number to its singleton representation
+fromBNat :: BNat n -> SNat n
+fromBNat BT     = SNat :: SNat 0
+fromBNat (B0 x) = mulSNat (SNat :: SNat 2) (fromBNat x)
+fromBNat (B1 x) = addSNat (mulSNat (SNat :: SNat 2) (fromBNat x)) (SNat :: SNat 1)
 
 -- | Add two base-2 encoded natural numbers
 addBNat :: BNat n -> BNat m -> BNat (n+m)
