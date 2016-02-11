@@ -18,7 +18,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 module CLaSH.Promoted.Nat
   ( SNat (..), snatProxy, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
-  , UNat (..), toUNat, addUNat, multUNat, powUNat
+  , UNat (..), toUNat, addUNat, mulUNat, powUNat
   , BNat (..), toBNat, succBNat, predBNat, addBNat, mulBNat, powBNat, div2BNat
   , div2Sub1BNat, showBNat, stripZeros
   )
@@ -82,17 +82,17 @@ addUNat (USucc x) y     = USucc (addUNat x y)
 -- | Multiply two unary singleton natural numbers
 --
 -- __NB__: Not synthesisable
-multUNat :: UNat n -> UNat m -> UNat (n * m)
-multUNat UZero      _     = UZero
-multUNat _          UZero = UZero
-multUNat (USucc x) y      = addUNat y (multUNat x y)
+mulUNat :: UNat n -> UNat m -> UNat (n * m)
+mulUNat UZero      _     = UZero
+mulUNat _          UZero = UZero
+mulUNat (USucc x) y      = addUNat y (mulUNat x y)
 
 -- | Power of two unary singleton natural numbers
 --
 -- __NB__: Not synthesisable
 powUNat :: UNat n -> UNat m -> UNat (n ^ m)
 powUNat _ UZero     = USucc UZero
-powUNat x (USucc y) = multUNat x (powUNat x y)
+powUNat x (USucc y) = mulUNat x (powUNat x y)
 
 -- | Add two singleton natural numbers
 addSNat :: SNat a -> SNat b -> SNat (a+b)
