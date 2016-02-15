@@ -75,7 +75,7 @@ module CLaSH.Sized.Vector
   , foldr, foldl, foldr1, foldl1, fold
   , ifoldr, ifoldl
     -- ** Specialised folds
-  , dfold, vfold
+  , dfold, dtfold, vfold
     -- * Prefix sums (scans)
   , scanl, scanr, postscanl, postscanr
   , mapAccumL, mapAccumR
@@ -103,7 +103,7 @@ import qualified Data.Foldable    as F
 import Data.Proxy                 (Proxy (..))
 import Data.Singletons.Prelude    (TyFun,Apply,type ($))
 import GHC.TypeLits               (CmpNat, KnownNat, Nat, type (+), type (*),
-                                   natVal)
+                                   type (^), natVal)
 import GHC.Base                   (Int(I#),Int#,isTrue#)
 import GHC.Prim                   ((==#),(<#),(-#))
 import Language.Haskell.TH        (ExpQ)
@@ -118,9 +118,9 @@ import qualified Prelude          as P
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary (..))
 import Unsafe.Coerce              (unsafeCoerce)
 
-import CLaSH.Promoted.Nat         (SNat (..), UNat (..), snatProxy,
+import CLaSH.Promoted.Nat         (SNat (..), UNat (..), powSNat, snatProxy,
                                    snatToInteger, subSNat, withSNat, toUNat)
-import CLaSH.Promoted.Nat.Literals (d1)
+import CLaSH.Promoted.Nat.Literals (d1, d2)
 import CLaSH.Sized.Internal.BitVector (Bit, BitVector, (++#), split#)
 import CLaSH.Sized.Index          (Index)
 
@@ -166,6 +166,17 @@ let sortV_flip xs = map fst sorted :< (snd (last sorted))
 >>> let compareSwap a b = if a > b then (a,b) else (b,a)
 >>> let insert y xs     = let (y',xs') = mapAccumL compareSwap y xs in xs' :< y'
 >>> let insertionSort   = vfold insert
+>>> data IIndex (f :: TyFun Nat *) :: *
+>>> :set -XUndecidableInstances
+>>> type instance Apply IIndex l = Index ((2^l)+1)
+>>> :{
+let populationCount'' :: (KnownNat k, KnownNat (2^k)) => BitVector (2^k) -> Index ((2^k)+1)
+    populationCount'' bv = dtfold (Proxy :: Proxy IIndex)
+                                  fromIntegral
+                                  (\_ x y -> plus x y)
+                                  (bv2v bv)
+:}
+
 -}
 
 infixr 5 `Cons`
@@ -1685,6 +1696,10 @@ lazyV = lazyV' (repeat undefined)
 --
 -- >>> append' (1 :> 2 :> Nil) (3 :> 4 :> Nil)
 -- <1,2,3,4>
+--
+-- __NB__: \"@'dfold' m f z xs@\" creates a linear structure, which has a depth,
+-- or delay, of O(@'length' xs@). Look at 'dtfold' for a /dependently/ type fold
+-- that produces a structure with a depth of O(log_2(@'length' xs@)).
 dfold :: forall p k a . KnownNat k
       => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
       -> (forall l . SNat l -> a -> (p $ l) -> (p $ (l + 1))) -- ^ Function to fold
@@ -1699,6 +1714,117 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
       let s' = s `subSNat` d1
       in  f s' y (go s' ys)
 {-# NOINLINE dfold #-}
+
+-- | A combination of 'dfold' and 'fold': a /dependently/ typed fold that
+-- reduces a vector in a tree-like structure.
+--
+-- As an example of when you might want to use 'dtfold' we will build a
+-- population counter: an circuit that counts the number of bits set to '1' in
+-- a 'BitVector'. Given a vector of /n/ bits, we only need we need a data type
+-- that can represent the number /n/: 'Index' @(n+1)@. 'Index' @k@ has a range
+-- of @[0 .. k-1]@ (using @ceil(log2(k))@ bits), hence we need 'Index' @n+1@.
+-- As an initial attempt we will use 'sum' because it gives a nice @log2(n)@
+-- structure of adders:
+--
+-- @
+-- populationCount :: (KnownNat (n+1), KnownNat (n+2))
+--                 => 'BitVector' (n+1) -> 'Index' (n+2)
+-- populationCount = sum . map fromIntegral . 'bv2v'
+-- @
+--
+-- The \"problem\" with this description is that all adders have the same
+-- bit-width, i.e. all adders are of the type:
+--
+-- @
+-- plus :: 'Index' (n+2) -> 'Index' (n+2) -> 'Index' (n+2).
+-- @
+--
+-- This is a \"problem\" because we could have a more efficient structure:
+-- one where each layer of adders is /just/ wide enough to count the number of
+-- bits at that layer. That is, at height /d/ we want the adder to be of type:
+--
+-- @
+-- 'Index' ((2^d)+1) -> 'Index' ((2^d)+1) -> 'Index' ((2^(d+1))+1)
+-- @
+--
+-- We have such an adder in the form of the 'CLaSH.Class.Num.plus' function, as
+-- defined in the instance 'CLaSH.Class.Num.ExtendingNum' instance of 'Index'.
+-- However, we cannot simply use 'fold':
+--
+-- >>> :{
+-- let populationCount' :: (KnownNat (n+1), KnownNat (n+2))
+--                      => BitVector (n+1) -> Index (n+2)
+--     populationCount' = fold plus . map fromIntegral . bv2v
+-- :}
+-- <BLANKLINE>
+-- <interactive>:...
+--     Couldn't match type ‘((n + 2) + (n + 2)) - 1’ with ‘n + 2’
+--     Expected type: Index (n + 2) -> Index (n + 2) -> Index (n + 2)
+--       Actual type: Index (n + 2)
+--                    -> Index (n + 2) -> AResult (Index (n + 2)) (Index (n + 2))
+--     Relevant bindings include
+--       populationCount' :: BitVector (n + 1) -> Index (n + 2)
+--         (bound at ...)
+--     In the first argument of ‘fold’, namely ‘plus’
+--     In the first argument of ‘(.)’, namely ‘fold plus’
+--
+-- because 'fold' expects a function of type @a -> a -> a@, i.e. a function
+-- where the arguments and result all have exactly the same type.
+--
+-- In order to accommodate the type of our /plus/, where the result is larger
+-- than the arguments, we must use a dependently typed fold in the the form
+-- of 'dtfold':
+--
+-- @
+-- import Data.Singletons.Prelude
+-- import Data.Proxy
+--
+-- data IIndex (f :: 'TyFun' Nat *) :: *
+-- type instance 'Apply' IIndex l = 'Index' ((2^l)+1)
+--
+-- populationCount'' :: (KnownNat k, KnownNat (2^k))
+--                   => BitVector (2^k) -> Index ((2^k)+1)
+-- populationCount'' bv = 'dtfold' (Proxy :: Proxy IIndex)
+--                               fromIntegral
+--                               (\\_ x y -> 'CLaSH.Class.Num.plus' x y)
+--                               ('bv2v' bv)
+-- @
+--
+-- And we can test that it works:
+--
+-- >>> :t populationCount'' (7 :: BitVector 16)
+-- populationCount'' (7 :: BitVector 16) :: Index 17
+-- >>> populationCount'' (7 :: BitVector 16)
+-- 3
+--
+-- Some final remarks:
+--
+--   * By using 'dtfold' instead of 'fold', we had to restrict our 'BitVector'
+--     argument to have bit-width that is a power of 2.
+--   * Even though our original /populationCount/ function specified a structure
+--     where all adders had the same width. Most VHDL/(System)Verilog synthesis
+--     tools will create a more efficient circuit, i.e. one where the adders
+--     have an increasing bit-width for every layer, from the
+--     VHDL/(System)Verilog produced by the CLaSH compiler.
+--
+-- __NB__: The depth, or delay, of the structure produced by
+-- \"@'dtfold' m f g xs@\" is O(log_2(@'length' xs@)).
+dtfold :: forall p k a . KnownNat k
+       => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
+       -> (a -> (p $ 0)) -- ^ Function to apply to every element
+       -> (forall l . SNat l -> (p $ l) -> (p $ l) -> (p $ (l + 1)))
+       -- ^ Function to combine results
+       -> Vec (2^k) a
+       -- ^ Vector to fold over
+       -> (p $ k)
+dtfold _ f g = go (SNat :: SNat k)
+  where
+    go :: SNat n -> Vec (2^n) a -> (p $ n)
+    go _  (x `Cons` Nil) = f x
+    go sn xs =
+      let sn'       = sn `subSNat` d1
+          (xsL,xsR) = splitAt (d2 `powSNat` sn') xs
+      in  g sn' (go sn' xsL) (go sn' xsR)
 
 -- | To be used as the motive /p/ for 'dfold', when the /f/ in \"'dfold' @p f@\"
 -- is a variation on (':>'), e.g.:
