@@ -1726,8 +1726,8 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- a 'BitVector'. Given a vector of /n/ bits, we only need we need a data type
 -- that can represent the number /n/: 'Index' @(n+1)@. 'Index' @k@ has a range
 -- of @[0 .. k-1]@ (using @ceil(log2(k))@ bits), hence we need 'Index' @n+1@.
--- As an initial attempt we will use 'sum' because it gives a nice @log2(n)@
--- structure of adders:
+-- As an initial attempt we will use 'sum', because it gives a nice (@log2(n)@)
+-- tree-structure of adders:
 --
 -- @
 -- populationCount :: (KnownNat (n+1), KnownNat (n+2))
@@ -1771,7 +1771,7 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 --     In the first argument of ‘fold’, namely ‘plus’
 --     In the first argument of ‘(.)’, namely ‘fold plus’
 --
--- because 'fold' expects a function of type @a -> a -> a@, i.e. a function
+-- because 'fold' expects a function of type \"@a -> a -> a@\", i.e. a function
 -- where the arguments and result all have exactly the same type.
 --
 -- In order to accommodate the type of our /plus/, where the result is larger
