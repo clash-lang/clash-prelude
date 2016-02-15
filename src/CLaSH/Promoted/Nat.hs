@@ -26,7 +26,9 @@ module CLaSH.Promoted.Nat
     -- ** Conversion
   , snatToInteger
     -- ** Arithmetic
-  , addSNat, subSNat, mulSNat, powSNat
+  , addSNat, mulSNat, powSNat
+    -- *** Partial
+  , subSNat, divSNat, logBaseSNat
     -- * Unary/Peano-encoded natural numbers
     -- ** Data type
   , UNat (..)
@@ -36,6 +38,8 @@ module CLaSH.Promoted.Nat
   , fromUNat
     -- ** Arithmetic
   , addUNat, mulUNat, powUNat
+    -- *** Partial
+  , predUNat, subUNat
     -- * Base-2 encoded natural numbers
     -- ** Data type
   , BNat (..)
@@ -43,10 +47,12 @@ module CLaSH.Promoted.Nat
   , toBNat
     -- ** Conversion
   , fromBNat
-    -- ** Showing base-2 encoded natural numbers
+    -- ** Pretty printing base-2 encoded natural numbers
   , showBNat
     -- ** Arithmetic
-  , succBNat, predBNat, addBNat, mulBNat, powBNat, div2BNat, div2Sub1BNat
+  , succBNat, addBNat, mulBNat, powBNat
+    -- *** Partial
+  , predBNat, div2BNat, div2Sub1BNat, log2BNat
     -- ** Normalisation
   , stripZeros
   )
@@ -107,7 +113,7 @@ fromUNat :: UNat n -> SNat n
 fromUNat UZero     = SNat :: SNat 0
 fromUNat (USucc x) = addSNat (fromUNat x) (SNat :: SNat 1)
 
--- | Add two unary singleton natural numbers
+-- | Add two unary-encoded natural numbers
 --
 -- __NB__: Not synthesisable
 addUNat :: UNat n -> UNat m -> UNat (n + m)
@@ -115,7 +121,7 @@ addUNat UZero     y     = y
 addUNat x         UZero = x
 addUNat (USucc x) y     = USucc (addUNat x y)
 
--- | Multiply two unary singleton natural numbers
+-- | Multiply two unary-encoded natural numbers
 --
 -- __NB__: Not synthesisable
 mulUNat :: UNat n -> UNat m -> UNat (n * m)
@@ -123,12 +129,23 @@ mulUNat UZero      _     = UZero
 mulUNat _          UZero = UZero
 mulUNat (USucc x) y      = addUNat y (mulUNat x y)
 
--- | Power of two unary singleton natural numbers
+-- | Power of two unary-encoded natural numbers
 --
 -- __NB__: Not synthesisable
 powUNat :: UNat n -> UNat m -> UNat (n ^ m)
 powUNat _ UZero     = USucc UZero
 powUNat x (USucc y) = mulUNat x (powUNat x y)
+
+-- | Predecessor of a unary-encoded natural numberpr
+predUNat :: UNat (n+1) -> UNat n
+predUNat (USucc x) = x
+predUNat _         = error "impossible: 0 ~ n+1"
+
+-- | Subtract two unary-encoded natural numbers
+subUNat :: UNat (m+n) -> UNat n -> UNat m
+subUNat x         UZero     = x
+subUNat (USucc x) (USucc y) = subUNat x y
+subUNat UZero     (USucc _) = error "impossible: 0 + (n + 1) ~ 0"
 
 -- | Add two singleton natural numbers
 addSNat :: SNat a -> SNat b -> SNat (a+b)
@@ -137,7 +154,7 @@ addSNat x y = reifyNat (snatToInteger x + snatToInteger y)
 {-# NOINLINE addSNat #-}
 
 -- | Subtract two singleton natural numbers
-subSNat :: SNat a -> SNat b -> SNat (a-b)
+subSNat :: SNat (a+b) -> SNat b -> SNat a
 subSNat x y = reifyNat (snatToInteger x - snatToInteger y)
             $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE subSNat #-}
@@ -153,6 +170,25 @@ powSNat :: SNat a -> SNat b -> SNat (a^b)
 powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y)
             $ \p -> unsafeCoerce (snatProxy p)
 {-# NOINLINE powSNat #-}
+
+-- | Division of two singleton natural numbers
+--
+-- __NB__: Only works when the dividend is an integer multiple of the
+-- divisor.
+divSNat :: SNat (a*(b+1)) -> SNat (b+1) -> SNat a
+divSNat x y = reifyNat (snatToInteger x `div` snatToInteger y)
+            $ \p -> unsafeCoerce (snatProxy p)
+
+-- | Logarithm of a natural number
+--
+-- __NB__: Only works when the argument is a power of the base
+logBaseSNat :: SNat (a+2) -- ^ Base
+            -> SNat ((a+2)^b)
+            -> SNat b
+logBaseSNat x y =
+  reifyNat (round (logBase (fromInteger (snatToInteger x) :: Float)
+                           (fromInteger (snatToInteger y) :: Float)))
+  $ \p -> unsafeCoerce (snatProxy p)
 
 -- | Base-2 encoded natural number
 --
@@ -215,7 +251,8 @@ toBNat s@SNat = toBNat' (natVal s)
 fromBNat :: BNat n -> SNat n
 fromBNat BT     = SNat :: SNat 0
 fromBNat (B0 x) = mulSNat (SNat :: SNat 2) (fromBNat x)
-fromBNat (B1 x) = addSNat (mulSNat (SNat :: SNat 2) (fromBNat x)) (SNat :: SNat 1)
+fromBNat (B1 x) = addSNat (mulSNat (SNat :: SNat 2) (fromBNat x))
+                          (SNat :: SNat 1)
 
 -- | Add two base-2 encoded natural numbers
 addBNat :: BNat n -> BNat m -> BNat (n+m)
@@ -248,21 +285,34 @@ succBNat (B0 a) = B1 a
 succBNat (B1 a) = B0 (succBNat a)
 
 -- | Predecessor of a base-2 encoded natural number
-predBNat :: BNat n -> BNat (n - 1)
+predBNat :: BNat (n+1) -> (BNat n)
 predBNat (B1 a) = B0 a
-predBNat (B0 a) = B1 (predBNat a)
-predBNat BT     = error "impossible"
+predBNat (B0 x) = B1 (go x)
+  where
+    go :: BNat m -> BNat (m-1)
+    go (B1 a) = B0 a
+    go (B0 a) = B1 (go a)
+    go BT     = error "impossible: 0 ~ 0 - 1"
+predBNat _ = error "impossible: n+1 ~ 0"
 
 -- | Divide a base-2 encoded natural number by 2
 div2BNat :: BNat (2*n) -> BNat n
-div2BNat (B0 x) = x
 div2BNat BT     = BT
-div2BNat (B1 _) = error "impossible"
+div2BNat (B0 x) = x
+div2BNat (B1 _) = error "impossible: 2*n ~ 2*n+1"
 
 -- | Subtract 1 and divide a base-2 encoded natural number by 2
 div2Sub1BNat :: BNat (2*n+1) -> BNat n
 div2Sub1BNat (B1 x) = x
-div2Sub1BNat _      = error "impossible"
+div2Sub1BNat _      = error "impossible: 2*n+1 ~ 2*n"
+
+-- | Get the log2 of a base-2 encoded natural number
+log2BNat :: BNat (2^n) -> BNat n
+log2BNat (B1 x) = case stripZeros x of
+  BT -> BT
+  _  -> error "impossible: 2^n ~ 2x+1"
+log2BNat (B0 x) = succBNat (log2BNat x)
+log2BNat _ = error "impossible: 2^n ~ 0"
 
 -- | Strip non-contributing zero's from a base-2 encoded natural number
 --
