@@ -103,7 +103,7 @@ import qualified Data.Foldable    as F
 import Data.Proxy                 (Proxy (..))
 import Data.Singletons.Prelude    (TyFun,Apply,type ($))
 import GHC.TypeLits               (CmpNat, KnownNat, Nat, type (+), type (*),
-                                   type (-), natVal)
+                                   natVal)
 import GHC.Base                   (Int(I#),Int#,isTrue#)
 import GHC.Prim                   ((==#),(<#),(-#))
 import Language.Haskell.TH        (ExpQ)
@@ -1745,12 +1745,11 @@ vfold f xs = dfold (Proxy :: Proxy (VCons a)) (const f) Nil xs
 -- <<1,2,3>,<1,2,3>,<1,2,3>>
 -- >>> rotateMatrix xss
 -- <<1,2,3>,<3,1,2>,<2,3,1>>
-smap :: KnownNat k => (forall l . SNat (k-1-l) -> a -> b) -> Vec k a -> Vec k b
-smap f xs = dfold (Proxy :: Proxy (VCons a))
-                  (\sn x xs' -> f (xsL `subSNat` d1 `subSNat` sn) x :> xs')
-                  Nil xs
-  where
-    xsL = lengthS xs
+smap :: KnownNat k => (forall l . SNat l -> a -> b) -> Vec k a -> Vec k b
+smap f xs = reverse
+          $ dfold (Proxy :: Proxy (VCons a))
+                  (\sn x xs' -> f sn x :> xs')
+                  Nil (reverse xs)
 {-# INLINE smap #-}
 
 instance (KnownNat n, KnownNat (BitSize a), BitPack a) => BitPack (Vec n a) where

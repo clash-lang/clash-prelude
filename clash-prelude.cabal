@@ -158,7 +158,7 @@ Library
                       integer-gmp               >= 0.5.1.0,
                       ghc-prim                  >= 0.3.1.0,
                       ghc-typelits-extra        >= 0.1,
-                      ghc-typelits-natnormalise >= 0.4.1,
+                      ghc-typelits-natnormalise >= 0.4.2,
                       lens                      >= 4.9,
                       QuickCheck                >= 2.7 && <2.9,
                       reflection                >= 2,
