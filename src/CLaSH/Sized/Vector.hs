@@ -170,11 +170,11 @@ let sortV_flip xs = map fst sorted :< (snd (last sorted))
 >>> :set -XUndecidableInstances
 >>> type instance Apply IIndex l = Index ((2^l)+1)
 >>> :{
-let populationCount'' :: (KnownNat k, KnownNat (2^k)) => BitVector (2^k) -> Index ((2^k)+1)
-    populationCount'' bv = dtfold (Proxy :: Proxy IIndex)
-                                  fromIntegral
-                                  (\_ x y -> plus x y)
-                                  (bv2v bv)
+let populationCount' :: (KnownNat k, KnownNat (2^k)) => BitVector (2^k) -> Index ((2^k)+1)
+    populationCount' bv = dtfold (Proxy :: Proxy IIndex)
+                                 fromIntegral
+                                 (\_ x y -> plus x y)
+                                 (bv2v bv)
 :}
 
 -}
@@ -1633,7 +1633,7 @@ lazyV = lazyV' (repeat undefined)
 
 -- | A /dependently/ typed fold.
 --
--- Using lists, we can define @append@ ('Prelude.++') using 'Prelude.foldr':
+-- Using lists, we can define @append@ (a.k.a. 'Prelude.++') using 'Prelude.foldr':
 --
 -- >>> import qualified Prelude
 -- >>> let append xs ys = Prelude.foldr (:) ys xs
@@ -1745,8 +1745,9 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- @
 --
 -- This is a \"problem\" because we could have a more efficient structure:
--- one where each layer of adders is /just/ wide enough to count the number of
--- bits at that layer. That is, at height /d/ we want the adder to be of type:
+-- one where each layer of adders is /precisely/ wide enough to count the number
+-- of bits at that layer. That is, at height /d/ we want the adder to be of
+-- type:
 --
 -- @
 -- 'Index' ((2^d)+1) -> 'Index' ((2^d)+1) -> 'Index' ((2^(d+1))+1)
@@ -1754,7 +1755,8 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 --
 -- We have such an adder in the form of the 'CLaSH.Class.Num.plus' function, as
 -- defined in the instance 'CLaSH.Class.Num.ExtendingNum' instance of 'Index'.
--- However, we cannot simply use 'fold':
+-- However, we cannot simply use 'fold' to create a tree-structure of
+-- 'CLaSH.Class.Num.plus'es:
 --
 -- >>> :{
 -- let populationCount' :: (KnownNat (n+1), KnownNat (n+2))
@@ -1776,30 +1778,31 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- because 'fold' expects a function of type \"@a -> a -> a@\", i.e. a function
 -- where the arguments and result all have exactly the same type.
 --
--- In order to accommodate the type of our /plus/, where the result is larger
--- than the arguments, we must use a dependently typed fold in the the form
--- of 'dtfold':
+-- In order to accommodate the type of our 'CLaSH.Class.Num.plus', where the
+-- result is larger than the arguments, we must use a dependently typed fold in
+-- the the form of 'dtfold':
 --
 -- @
+-- {\-\# LANGUAGE UndecidableInstances \#-\}
 -- import Data.Singletons.Prelude
 -- import Data.Proxy
 --
 -- data IIndex (f :: 'TyFun' Nat *) :: *
 -- type instance 'Apply' IIndex l = 'Index' ((2^l)+1)
 --
--- populationCount'' :: (KnownNat k, KnownNat (2^k))
---                   => BitVector (2^k) -> Index ((2^k)+1)
--- populationCount'' bv = 'dtfold' (Proxy :: Proxy IIndex)
---                               fromIntegral
---                               (\\_ x y -> 'CLaSH.Class.Num.plus' x y)
---                               ('bv2v' bv)
+-- populationCount' :: (KnownNat k, KnownNat (2^k))
+--                  => BitVector (2^k) -> Index ((2^k)+1)
+-- populationCount' bv = 'dtfold' (Proxy :: Proxy IIndex)
+--                              fromIntegral
+--                              (\\_ x y -> 'CLaSH.Class.Num.plus' x y)
+--                              ('bv2v' bv)
 -- @
 --
 -- And we can test that it works:
 --
--- >>> :t populationCount'' (7 :: BitVector 16)
--- populationCount'' (7 :: BitVector 16) :: Index 17
--- >>> populationCount'' (7 :: BitVector 16)
+-- >>> :t populationCount' (7 :: BitVector 16)
+-- populationCount' (7 :: BitVector 16) :: Index 17
+-- >>> populationCount' (7 :: BitVector 16)
 -- 3
 --
 -- Some final remarks:
