@@ -1821,9 +1821,15 @@ dtfold :: forall p k a . KnownNat k
        => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
        -> (a -> (p $ 0)) -- ^ Function to apply to every element
        -> (forall l . SNat l -> (p $ l) -> (p $ l) -> (p $ (l + 1)))
-       -- ^ Function to combine results
+       -- ^ Function to combine results.
+       --
+       -- __NB__: The @SNat l@ indicates the depth/height of the node in the
+       -- tree that is created by applying this function. The leafs of the tree
+       -- have depth\/height /0/, and the root of the tree has height /k/.
        -> Vec (2^k) a
-       -- ^ Vector to fold over
+       -- ^ Vector to fold over.
+       --
+       -- __NB__: Must have a length that is a power of 2.
        -> (p $ k)
 dtfold _ f g = go (SNat :: SNat k)
   where
