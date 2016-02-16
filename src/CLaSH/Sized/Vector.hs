@@ -1677,7 +1677,7 @@ lazyV = lazyV' (repeat undefined)
 -- We thus need a @fold@ function that can handle the growing vector type:
 -- 'dfold'. Compared to 'foldr', 'dfold' takes an extra parameter, called the
 -- /motive/, that allows the folded function to have an argument and result type
--- that /depends/ on the current index into the vector. Using 'dfold', we can
+-- that /depends/ on the current length of the vector. Using 'dfold', we can
 -- now correctly define ('++'):
 --
 -- @
@@ -1701,11 +1701,16 @@ lazyV = lazyV' (repeat undefined)
 -- <1,2,3,4>
 --
 -- __NB__: \"@'dfold' m f z xs@\" creates a linear structure, which has a depth,
--- or delay, of O(@'length' xs@). Look at 'dtfold' for a /dependently/ type fold
--- that produces a structure with a depth of O(log_2(@'length' xs@)).
+-- or delay, of O(@'length' xs@). Look at 'dtfold' for a /dependently/ typed
+-- fold that produces a structure with a depth of O(log_2(@'length' xs@)).
 dfold :: forall p k a . KnownNat k
       => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
-      -> (forall l . SNat l -> a -> (p $ l) -> (p $ (l + 1))) -- ^ Function to fold
+      -> (forall l . SNat l -> a -> (p $ l) -> (p $ (l + 1)))
+      -- ^ Function to fold.
+      --
+      -- __NB__: The @SNat l@ is __not__ the index (see (`!!`)) to the
+      -- element /a/. @SNat l@ is the number of elements that occur to the
+      -- right of /a/.
       -> (p $ 0) -- ^ Initial element
       -> Vec k a -- ^ Vector to fold over
       -> (p $ k)
