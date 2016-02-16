@@ -1692,7 +1692,7 @@ lazyV = lazyV' (repeat undefined)
 -- append' xs ys = 'dfold' (Proxy :: Proxy (Append m a)) (const (':>')) ys xs
 -- @
 --
--- We now see that @append'@ has the appropriate type:
+-- We now see that /append'/ has the appropriate type:
 --
 -- >>> :t append'
 -- append' :: KnownNat k => Vec k a -> Vec m a -> Vec (k + m) a
