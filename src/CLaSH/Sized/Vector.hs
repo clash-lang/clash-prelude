@@ -1719,7 +1719,7 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- reduces a vector in a tree-like structure.
 --
 -- As an example of when you might want to use 'dtfold' we will build a
--- population counter: an circuit that counts the number of bits set to '1' in
+-- population counter: a circuit that counts the number of bits set to '1' in
 -- a 'BitVector'. Given a vector of /n/ bits, we only need we need a data type
 -- that can represent the number /n/: 'Index' @(n+1)@. 'Index' @k@ has a range
 -- of @[0 .. k-1]@ (using @ceil(log2(k))@ bits), hence we need 'Index' @n+1@.
