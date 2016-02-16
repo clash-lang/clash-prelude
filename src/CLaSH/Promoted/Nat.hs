@@ -195,6 +195,7 @@ powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y)
 divSNat :: SNat (a*(b+1)) -> SNat (b+1) -> SNat a
 divSNat x y = reifyNat (snatToInteger x `div` snatToInteger y)
             $ \p -> unsafeCoerce (snatProxy p)
+{-# NOINLINE divSNat #-}
 
 -- | Logarithm of a natural number
 --
@@ -206,6 +207,7 @@ logBaseSNat x y =
   reifyNat (round (logBase (fromInteger (snatToInteger x) :: Float)
                            (fromInteger (snatToInteger y) :: Float)))
   $ \p -> unsafeCoerce (snatProxy p)
+{-# NOINLINE logBaseSNat #-}
 
 -- | Base-2 encoded natural number
 --
