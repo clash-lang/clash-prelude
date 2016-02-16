@@ -1636,20 +1636,22 @@ lazyV = lazyV' (repeat undefined)
 
 -- | A /dependently/ typed fold.
 --
--- Using lists, we can define @append@ (a.k.a. 'Prelude.++') using 'Prelude.foldr':
+-- Using lists, we can define /append/ (a.k.a. @Data.List.@'Data.List.++') in
+-- terms of @Data.List.@'Data.List.foldr':
 --
--- >>> import qualified Prelude
--- >>> let append xs ys = Prelude.foldr (:) ys xs
+-- >>> import qualified Data.List
+-- >>> let append xs ys = Data.List.foldr (:) ys xs
 -- >>> append [1,2] [3,4]
 -- [1,2,3,4]
 --
--- However, when we try to do the same for 'Vec':
+-- However, when we try to do the same for 'Vec', by defining /append'/ in terms
+-- of @CLaSH.Sized.Vector.@'foldr':
 --
 -- @
 -- append' xs ys = 'foldr' (:>) ys xs
 -- @
 --
--- We get a type error
+-- we get a type error:
 --
 -- >>> let append' xs ys = foldr (:>) ys xs
 -- <BLANKLINE>
@@ -1678,7 +1680,7 @@ lazyV = lazyV' (repeat undefined)
 -- 'dfold'. Compared to 'foldr', 'dfold' takes an extra parameter, called the
 -- /motive/, that allows the folded function to have an argument and result type
 -- that /depends/ on the current length of the vector. Using 'dfold', we can
--- now correctly define ('++'):
+-- now correctly define /append'/:
 --
 -- @
 -- import Data.Singletons.Prelude
