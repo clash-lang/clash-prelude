@@ -1836,6 +1836,7 @@ dtfold _ f g = go (SNat :: SNat k)
       let sn'       = sn `subSNat` d1
           (xsL,xsR) = splitAt (d2 `powSNat` sn') xs
       in  g sn' (go sn' xsL) (go sn' xsR)
+{-# NOINLINE dtfold #-}
 
 -- | To be used as the motive /p/ for 'dfold', when the /f/ in \"'dfold' @p f@\"
 -- is a variation on (':>'), e.g.:
