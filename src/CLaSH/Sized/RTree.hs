@@ -52,7 +52,7 @@ import CLaSH.Promoted.Nat          (SNat (..), UNat (..), powSNat, snatToInteger
                                     subSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
 import CLaSH.Sized.Index           (Index)
-import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (++), (!!))
+import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (!!), (++), dtfold)
 
 data RTree :: Nat -> * -> * where
   LR :: a -> RTree 0 a
@@ -133,8 +133,11 @@ tindices =
          (\s@SNat l r -> BR l (tmap (+(fromInteger (snatToInteger (d2 `powSNat` s)))) r))
          (treplicate SNat 0)
 
+data V2TTree (a :: *) (f :: TyFun Nat *) :: *
+type instance Apply (V2TTree a) d = RTree d a
+
 v2t :: (KnownNat d, KnownNat (2^d)) => Vec (2^d) a -> RTree d a
-v2t v = tmap (v !!) tindices
+v2t = dtfold (Proxy :: Proxy (V2TTree a)) LR (const BR)
 
 data T2VTree (a :: *) (f :: TyFun Nat *) :: *
 type instance Apply (T2VTree a) d = Vec (2^d) a
