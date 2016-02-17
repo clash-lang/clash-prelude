@@ -22,6 +22,8 @@ module CLaSH.Sized.RTree
     -- ** Indexing
   , indexTree
   , tindices
+    -- * Modifying trees
+  , replaceTree
     -- * Element-wise operations
     -- ** Mapping
   , tmap
@@ -41,6 +43,7 @@ module CLaSH.Sized.RTree
 where
 
 import Control.Applicative         (liftA2)
+import qualified Control.Lens      as Lens
 import Data.Singletons.Prelude     (Apply, TyFun, type ($))
 import Data.Proxy                  (Proxy (..))
 import GHC.TypeLits                (KnownNat, Nat, type (+), type (^), type (*))
@@ -52,7 +55,8 @@ import CLaSH.Promoted.Nat          (SNat (..), UNat (..), powSNat, snatToInteger
                                     subSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
 import CLaSH.Sized.Index           (Index)
-import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (!!), (++), dtfold)
+import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (!!), (++), dtfold,
+                                    replace)
 
 data RTree :: Nat -> * -> * where
   LR :: a -> RTree 0 a
@@ -85,6 +89,11 @@ instance (KnownNat (2^d), KnownNat d, KnownNat (BitSize a), BitPack a) =>
   type BitSize (RTree d a) = (2^d) * (BitSize a)
   pack   = pack . t2v
   unpack = v2t . unpack
+
+type instance Lens.Index   (RTree d a) = Int
+type instance Lens.IxValue (RTree d a) = a
+instance (KnownNat d, KnownNat (2^d)) => Lens.Ixed (RTree d a) where
+  ix i f t = replaceTree i <$> f (indexTree t i) <*> pure t
 
 tdfold :: forall p k a . KnownNat k
        => Proxy (p :: TyFun Nat * -> *)
@@ -147,6 +156,9 @@ t2v = tdfold (Proxy :: Proxy (T2VTree a)) (:> Nil) (\_ l r -> l ++ r)
 
 indexTree :: (KnownNat d, KnownNat (2^d), Enum i) => RTree d a -> i -> a
 indexTree t i = (t2v t) !! i
+
+replaceTree :: (KnownNat d, KnownNat (2^d), Enum i) => i -> a -> RTree d a -> RTree d a
+replaceTree i a = v2t . replace i a . t2v
 
 data ZipWithTree (b :: *) (c :: *) (f :: TyFun Nat *) :: *
 type instance Apply (ZipWithTree b c) d = RTree d b -> RTree d c
