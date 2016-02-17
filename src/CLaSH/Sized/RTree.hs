@@ -6,7 +6,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# LANGUAGE DataKinds, TypeOperators, GADTs, ScopedTypeVariables,
              KindSignatures, RankNTypes, TypeFamilies, UndecidableInstances,
-             MagicHash, PatternSynonyms, FlexibleContexts, TupleSections #-}
+             MagicHash, PatternSynonyms, FlexibleContexts, TupleSections,
+             ViewPatterns #-}
 
 {-# LANGUAGE Trustworthy #-}
 
@@ -15,6 +16,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 module CLaSH.Sized.RTree
   ( -- * 'RTree' data type
     RTree (..)
+  , pattern LR
+  , pattern BR
     -- * Construction
   , treplicate
   , trepeat
@@ -59,12 +62,34 @@ import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (!!), (++), dtfold,
                                     replace)
 
 data RTree :: Nat -> * -> * where
-  LR :: a -> RTree 0 a
-  BR :: RTree n a -> RTree n a -> RTree (n+1) a
+  LR_ :: a -> RTree 0 a
+  BR_ :: RTree d a -> RTree d a -> RTree (d+1) a
+{-# WARNING LR_ "Use 'LR' instead of 'LR_'" #-}
+{-# WARNING BR_ "Use 'BR' instead of 'BR_'" #-}
+
+textract :: RTree 0 a -> a
+textract (LR_ x) = x
+textract _ = error "impossible"
+{-# NOINLINE textract #-}
+
+tsplit :: RTree (d+1) a -> (RTree d a,RTree d a)
+tsplit (BR_ l r) = (l,r)
+tsplit _ = error "impossible"
+{-# NOINLINE tsplit #-}
+
+pattern LR :: a -> RTree 0 a
+pattern LR x <- (textract -> x)
+  where
+    LR x = LR_ x
+
+pattern BR :: RTree d a -> RTree d a -> RTree (d+1) a
+pattern BR l r <- ((\t -> (tsplit t)) -> (l,r))
+  where
+    BR l r = BR_ l r
 
 instance Show a => Show (RTree n a) where
-  show (LR a)   = show a
-  show (BR l r) = '<':show l P.++ (',':show r) P.++ ">"
+  show (LR_ a)   = show a
+  show (BR_ l r) = '<':show l P.++ (',':show r) P.++ ">"
 
 instance KnownNat d => Functor (RTree d) where
   fmap = tmap
@@ -104,9 +129,9 @@ tdfold :: forall p k a . KnownNat k
 tdfold _ f g = go SNat
   where
     go :: SNat m -> RTree m a -> (p $ m)
-    go _  (LR a)   = f a
-    go sn (BR l r) = let sn' = sn `subSNat` d1
-                     in  g sn' (go sn' l) (go sn' r)
+    go _  (LR_ a)   = f a
+    go sn (BR_ l r) = let sn' = sn `subSNat` d1
+                      in  g sn' (go sn' l) (go sn' r)
 {-# NOINLINE tdfold #-}
 
 data TfoldTree (a :: *) (f :: TyFun Nat *) :: *
@@ -176,7 +201,6 @@ tzipWith f = tdfold (Proxy :: Proxy (ZipWithTree b c)) lr br
        -> RTree (l+1) b
        -> RTree (l+1) c
     br _ fl fr (BR l r) = BR (fl l) (fr r)
-    br _ _  _  _        = error "impossible"
 
 tzip :: KnownNat d => RTree d a -> RTree d b -> RTree d (a,b)
 tzip = tzipWith (,)
