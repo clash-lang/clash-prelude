@@ -100,7 +100,7 @@ import CLaSH.Promoted.Nat    (SNat (..), snatToInteger)
 import CLaSH.Sized.BitVector (BitVector)
 import CLaSH.Signal          (Signal)
 import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
-import CLaSH.Signal.Bundle   (bundle')
+import CLaSH.Signal.Bundle   (bundle)
 import CLaSH.Sized.Unsigned  (Unsigned)
 
 {-# INLINE blockRamFile #-}
@@ -286,7 +286,7 @@ blockRamFile# clk sz file wr rd en din = register' clk undefined dout
     dout = runST $ do
       mem <- unsafeIOToST (initMem file)
       arr <- newListArray (0,szI-1) mem
-      traverse (ramT arr) (bundle' clk (wr,rd,en,din))
+      traverse (ramT arr) (bundle (wr,rd,en,din))
 
     ramT :: STArray s Int e -> (Int,Int,Bool,e) -> ST s e
     ramT ram (w,r,e,d) = do

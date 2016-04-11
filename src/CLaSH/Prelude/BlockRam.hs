@@ -367,7 +367,7 @@ import GHC.TypeLits           (KnownNat, type (^))
 
 import CLaSH.Signal           (Signal, mux)
 import CLaSH.Signal.Explicit  (Signal', SClock, register', systemClock)
-import CLaSH.Signal.Bundle    (bundle')
+import CLaSH.Signal.Bundle    (bundle)
 import CLaSH.Sized.Unsigned   (Unsigned)
 import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
 
@@ -529,7 +529,7 @@ blockRam# clk content wr rd en din = register' clk undefined dout
     szI  = maxIndex content
     dout = runST $ do
       arr <- newListArray (0,szI) (toList content)
-      traverse (ramT arr) (bundle' clk (wr,rd,en,din))
+      traverse (ramT arr) (bundle (wr,rd,en,din))
 
     ramT :: STArray s Int e -> (Int,Int,Bool,e) -> ST s e
     ramT ram (w,r,e,d) = do

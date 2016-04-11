@@ -207,4 +207,4 @@ mooreB' :: (Bundle i, Bundle o)
         -> (Unbundled' clk i -> Unbundled' clk o)
         -- ^ Synchronous sequential function with input and output matching that
         -- of the moore machine
-mooreB' clk ft fo iS i = unbundle' clk (moore' clk ft fo iS (bundle' clk i))
+mooreB' clk ft fo iS i = unbundle (moore' clk ft fo iS (bundle i))
