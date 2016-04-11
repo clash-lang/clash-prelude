@@ -550,7 +550,7 @@ readNew' clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wrAddr
 -- >>> import CLaSH.Prelude
 -- >>> :t readNew (blockRam (0 :> 1 :> Nil))
 -- readNew (blockRam (0 :> 1 :> Nil))
---   :: (Enum addr, Eq addr, Num a) =>
+--   :: (Num a, Eq addr, Enum addr) =>
 --      Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
 readNew :: Eq addr => (Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a) -> Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
 readNew = readNew' systemClock

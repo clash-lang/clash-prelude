@@ -85,6 +85,7 @@ import CLaSH.Signal.Explicit
 --
 -- >>> simulateB' clkA clkA rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
+-- ...
 registerB' :: Bundle a => SClock clk -> a -> Unbundled' clk a -> Unbundled' clk a
 registerB' clk i = unbundle' clk Prelude.. register' clk i Prelude.. bundle' clk
 

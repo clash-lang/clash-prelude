@@ -1653,7 +1653,7 @@ A list of often encountered errors and their solutions:
       @topEntity@ has no arguments, you're out of luck for now. If it has
       multiple arguments, consider bundling them in a tuple.
 
-*  __\<*** Exception: \<\<loop\>\>__
+*  __\<*** Exception: \<\<loop\>\>__ or "blinking cursor"
 
     You are using value-recursion, but one of the 'Vec'tor functions that you
     are using is too /strict/ in one of the recursive arguments. For example:
@@ -1671,10 +1671,7 @@ A list of often encountered errors and their solutions:
                                 else (b,a)
     @
 
-    Will not terminate because 'zipWith' is too strict in its second argument:
-
-    >>> sortV (4 :> 1 :> 2 :> 3 :> Nil)
-    <*** Exception: <<loop>>
+    Will not terminate because 'zipWith' is too strict in its second argument.
 
     In this case, adding 'lazyV' on 'zipWith's second argument:
 

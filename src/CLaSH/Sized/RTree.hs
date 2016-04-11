@@ -47,13 +47,14 @@ where
 
 import Control.Applicative         (liftA2)
 import qualified Control.Lens      as Lens
-import Data.Singletons.Prelude     (Apply, TyFun, type ($))
+-- import Data.Singletons.Prelude     (Apply, TyFun, type ($))
 import Data.Proxy                  (Proxy (..))
 import GHC.TypeLits                (KnownNat, Nat, type (+), type (^), type (*))
 import qualified Prelude           as P
 import Prelude                     hiding ((++), (!!))
 
 import CLaSH.Class.BitPack         (BitPack (..))
+import CLaSH.Promoted.Defun        (TyFun,Apply,type (@@))
 import CLaSH.Promoted.Nat          (SNat (..), UNat (..), powSNat, snatToInteger,
                                     subSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
@@ -69,12 +70,10 @@ data RTree :: Nat -> * -> * where
 
 textract :: RTree 0 a -> a
 textract (LR_ x) = x
-textract _ = error "impossible"
 {-# NOINLINE textract #-}
 
 tsplit :: RTree (d+1) a -> (RTree d a,RTree d a)
 tsplit (BR_ l r) = (l,r)
-tsplit _ = error "impossible"
 {-# NOINLINE tsplit #-}
 
 pattern LR :: a -> RTree 0 a
@@ -122,13 +121,13 @@ instance (KnownNat d, KnownNat (2^d)) => Lens.Ixed (RTree d a) where
 
 tdfold :: forall p k a . KnownNat k
        => Proxy (p :: TyFun Nat * -> *)
-       -> (a -> (p $ 0))
-       -> (forall l . SNat l -> (p $ l) -> (p $ l) -> (p $ (l+1)))
+       -> (a -> (p @@ 0))
+       -> (forall l . SNat l -> (p @@ l) -> (p @@ l) -> (p @@ (l+1)))
        -> RTree k a
-       -> (p $ k)
+       -> (p @@ k)
 tdfold _ f g = go SNat
   where
-    go :: SNat m -> RTree m a -> (p $ m)
+    go :: SNat m -> RTree m a -> (p @@ m)
     go _  (LR_ a)   = f a
     go sn (BR_ l r) = let sn' = sn `subSNat` d1
                       in  g sn' (go sn' l) (go sn' r)
@@ -170,7 +169,7 @@ tindices =
 data V2TTree (a :: *) (f :: TyFun Nat *) :: *
 type instance Apply (V2TTree a) d = RTree d a
 
-v2t :: (KnownNat d, KnownNat (2^d)) => Vec (2^d) a -> RTree d a
+v2t :: KnownNat d => Vec (2^d) a -> RTree d a
 v2t = dtfold (Proxy :: Proxy (V2TTree a)) LR (const BR)
 
 data T2VTree (a :: *) (f :: TyFun Nat *) :: *
@@ -201,6 +200,7 @@ tzipWith f = tdfold (Proxy :: Proxy (ZipWithTree b c)) lr br
        -> RTree (l+1) b
        -> RTree (l+1) c
     br _ fl fr (BR l r) = BR (fl l) (fr r)
+    br _ _  _  _        = error "impossible"
 
 tzip :: KnownNat d => RTree d a -> RTree d b -> RTree d (a,b)
 tzip = tzipWith (,)

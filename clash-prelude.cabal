@@ -102,6 +102,7 @@ Library
                       CLaSH.Prelude.Synchronizer
                       CLaSH.Prelude.Testbench
 
+                      CLaSH.Promoted.Defun
                       CLaSH.Promoted.Nat
                       CLaSH.Promoted.Nat.Literals
                       CLaSH.Promoted.Nat.TH
@@ -162,7 +163,7 @@ Library
                       lens                      >= 4.9,
                       QuickCheck                >= 2.7 && <2.9,
                       reflection                >= 2,
-                      singletons                >= 1.0 && <3.0,
+                      -- singletons                >= 1.0 && <3.0,
                       template-haskell          >= 2.9.0.0
 
   if impl(ghc<7.11)
