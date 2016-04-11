@@ -95,6 +95,7 @@ import CLaSH.Sized.Vector          (Vec (..), (+>>), asNatProxy, repeat)
 --
 -- >>> simulateB' clkA clkA window4 [1::Int,2,3,4,5] :: [Vec 4 Int]
 -- [<1,0,0,0>,<2,1,0,0>,<3,2,1,0>,<4,3,2,1>,<5,4,3,2>...
+-- ...
 window' :: (KnownNat n, Default a)
         => SClock clk                  -- ^ Clock to which the incoming
                                        -- signal is synchronized
@@ -123,6 +124,7 @@ window' clk x = res
 --
 -- >>> simulateB' clkA clkA windowD3 [1::Int,2,3,4] :: [Vec 3 Int]
 -- [<0,0,0>,<1,0,0>,<2,1,0>,<3,2,1>,<4,3,2>...
+-- ...
 windowD' :: (KnownNat (n + 1), Default a)
          => SClock clk                   -- ^ Clock to which the incoming signal
                                          -- is synchronized

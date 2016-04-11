@@ -58,6 +58,7 @@ let mac s (x,y) = x * y + s
 --
 -- >>> simulate topEntity [(1,1),(2,2),(3,3),(4,4)]
 -- [0,1,5,14...
+-- ...
 --
 -- Synchronous sequential functions can be composed just like their
 -- combinational counterpart:
@@ -141,6 +142,7 @@ mooreB = mooreB' systemClock
 --
 -- >>> simulate topEntity [(1,1),(2,2),(3,3),(4,4)]
 -- [0,1,5,14...
+-- ...
 --
 -- Synchronous sequential functions can be composed just like their
 -- combinational counterpart:

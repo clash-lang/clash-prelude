@@ -333,6 +333,7 @@ regEn' = regEn#
 --
 -- >>> simulateB' clkA clkA (unbundle' clkA . register' clkA (8,8) . bundle' clkA) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
+-- ...
 --
 -- __NB__: This function is not synthesisable
 simulateB' :: (Bundle a, Bundle b)

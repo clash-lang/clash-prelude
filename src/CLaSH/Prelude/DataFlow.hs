@@ -537,7 +537,7 @@ instance (LockStep a x, LockStep b y) => LockStep (a,b) (x,y) where
                                      xyV     = bundle' clk (xV,yV)
                                  in  (xy,xyV,rdy))) `seqDF` (stepLock `parDF` stepLock)
 
-instance (LockStep en a, KnownNat m, m ~ (n + 1), KnownNat (n+1)) =>
+instance (LockStep en a, m ~ (n + 1), KnownNat (n+1)) =>
   LockStep (Vec m en) (Vec m a) where
   lockStep = parNDF (repeat lockStep) `seqDF`
     DF (\xs vals rdy ->

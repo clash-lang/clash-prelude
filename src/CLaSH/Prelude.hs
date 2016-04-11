@@ -193,6 +193,7 @@ It instead exports the identically named functions defined in terms of
 --
 -- >>> simulateB window4 [1::Int,2,3,4,5] :: [Vec 4 Int]
 -- [<1,0,0,0>,<2,1,0,0>,<3,2,1,0>,<4,3,2,1>,<5,4,3,2>...
+-- ...
 window :: (KnownNat n, Default a)
        => Signal a                -- ^ Signal to create a window over
        -> Vec (n + 1) (Signal a)  -- ^ Window of at least size 1
@@ -206,6 +207,7 @@ window = window' systemClock
 --
 -- >>> simulateB windowD3 [1::Int,2,3,4] :: [Vec 3 Int]
 -- [<0,0,0>,<1,0,0>,<2,1,0>,<3,2,1>,<4,3,2>...
+-- ...
 windowD :: (KnownNat (n + 1), Default a)
         => Signal a               -- ^ Signal to create a window over
         -> Vec (n + 1) (Signal a) -- ^ Window of at least size 1

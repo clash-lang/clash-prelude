@@ -155,6 +155,7 @@ bundle = bundle' systemClock
 --
 -- >>> simulateB (unbundle . register (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
+-- ...
 --
 -- __NB__: This function is not synthesisable
 simulateB :: (Bundle a, Bundle b) => (Unbundled a -> Unbundled b) -> [a] -> [b]

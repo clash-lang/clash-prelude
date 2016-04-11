@@ -681,6 +681,7 @@ fromList = Prelude.foldr (:-) (error "finite list")
 --
 -- >>> simulate (register 8) [1, 2, 3]
 -- [8,1,2,3...
+-- ...
 --
 -- __NB__: This function is not synthesisable
 simulate :: (Signal' clk1 a -> Signal' clk2 b) -> [a] -> [b]

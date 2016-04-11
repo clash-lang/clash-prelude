@@ -154,7 +154,6 @@ powUNat x (USucc y) = mulUNat x (powUNat x y)
 -- __NB__: Not synthesisable
 predUNat :: UNat (n+1) -> UNat n
 predUNat (USucc x) = x
-predUNat _         = error "impossible: 0 ~ n+1"
 
 -- | Subtract two unary-encoded natural numbers
 --
@@ -162,7 +161,7 @@ predUNat _         = error "impossible: 0 ~ n+1"
 subUNat :: UNat (m+n) -> UNat n -> UNat m
 subUNat x         UZero     = x
 subUNat (USucc x) (USucc y) = subUNat x y
-subUNat UZero     (USucc _) = error "impossible: 0 + (n + 1) ~ 0"
+subUNat UZero     _         = error "impossible: 0 + (n + 1) ~ 0"
 
 -- | Add two singleton natural numbers
 addSNat :: SNat a -> SNat b -> SNat (a+b)
@@ -338,7 +337,6 @@ predBNat (B0 x)  = B1 (go x)
       a' -> B0 a'
     go (B0 a)  = B1 (go a)
     go BT      = error "impossible: 0 ~ 0 - 1"
-predBNat _ = error "impossible: n+1 ~ 0"
 
 -- | Divide a base-2 encoded natural number by 2
 --
@@ -363,7 +361,6 @@ log2BNat (B1 x) = case stripZeros x of
   BT -> BT
   _  -> error "impossible: 2^n ~ 2x+1"
 log2BNat (B0 x) = succBNat (log2BNat x)
-log2BNat _ = error "impossible: 2^n ~ 0"
 
 -- | Strip non-contributing zero's from a base-2 encoded natural number
 --

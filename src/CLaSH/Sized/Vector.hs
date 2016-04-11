@@ -23,7 +23,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Trustworthy #-}
 
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-redundant-constraints #-}
+
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Sized.Vector
@@ -102,7 +103,7 @@ import qualified Control.Lens     as Lens
 import Data.Default               (Default (..))
 import qualified Data.Foldable    as F
 import Data.Proxy                 (Proxy (..))
-import Data.Singletons.Prelude    (TyFun,Apply,type ($))
+-- import Data.Singletons.Prelude    (TyFun,Apply,type ($))
 import GHC.TypeLits               (CmpNat, KnownNat, Nat, type (+), type (*),
                                    type (^), natVal)
 import GHC.Base                   (Int(I#),Int#,isTrue#)
@@ -119,6 +120,7 @@ import qualified Prelude          as P
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary (..))
 import Unsafe.Coerce              (unsafeCoerce)
 
+import CLaSH.Promoted.Defun       (TyFun,Apply,type (@@))
 import CLaSH.Promoted.Nat         (SNat (..), UNat (..), powSNat, snatProxy,
                                    snatToInteger, subSNat, withSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
@@ -160,7 +162,7 @@ let sortV_flip xs = map fst sorted :< (snd (last sorted))
         sorted = zipWith (flip compareSwapL) rights lefts
 :}
 
->>> import Data.Singletons.Prelude
+>>> import CLaSH.Promoted.Defun
 >>> data Append (m :: Nat) (a :: *) (f :: TyFun Nat *) :: *
 >>> type instance Apply (Append m a) l = Vec (l + m) a
 >>> let append' xs ys = dfold (Proxy :: Proxy (Append m a)) (const (:>)) ys xs
@@ -301,11 +303,12 @@ singleton = (`Cons` Nil)
 -- >>> head Nil
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘...’ with ‘0’
---     Expected type: Vec ... a
---       Actual type: Vec 0 a
---     In the first argument of ‘head’, namely ‘Nil’
---     In the expression: head Nil
+--     • Couldn't match type ‘1’ with ‘0’
+--       Expected type: Vec (0 + 1) a
+--         Actual type: Vec 0 a
+--     • In the first argument of ‘head’, namely ‘Nil’
+--       In the expression: head Nil
+--       In an equation for ‘it’: it = head Nil
 head :: Vec (n + 1) a -> a
 head (x `Cons` _) = x
 
@@ -317,11 +320,12 @@ head (x `Cons` _) = x
 -- >>> tail Nil
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘...’ with ‘0’
---     Expected type: Vec ... a
---       Actual type: Vec 0 a
---     In the first argument of ‘tail’, namely ‘Nil’
---     In the expression: tail Nil
+--     • Couldn't match type ‘1’ with ‘0’
+--       Expected type: Vec (0 + 1) a
+--         Actual type: Vec 0 a
+--     • In the first argument of ‘tail’, namely ‘Nil’
+--       In the expression: tail Nil
+--       In an equation for ‘it’: it = tail Nil
 tail :: Vec (n + 1) a -> Vec n a
 tail (_ `Cons` xs) = xs
 
@@ -333,11 +337,12 @@ tail (_ `Cons` xs) = xs
 -- >>> last Nil
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘...’ with ‘0’
---     Expected type: Vec ... a
---       Actual type: Vec 0 a
---     In the first argument of ‘last’, namely ‘Nil’
---     In the expression: last Nil
+--     • Couldn't match type ‘1’ with ‘0’
+--       Expected type: Vec (0 + 1) a
+--         Actual type: Vec 0 a
+--     • In the first argument of ‘last’, namely ‘Nil’
+--       In the expression: last Nil
+--       In an equation for ‘it’: it = last Nil
 last :: Vec (n + 1) a -> a
 last (x `Cons` Nil)         = x
 last (_ `Cons` y `Cons` ys) = last (y `Cons` ys)
@@ -350,11 +355,12 @@ last (_ `Cons` y `Cons` ys) = last (y `Cons` ys)
 -- >>> init Nil
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘...’ with ‘0’
---     Expected type: Vec ... a
---       Actual type: Vec 0 a
---     In the first argument of ‘init’, namely ‘Nil’
---     In the expression: init Nil
+--     • Couldn't match type ‘1’ with ‘0’
+--       Expected type: Vec (0 + 1) a
+--         Actual type: Vec 0 a
+--     • In the first argument of ‘init’, namely ‘Nil’
+--       In the expression: init Nil
+--       In an equation for ‘it’: it = init Nil
 init :: Vec (n + 1) a -> Vec n a
 init (_ `Cons` Nil)         = Nil
 init (x `Cons` y `Cons` ys) = x `Cons` init (y `Cons` ys)
@@ -586,6 +592,7 @@ map f (x `Cons` xs) = f x `Cons` map f xs
 -- imap (+) (2 :> 2 :> 2 :> 2 :> Nil) :: Vec 4 (Index 4)
 -- >>> imap (+) (2 :> 2 :> 2 :> 2 :> Nil)
 -- <2,3,*** Exception: CLaSH.Sized.Index: result 4 is out of bounds: [0..3]
+-- ...
 -- >>> imap (\i a -> fromIntegral i + a) (2 :> 2 :> 2 :> 2 :> Nil) :: Vec 4 (Unsigned 8)
 -- <2,3,4,5>
 --
@@ -604,6 +611,7 @@ imap f = go 0
 --
 -- >>> izipWith (\i a b -> i + a + b) (2 :> 2 :> Nil)  (3 :> 3:> Nil)
 -- <*** Exception: CLaSH.Sized.Index: result 3 is out of bounds: [0..1]
+-- ...
 -- >>> izipWith (\i a b -> fromIntegral i + a + b) (2 :> 2 :> Nil) (3 :> 3 :> Nil) :: Vec 2 (Unsigned 8)
 -- <5,6>
 --
@@ -1022,6 +1030,7 @@ index_int xs i@(I# n0)
 -- 2
 -- >>> (1:>2:>3:>4:>5:>Nil) !! 14
 -- *** Exception: CLaSH.Sized.Vector.(!!): index 14 is larger than maximum index 4
+-- ...
 (!!) :: (KnownNat n, Enum i) => Vec n a -> i -> a
 xs !! i = index_int xs (fromEnum i)
 {-# INLINE (!!) #-}
@@ -1071,6 +1080,7 @@ replace_int xs i@(I# n0) a
 -- <7,2,3,4,5>
 -- >>> replace 9 7 (1:>2:>3:>4:>5:>Nil)
 -- <1,2,3,4,*** Exception: CLaSH.Sized.Vector.replace: index 9 is larger than maximum index 4
+-- ...
 replace :: (KnownNat n, Enum i) => i -> a -> Vec n a -> Vec n a
 replace i y xs = replace_int xs (fromEnum i) y
 {-# INLINE replace #-}
@@ -1086,13 +1096,13 @@ replace i y xs = replace_int xs (fromEnum i) y
 -- >>> take d4               (1:>2:>Nil)
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘4 + n0’ with ‘2’
---     The type variable ‘n0’ is ambiguous
---     Expected type: Vec (4 + n0) a
---       Actual type: Vec (1 + 1) a
---     In the second argument of ‘take’, namely ‘(1 :> 2 :> Nil)’
---     In the expression: take d4 (1 :> 2 :> Nil)
---     In an equation for ‘it’: it = take d4 (1 :> 2 :> Nil)
+--     • Couldn't match type ‘4 + n0’ with ‘2’
+--       Expected type: Vec (4 + n0) a
+--         Actual type: Vec (1 + 1) a
+--       The type variable ‘n0’ is ambiguous
+--     • In the second argument of ‘take’, namely ‘(1 :> 2 :> Nil)’
+--       In the expression: take d4 (1 :> 2 :> Nil)
+--       In an equation for ‘it’: it = take d4 (1 :> 2 :> Nil)
 take :: SNat m -> Vec (m + n) a -> Vec m a
 take n = fst . splitAt n
 {-# INLINE take #-}
@@ -1116,10 +1126,10 @@ takeI = withSNat take
 -- >>> drop d4               (1:>2:>Nil)
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match expected type ‘2’ with actual type ‘4 + n0’
---     The type variable ‘n0’ is ambiguous
---     In the first argument of ‘print’, namely ‘it’
---     In a stmt of an interactive GHCi command: print it
+--     • Couldn't match expected type ‘2’ with actual type ‘4 + n0’
+--       The type variable ‘n0’ is ambiguous
+--     • In the first argument of ‘print’, namely ‘it’
+--       In a stmt of an interactive GHCi command: print it
 drop :: SNat m -> Vec (m + n) a -> Vec n a
 drop n = snd . splitAt n
 {-# INLINE drop #-}
@@ -1197,6 +1207,11 @@ replicateU (USucc s) x = x `Cons` replicateU s x
 -- demanded by the context.
 --
 -- >>> replicateI 6 :: Vec 5 Int
+-- <BLANKLINE>
+-- <interactive>:...
+--     In the use of ‘replicateI’
+--     (imported from CLaSH.Prelude, but defined in CLaSH.Sized.Vector):
+--     Deprecated: "Use 'repeat' instead of 'replicateI'"
 -- <6,6,6,6,6>
 replicateI :: KnownNat n => a -> Vec n a
 replicateI = withSNat replicate
@@ -1320,7 +1335,7 @@ stencil1d stX f xs = map f (windows1d stX xs)
 -- >>> :t xss
 -- xss :: Num a => Vec 4 (Vec 4 a)
 -- >>> :t stencil2d d2 d2 (sum . map sum) xss
--- stencil2d d2 d2 (sum . map sum) xss :: Num a => Vec 3 (Vec 3 a)
+-- stencil2d d2 d2 (sum . map sum) xss :: Num b => Vec 3 (Vec 3 b)
 -- >>> stencil2d d2 d2 (sum . map sum) xss
 -- <<14,18,22>,<30,34,38>,<46,50,54>>
 stencil2d :: (KnownNat (n + 1), KnownNat (m+1))
@@ -1656,15 +1671,16 @@ lazyV = lazyV' (repeat undefined)
 -- >>> let append' xs ys = foldr (:>) ys xs
 -- <BLANKLINE>
 -- <interactive>:...
---     Occurs check: cannot construct the infinite type: ... ~ ... + 1
---     Expected type: a -> Vec ... a -> Vec ... a
---       Actual type: a -> Vec ... a -> Vec (... + 1) a
---     Relevant bindings include
---       ys :: Vec ... a (bound at ...)
---       append' :: Vec n a -> Vec ... a -> Vec ... a
---         (bound at ...)
---     In the first argument of ‘foldr’, namely ‘(:>)’
---     In the expression: foldr (:>) ys xs
+--     • Occurs check: cannot construct the infinite type: t ~ t + 1
+--       Expected type: a -> Vec t a -> Vec t a
+--         Actual type: a -> Vec t a -> Vec (t + 1) a
+--     • In the first argument of ‘foldr’, namely ‘(:>)’
+--       In the expression: foldr (:>) ys xs
+--       In an equation for ‘append'’: append' xs ys = foldr (:>) ys xs
+--     • Relevant bindings include
+--         ys :: Vec t a (bound at ...)
+--         append' :: Vec n a -> Vec t a -> Vec t a
+--           (bound at ...)
 --
 -- The reason is that the type of 'foldr' is:
 --
@@ -1683,7 +1699,7 @@ lazyV = lazyV' (repeat undefined)
 -- now correctly define /append'/:
 --
 -- @
--- import Data.Singletons.Prelude
+-- import CLaSH.Promoted.Defun
 -- import Data.Proxy
 --
 -- data Append (m :: Nat) (a :: *) (f :: 'TyFun' Nat *) :: *
@@ -1707,18 +1723,18 @@ lazyV = lazyV' (repeat undefined)
 -- fold that produces a structure with a depth of O(log_2(@'length' xs@)).
 dfold :: forall p k a . KnownNat k
       => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
-      -> (forall l . SNat l -> a -> (p $ l) -> (p $ (l + 1)))
+      -> (forall l . SNat l -> a -> (p @@ l) -> (p @@ (l + 1)))
       -- ^ Function to fold.
       --
       -- __NB__: The @SNat l@ is __not__ the index (see (`!!`)) to the
       -- element /a/. @SNat l@ is the number of elements that occur to the
       -- right of /a/.
-      -> (p $ 0) -- ^ Initial element
+      -> (p @@ 0) -- ^ Initial element
       -> Vec k a -- ^ Vector to fold over
-      -> (p $ k)
+      -> (p @@ k)
 dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
   where
-    go :: SNat n -> Vec n a -> (p $ n)
+    go :: SNat n -> Vec n a -> (p @@ n)
     go _ Nil                        = z
     go s (y `Cons` (ys :: Vec z a)) =
       let s' = s `subSNat` d1
@@ -1770,15 +1786,16 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- :}
 -- <BLANKLINE>
 -- <interactive>:...
---     Couldn't match type ‘((n + 2) + (n + 2)) - 1’ with ‘n + 2’
---     Expected type: Index (n + 2) -> Index (n + 2) -> Index (n + 2)
---       Actual type: Index (n + 2)
---                    -> Index (n + 2) -> AResult (Index (n + 2)) (Index (n + 2))
---     Relevant bindings include
---       populationCount' :: BitVector (n + 1) -> Index (n + 2)
---         (bound at ...)
---     In the first argument of ‘fold’, namely ‘plus’
---     In the first argument of ‘(.)’, namely ‘fold plus’
+--     • Couldn't match type ‘((n + 2) + (n + 2)) - 1’ with ‘n + 2’
+--       Expected type: Index (n + 2) -> Index (n + 2) -> Index (n + 2)
+--         Actual type: Index (n + 2)
+--                      -> Index (n + 2) -> AResult (Index (n + 2)) (Index (n + 2))
+--     • In the first argument of ‘fold’, namely ‘plus’
+--       In the first argument of ‘(.)’, namely ‘fold plus’
+--       In the expression: fold plus . map fromIntegral . bv2v
+--     • Relevant bindings include
+--         populationCount' :: BitVector (n + 1) -> Index (n + 2)
+--           (bound at ...)
 --
 -- because 'fold' expects a function of type \"@a -> a -> a@\", i.e. a function
 -- where the arguments and result all have exactly the same type.
@@ -1789,7 +1806,7 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 --
 -- @
 -- {\-\# LANGUAGE UndecidableInstances \#-\}
--- import Data.Singletons.Prelude
+-- import CLaSH.Promoted.Defun
 -- import Data.Proxy
 --
 -- data IIndex (f :: 'TyFun' Nat *) :: *
@@ -1824,8 +1841,8 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- \"@'dtfold' m f g xs@\" is O(log_2(@'length' xs@)).
 dtfold :: forall p k a . KnownNat k
        => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
-       -> (a -> (p $ 0)) -- ^ Function to apply to every element
-       -> (forall l . SNat l -> (p $ l) -> (p $ l) -> (p $ (l + 1)))
+       -> (a -> (p @@ 0)) -- ^ Function to apply to every element
+       -> (forall l . SNat l -> (p @@ l) -> (p @@ l) -> (p @@ (l + 1)))
        -- ^ Function to combine results.
        --
        -- __NB__: The @SNat l@ indicates the depth/height of the node in the
@@ -1835,10 +1852,10 @@ dtfold :: forall p k a . KnownNat k
        -- ^ Vector to fold over.
        --
        -- __NB__: Must have a length that is a power of 2.
-       -> (p $ k)
+       -> (p @@ k)
 dtfold _ f g = go (SNat :: SNat k)
   where
-    go :: SNat n -> Vec (2^n) a -> (p $ n)
+    go :: SNat n -> Vec (2^n) a -> (p @@ n)
     go _  (x `Cons` Nil) = f x
     go sn xs =
       let sn'       = sn `subSNat` d1
