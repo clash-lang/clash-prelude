@@ -22,10 +22,8 @@ module CLaSH.Signal
     -- * Boolean connectives
   , (.&&.), (.||.), not1
     -- * Product/Signal isomorphism
-  , Bundle
+  , Bundle(..)
   , Unbundled
-  , bundle
-  , unbundle
     -- * Simulation functions (not synthesisable)
   , simulate
   , simulateB

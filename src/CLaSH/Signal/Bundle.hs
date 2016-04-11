@@ -76,7 +76,7 @@ class Bundle a where
   -- However:
   --
   -- @
-  -- __bundle_ :: 'Signal'' clk 'CLaSH.Sized.BitVector.Bit' -> 'Signal'' clk 'CLaSH.Sized.BitVector.Bit'
+  -- __bundle__ :: 'Signal'' clk 'CLaSH.Sized.BitVector.Bit' -> 'Signal'' clk 'CLaSH.Sized.BitVector.Bit'
   -- @
   bundle :: Unbundled' clk a -> Signal' clk a
 
