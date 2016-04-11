@@ -44,7 +44,7 @@ import GHC.TypeLits           (KnownNat, type (^))
 
 import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
 import CLaSH.Signal           (Signal)
-import CLaSH.Signal.Bundle    (bundle')
+import CLaSH.Signal.Bundle    (bundle)
 import CLaSH.Signal.Explicit  (Signal', SClock, systemClock, unsafeSynchronizer)
 import CLaSH.Sized.Unsigned   (Unsigned)
 
@@ -148,7 +148,7 @@ asyncRam# wclk rclk sz wr rd en din = unsafeSynchronizer wclk rclk dout
     rd'  = unsafeSynchronizer rclk wclk rd
     dout = runST $ do
       arr <- newArray_ (0,szI-1)
-      traverse (ramT arr) (bundle' wclk (wr,rd',en,din))
+      traverse (ramT arr) (bundle (wr,rd',en,din))
 
     ramT :: STArray s Int e -> (Int,Int,Bool,e) -> ST s e
     ramT ram (w,r,e,d) = do
