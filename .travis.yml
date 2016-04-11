@@ -30,7 +30,7 @@ script:
 matrix:
   fast_finish: true
   include:
-  - env: GHCVER=7.10.3 STACK_YAML=stack-ghc801.yaml
+  - env: GHCVER=8.0.1 STACK_YAML=stack-ghc801.yaml
     addons:
       apt:
         sources:
