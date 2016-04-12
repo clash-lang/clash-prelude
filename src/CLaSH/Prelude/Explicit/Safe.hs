@@ -60,6 +60,7 @@ import CLaSH.Prelude.RAM          (asyncRam',asyncRamPow2')
 import CLaSH.Prelude.ROM          (rom', romPow2')
 import CLaSH.Prelude.Synchronizer (dualFlipFlopSynchronizer,
                                    asyncFIFOSynchronizer)
+import CLaSH.Signal.Bundle        (Bundle(..), Unbundled')
 import CLaSH.Signal.Explicit
 
 {- $setup
