@@ -30,8 +30,6 @@ module CLaSH.Signal.Explicit
     -- * Basic circuit functions
   , register'
   , regEn'
-    -- * Product/Signal isomorphism
-  , Bundle (..)
   )
 where
 
@@ -40,8 +38,8 @@ import GHC.TypeLits           (KnownNat, KnownSymbol)
 import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
 import CLaSH.Promoted.Symbol  (SSymbol (..))
 import CLaSH.Signal.Internal  (Signal' (..), Clock (..), SClock (..), register#,
-                               regEn#, simulate)
-import CLaSH.Signal.Bundle    (Bundle (..), Unbundled')
+                               regEn#)
+import CLaSH.Signal.Bundle    (Bundle, Unbundled')
 
 {- $setup
 >>> :set -XDataKinds
