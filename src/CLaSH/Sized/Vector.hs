@@ -274,7 +274,7 @@ instance (KnownNat m, m ~ (n+1)) => Traversable (Vec m) where
   traverse = traverse#
 
 {-# NOINLINE traverse# #-}
-traverse# :: Applicative f => (a -> f b) -> Vec n a -> f (Vec n b)
+traverse# :: forall a f b n . Applicative f => (a -> f b) -> Vec n a -> f (Vec n b)
 traverse# _ Nil           = pure Nil
 traverse# f (x `Cons` xs) = Cons <$> f x <*> traverse# f xs
 
