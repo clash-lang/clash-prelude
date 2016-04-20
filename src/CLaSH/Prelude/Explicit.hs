@@ -104,7 +104,7 @@ window' :: (KnownNat n, Default a)
         -> Vec (n + 1) (Signal' clk a) -- ^ Window of at least size 1
 window' clk x = res
   where
-    res  = x `Cons` prev
+    res  = x :> prev
     prev = case natVal (asNatProxy prev) of
              0 -> repeat def
              _ -> let next = x +>> prev
