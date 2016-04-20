@@ -29,7 +29,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 module CLaSH.Sized.Vector
   ( -- * 'Vec'tor data type
-    Vec(..)
+    Vec(Nil,(:>),(:<))
     -- * Accessors
     -- ** Length information
   , length, maxIndex, lengthS
@@ -52,7 +52,6 @@ module CLaSH.Sized.Vector
     -- *** Initialisation from a list
   , v
     -- ** Concatenation
-  , pattern (:>), pattern (:<)
   , (++), (+>>), (<<+), concat
   , shiftInAt0, shiftInAtN , shiftOutFrom0, shiftOutFromN
   , merge
@@ -99,7 +98,7 @@ module CLaSH.Sized.Vector
 where
 
 import Control.DeepSeq            (NFData (..))
-import qualified Control.Lens     as Lens
+import qualified Control.Lens     as Lens hiding (pattern (:>), pattern (:<))
 import Data.Default               (Default (..))
 import qualified Data.Foldable    as F
 import Data.Proxy                 (Proxy (..))
@@ -191,7 +190,6 @@ infixr 5 `Cons`
 data Vec :: Nat -> * -> * where
   Nil  :: Vec 0 a
   Cons :: a -> Vec n a -> Vec (n + 1) a
-{-# WARNING Cons "Use ':>' instead of 'Cons'" #-}
 
 instance NFData a => NFData (Vec n a) where
   rnf Nil         = ()

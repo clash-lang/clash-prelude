@@ -59,8 +59,7 @@ import CLaSH.Promoted.Nat          (SNat (..), UNat (..), powSNat, snatToInteger
                                     subSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
 import CLaSH.Sized.Index           (Index)
-import CLaSH.Sized.Vector          (Vec (..), pattern (:>), (!!), (++), dtfold,
-                                    replace)
+import CLaSH.Sized.Vector          (Vec (..), (!!), (++), dtfold, replace)
 
 data RTree :: Nat -> * -> * where
   LR_ :: a -> RTree 0 a
