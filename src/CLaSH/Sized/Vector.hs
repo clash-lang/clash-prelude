@@ -167,7 +167,7 @@ let sortV_flip xs = map fst sorted :< (snd (last sorted))
 >>> let append' xs ys = dfold (Proxy :: Proxy (Append m a)) (const (:>)) ys xs
 >>> let compareSwap a b = if a > b then (a,b) else (b,a)
 >>> let insert y xs     = let (y',xs') = mapAccumL compareSwap y xs in xs' :< y'
->>> let insertionSort   = vfold insert
+>>> let insertionSort   = vfold (const insert)
 >>> data IIndex (f :: TyFun Nat *) :: *
 >>> :set -XUndecidableInstances
 >>> type instance Apply IIndex l = Index ((2^l)+1)
@@ -1879,7 +1879,7 @@ type instance Apply (VCons a) l = Vec l a
 -- @
 -- compareSwap a b = if a > b then (a,b) else (b,a)
 -- insert y xs     = let (y',xs') = 'mapAccumL' compareSwap y xs in xs' ':<' y'
--- insertionSort   = 'vfold' insert
+-- insertionSort   = 'vfold' (const insert)
 -- @
 --
 -- Builds a triangular structure of compare and swaps to sort a row.
@@ -1891,10 +1891,10 @@ type instance Apply (VCons a) l = Vec l a
 --
 -- <<doc/csSort.svg>>
 vfold :: KnownNat k
-      => (forall l . a -> Vec l b -> Vec (l + 1) b)
+      => (forall l . SNat l -> a -> Vec l b -> Vec (l + 1) b)
       -> Vec k a
       -> Vec k b
-vfold f xs = dfold (Proxy :: Proxy (VCons a)) (const f) Nil xs
+vfold f xs = dfold (Proxy :: Proxy (VCons a)) f Nil xs
 {-# INLINE vfold #-}
 
 -- | Apply a function to every element of a vector and the element's position
