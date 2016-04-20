@@ -39,7 +39,6 @@ import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
 import CLaSH.Promoted.Symbol  (SSymbol (..))
 import CLaSH.Signal.Internal  (Signal' (..), Clock (..), SClock (..), register#,
                                regEn#)
-import CLaSH.Signal.Bundle    (Bundle, Unbundled')
 
 {- $setup
 >>> :set -XDataKinds
