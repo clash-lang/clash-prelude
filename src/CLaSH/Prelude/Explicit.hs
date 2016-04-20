@@ -18,7 +18,6 @@ using explicitly clocked signals.
 
 {-# LANGUAGE Unsafe #-}
 
-{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Prelude.Explicit

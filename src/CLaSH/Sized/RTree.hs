@@ -62,8 +62,6 @@ import CLaSH.Sized.Vector          (Vec (..), (!!), (++), dtfold, replace)
 data RTree :: Nat -> * -> * where
   LR_ :: a -> RTree 0 a
   BR_ :: RTree d a -> RTree d a -> RTree (d+1) a
-{-# WARNING LR_ "Use 'LR' instead of 'LR_'" #-}
-{-# WARNING BR_ "Use 'BR' instead of 'BR_'" #-}
 
 textract :: RTree 0 a -> a
 textract (LR_ x) = x
