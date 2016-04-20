@@ -18,9 +18,7 @@ RAM primitives with a combinational read port.
 
 -- See: https://github.com/clash-lang/clash-compiler/commit/721fcfa9198925661cd836668705f817bddaae3c
 -- as to why we need this.
-#if __GLASGOW_HASKELL__ > 711
 {-# OPTIONS_GHC -fno-cpr-anal #-}
-#endif
 
 {-# OPTIONS_HADDOCK show-extensions #-}
 
