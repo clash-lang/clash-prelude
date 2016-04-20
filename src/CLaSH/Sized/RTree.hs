@@ -15,9 +15,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 module CLaSH.Sized.RTree
   ( -- * 'RTree' data type
-    RTree (..)
-  , pattern LR
-  , pattern BR
+    RTree (LR, BR)
     -- * Construction
   , treplicate
   , trepeat
