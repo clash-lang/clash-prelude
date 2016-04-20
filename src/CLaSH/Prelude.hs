@@ -106,9 +106,6 @@ module CLaSH.Prelude
   , module CLaSH.Promoted.Ord
     -- ** Template Haskell
   , Lift (..)
-#if __GLASGOW_HASKELL__ < 711
-  , deriveLift
-#endif
     -- ** Type classes
     -- *** CLaSH
   , module CLaSH.Class.BitPack
@@ -130,9 +127,6 @@ import Data.Default
 import GHC.TypeLits
 import GHC.TypeLits.Extra
 import Language.Haskell.TH.Syntax  (Lift(..))
-#if __GLASGOW_HASKELL__ < 711
-import Language.Haskell.TH.Lift    (deriveLift)
-#endif
 import Prelude                     hiding ((++), (!!), concat, drop, foldl,
                                            foldl1, foldr, foldr1, head, init,
                                            iterate, last, length, map, repeat,
