@@ -132,19 +132,22 @@ Library
                       CLaSH.Tutorial
                       CLaSH.Examples
 
-  other-extensions:   BangPatterns
-                      DataKinds
+  other-extensions:   CPP
+                      BangPatterns
                       ConstraintKinds
+                      DataKinds
                       DefaultSignatures
+                      DeriveDataTypeable
                       DeriveTraversable
                       DeriveLift
-                      DeriveDataTypeable
                       FlexibleContexts
+                      FlexibleInstances
                       GADTs
                       GeneralizedNewtypeDeriving
                       KindSignatures
                       MagicHash
                       MultiParamTypeClasses
+                      PatternSynonyms
                       Rank2Types
                       ScopedTypeVariables
                       StandaloneDeriving
@@ -153,6 +156,7 @@ Library
                       TypeFamilies
                       TypeOperators
                       UndecidableInstances
+                      ViewPatterns
 
   Build-depends:      array                     >= 0.5.1.0,
                       base                      >= 4.8.0.0 && < 5,
