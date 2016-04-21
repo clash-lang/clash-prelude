@@ -1754,7 +1754,7 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 -- bit-width, i.e. all adders are of the type:
 --
 -- @
--- plus :: 'Index' (n+2) -> 'Index' (n+2) -> 'Index' (n+2).
+-- (+) :: 'Index' (n+2) -> 'Index' (n+2) -> 'Index' (n+2).
 -- @
 --
 -- This is a \"problem\" because we could have a more efficient structure:
