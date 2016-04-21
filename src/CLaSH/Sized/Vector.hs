@@ -1959,7 +1959,7 @@ v2bv = pack
 
 instance Lift a => Lift (Vec n a) where
   lift Nil           = [| Nil |]
-  lift (x `Cons` xs) = [| x :> $(lift xs) |]
+  lift (x `Cons` xs) = [| x `Cons` $(lift xs) |]
 
 instance (KnownNat n, Arbitrary a) => Arbitrary (Vec n a) where
   arbitrary = traverse# id $ repeat arbitrary
