@@ -118,7 +118,7 @@ tsplit (BR_ l r) = (l,r)
 -- f :: Num a => RTree 0 a -> RTree 0 a -> a
 -- >>> f (LR 1) (LR 2)
 -- 3
-pattern LR :: b -> RTree 0 b
+pattern LR :: a -> RTree 0 a
 pattern LR x <- (textract -> x)
   where
     LR x = LR_ x
@@ -135,7 +135,7 @@ pattern LR x <- (textract -> x)
 --
 -- >>> let f (BR (LR a) (LR b)) = LR (a + b)
 -- >>> :t f
--- f :: Num a => RTree 1 a -> a
+-- f :: Num a => RTree 1 a -> RTree 0 a
 -- >>> f (BR (LR 1) (LR 2))
 -- 3
 pattern BR :: RTree d a -> RTree d a -> RTree (d+1) a
