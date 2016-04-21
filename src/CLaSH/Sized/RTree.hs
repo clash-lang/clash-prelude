@@ -11,6 +11,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE PatternSynonyms      #-}
 {-# LANGUAGE RankNTypes           #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE TupleSections        #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
@@ -53,11 +54,15 @@ where
 
 import Control.Applicative         (liftA2)
 import qualified Control.Lens      as Lens
+import Data.Default                (Default (..))
+import Data.Foldable               (toList)
 -- import Data.Singletons.Prelude     (Apply, TyFun, type ($))
 import Data.Proxy                  (Proxy (..))
 import GHC.TypeLits                (KnownNat, Nat, type (+), type (^), type (*))
+import Language.Haskell.TH.Syntax  (Lift(..))
 import qualified Prelude           as P
 import Prelude                     hiding ((++), (!!))
+import Test.QuickCheck             (Arbitrary (..), CoArbitrary (..))
 
 import CLaSH.Class.BitPack         (BitPack (..))
 import CLaSH.Promoted.Defun        (TyFun,Apply,type (@@))
@@ -143,6 +148,12 @@ pattern BR l r <- ((\t -> (tsplit t)) -> (l,r))
   where
     BR l r = BR_ l r
 
+instance (KnownNat d, Eq a) => Eq (RTree d a) where
+  (==) t1 t2 = (==) (t2v t1) (t2v t2)
+
+instance (KnownNat d, Ord a) => Ord (RTree d a) where
+  compare t1 t2 = compare (t2v t1) (t2v t2)
+
 instance Show a => Show (RTree n a) where
   show (LR_ a)   = show a
   show (BR_ l r) = '<':show l P.++ (',':show r) P.++ ">"
@@ -175,6 +186,20 @@ type instance Lens.Index   (RTree d a) = Int
 type instance Lens.IxValue (RTree d a) = a
 instance (KnownNat d, KnownNat (2^d)) => Lens.Ixed (RTree d a) where
   ix i f t = replaceTree i <$> f (indexTree t i) <*> pure t
+
+instance (KnownNat d, Default a) => Default (RTree d a) where
+  def = trepeat def
+
+instance Lift a => Lift (RTree d a) where
+  lift (LR_ a)     = [| LR_ a |]
+  lift (BR_ t1 t2) = [| BR_ $(lift t1) $(lift t2) |]
+
+instance (KnownNat d, Arbitrary a) => Arbitrary (RTree d a) where
+  arbitrary = sequenceA (trepeat arbitrary)
+  shrink    = sequenceA . fmap shrink
+
+instance (KnownNat d, CoArbitrary a) => CoArbitrary (RTree d a) where
+  coarbitrary = coarbitrary . toList
 
 -- | A /dependently/ typed fold over trees.
 --
