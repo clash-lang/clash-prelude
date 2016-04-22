@@ -7,6 +7,7 @@
   * Add `predUNat` and `subUNat` to `CLaSH.Promoted.Nat`: predecessor and subtraction for unary-encoded natural numbers.
   * Add `dtfold` to `CLaSH.Sized.Vector`: a dependently-typed tree-fold over `Vec`.
   * Add the perfect-depth binary trees module `CLaSH.Sized.RTree`
+  * Synthesisable definitions of `countLeadingZeros` and `countTrailingZeros` for: `BitVector`, `Signed`, `Unsigned`, and `Fixed`
 * Changes:
   * `bundle'` and `unbundle'` are removed; `bundle` now has type `Unbundled' clk a -> Signal' clk a`, `unbundle` now has type `Signal' clk a -> Unbundled' clk a`
   * `subSNat` now has the type `SNat (a+b) -> SNat b -> SNat a` (where it used to be `SNat a -> SNat b -> SNat (a-b)`)
