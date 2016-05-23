@@ -1,7 +1,9 @@
 resolver: ghc-8.0.1
-
+flags:
+  clash-prelude:
+    doclinks: true
 packages:
-- .
+- '.'
 - location:
     git: https://github.com/clash-lang/ghc-tcplugins-extra.git
     commit: 254f32742606d11c3a2b70c26a71fe5aab100388
@@ -11,7 +13,6 @@ packages:
 - location:
     git: https://github.com/clash-lang/ghc-typelits-extra.git
     commit: d3a12442f2c84bcc5f9385e7d8dd799d7fbd25dd
-
 extra-deps:
 - QuickCheck-2.8.2
 - StateVar-1.1.0.3
@@ -52,8 +53,10 @@ extra-deps:
 - reflection-2.1.2
 - regex-base-0.93.2
 - regex-tdfa-rc-1.1.8.3
+- safe-0.3.9
 - semigroupoids-5.0.1
 - semigroups-0.18.1
+- singletons-2.1
 - stm-2.4.4.1
 - syb-0.6
 - tagged-0.8.3
@@ -61,13 +64,14 @@ extra-deps:
 - tasty-hunit-0.9.2
 - text-1.2.2.1
 - tf-random-0.5
+- th-desugar-1.6
+- th-expand-syns-0.4.0.0
+- th-lift-0.7.6
+- th-lift-instances-0.1.7
+- th-orphans-0.13.1
+- th-reify-many-0.1.6
 - transformers-compat-0.5.1.4
 - unbounded-delays-0.1.0.9
 - unordered-containers-0.2.7.0
 - vector-0.11.0.0
 - void-0.7.1
-
-
-flags:
-  clash-prelude:
-    doclinks: true
