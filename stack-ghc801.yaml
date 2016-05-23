@@ -1,4 +1,4 @@
-resolver: ghc-8.0.0.20160411
+resolver: ghc-8.0.1
 
 packages:
 - .
@@ -39,7 +39,7 @@ extra-deps:
 - ghc-paths-0.1.0.9
 - hashable-1.2.4.0
 - kan-extensions-5.0.1
-- lens-4.13.2.1
+- lens-4.14
 - mtl-2.2.1
 - old-locale-1.0.0.7
 - optparse-applicative-0.12.1.0
