@@ -56,7 +56,7 @@ import Control.Applicative         (liftA2)
 import qualified Control.Lens      as Lens
 import Data.Default                (Default (..))
 import Data.Foldable               (toList)
--- import Data.Singletons.Prelude     (Apply, TyFun, type ($))
+import Data.Singletons.Prelude     (Apply, TyFun, type (@@))
 import Data.Proxy                  (Proxy (..))
 import GHC.TypeLits                (KnownNat, Nat, type (+), type (^), type (*))
 import Language.Haskell.TH.Syntax  (Lift(..))
@@ -65,7 +65,6 @@ import Prelude                     hiding ((++), (!!))
 import Test.QuickCheck             (Arbitrary (..), CoArbitrary (..))
 
 import CLaSH.Class.BitPack         (BitPack (..))
-import CLaSH.Promoted.Defun        (TyFun,Apply,type (@@))
 import CLaSH.Promoted.Nat          (SNat (..), UNat (..), powSNat, snatToInteger,
                                     subSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
@@ -268,7 +267,7 @@ instance (KnownNat d, CoArbitrary a) => CoArbitrary (RTree d a) where
 --
 -- @
 -- {\-\# LANGUAGE UndecidableInstances \#-\}
--- import CLaSH.Promoted.Defun
+-- import Data.Singletons.Prelude
 -- import Data.Proxy
 --
 -- data IIndex (f :: 'TyFun' Nat *) :: *

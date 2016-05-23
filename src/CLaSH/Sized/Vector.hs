@@ -101,7 +101,7 @@ import qualified Control.Lens     as Lens hiding (pattern (:>), pattern (:<))
 import Data.Default               (Default (..))
 import qualified Data.Foldable    as F
 import Data.Proxy                 (Proxy (..))
--- import Data.Singletons.Prelude    (TyFun,Apply,type ($))
+import Data.Singletons.Prelude    (TyFun,Apply,type (@@))
 import GHC.TypeLits               (CmpNat, KnownNat, Nat, type (+), type (*),
                                    type (^), natVal)
 import GHC.Base                   (Int(I#),Int#,isTrue#)
@@ -118,7 +118,6 @@ import qualified Prelude          as P
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary (..))
 import Unsafe.Coerce              (unsafeCoerce)
 
-import CLaSH.Promoted.Defun       (TyFun,Apply,type (@@))
 import CLaSH.Promoted.Nat         (SNat (..), UNat (..), powSNat, snatProxy,
                                    snatToInteger, subSNat, withSNat, toUNat)
 import CLaSH.Promoted.Nat.Literals (d1, d2)
@@ -160,7 +159,6 @@ let sortV_flip xs = map fst sorted :< (snd (last sorted))
         sorted = zipWith (flip compareSwapL) rights lefts
 :}
 
->>> import CLaSH.Promoted.Defun
 >>> data Append (m :: Nat) (a :: *) (f :: TyFun Nat *) :: *
 >>> type instance Apply (Append m a) l = Vec (l + m) a
 >>> let append' xs ys = dfold (Proxy :: Proxy (Append m a)) (const (:>)) ys xs
@@ -1691,7 +1689,7 @@ lazyV = lazyV' (repeat undefined)
 -- now correctly define /append'/:
 --
 -- @
--- import CLaSH.Promoted.Defun
+-- import Data.Singletons.Prelude
 -- import Data.Proxy
 --
 -- data Append (m :: Nat) (a :: *) (f :: 'TyFun' Nat *) :: *
@@ -1798,7 +1796,7 @@ dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
 --
 -- @
 -- {\-\# LANGUAGE UndecidableInstances \#-\}
--- import CLaSH.Promoted.Defun
+-- import Data.Singletons.Prelude
 -- import Data.Proxy
 --
 -- data IIndex (f :: 'TyFun' Nat *) :: *
