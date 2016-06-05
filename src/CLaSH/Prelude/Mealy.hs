@@ -136,7 +136,7 @@ mealyB = mealyB' systemClock
       -- of the mealy machine
 (<^>) = mealyB
 
-{-# INLINABLE mealy' #-}
+{-# INLINE mealy' #-}
 -- | Create a synchronous function from a combinational function describing
 -- a mealy machine
 --
