@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -17,6 +18,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Sized.Internal.Unsigned
   ( -- * Datatypes
@@ -131,9 +134,9 @@ newtype Unsigned (n :: Nat) =
     U { unsafeToInteger :: Integer }
   deriving Data
 
-{-# NOINLINE size# #-}
 size# :: KnownNat n => Unsigned n -> Int
 size# u = fromInteger (natVal u)
+{-# PRIMITIVE size# #-}
 
 instance KnownNat n => Show (Unsigned n) where
   showsPrec p u = showsPrec p (toInteger# u)
@@ -154,13 +157,13 @@ instance BitPack (Unsigned n) where
   pack   = pack#
   unpack = unpack#
 
-{-# NOINLINE pack# #-}
 pack# :: Unsigned n -> BitVector n
 pack# (U i) = BV i
+{-# PRIMITIVE pack# #-}
 
-{-# NOINLINE unpack# #-}
 unpack# :: BitVector n -> Unsigned n
 unpack# (BV i) = U i
+{-# PRIMITIVE unpack# #-}
 
 instance KnownNat n => Eq (Unsigned n) where
   (==) = eq#
@@ -170,13 +173,13 @@ umask :: Integer -> Integer -> Integer
 umask n i = i .&. ((bit (fromInteger n)) - 1)
 {-# INLINE umask #-}
 
-{-# NOINLINE eq# #-}
 eq# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
 eq# u@(U v1) (U v2) = umask (natVal u) v1 == umask (natVal u) v2
+{-# PRIMITIVE eq# #-}
 
-{-# NOINLINE neq# #-}
 neq# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
 neq# u@(U v1) (U v2) = umask (natVal u) v1 /= umask (natVal u) v2
+{-# PRIMITIVE neq# #-}
 
 instance KnownNat n => Ord (Unsigned n) where
   (<)  = lt#
@@ -185,14 +188,14 @@ instance KnownNat n => Ord (Unsigned n) where
   (<=) = le#
 
 lt#,ge#,gt#,le# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
-{-# NOINLINE lt# #-}
 lt# u@(U n) (U m) = umask (natVal u) n < umask (natVal u) m
-{-# NOINLINE ge# #-}
+{-# PRIMITIVE lt# #-}
 ge# u@(U n) (U m) = umask (natVal u) n >= umask (natVal u) m
-{-# NOINLINE gt# #-}
+{-# PRIMITIVE ge# #-}
 gt# u@(U n) (U m) = umask (natVal u) n > umask (natVal u) m
-{-# NOINLINE le# #-}
+{-# PRIMITIVE gt# #-}
 le# u@(U n) (U m) = umask (natVal u) n <= umask (natVal u) m
+{-# PRIMITIVE le# #-}
 
 -- | The functions: 'enumFrom', 'enumFromThen', 'enumFromTo', and
 -- 'enumFromThenTo', are not synthesisable.
@@ -206,10 +209,6 @@ instance KnownNat n => Enum (Unsigned n) where
   enumFromTo     = enumFromTo#
   enumFromThenTo = enumFromThenTo#
 
-{-# NOINLINE enumFrom# #-}
-{-# NOINLINE enumFromThen# #-}
-{-# NOINLINE enumFromTo# #-}
-{-# NOINLINE enumFromThenTo# #-}
 enumFrom#       :: KnownNat n => Unsigned n -> [Unsigned n]
 enumFromThen#   :: KnownNat n => Unsigned n -> Unsigned n -> [Unsigned n]
 enumFromTo#     :: KnownNat n => Unsigned n -> Unsigned n -> [Unsigned n]
@@ -219,18 +218,22 @@ enumFrom# x             = map toEnum [fromEnum x ..]
 enumFromThen# x y       = map toEnum [fromEnum x, fromEnum y ..]
 enumFromTo# x y         = map toEnum [fromEnum x .. fromEnum y]
 enumFromThenTo# x1 x2 y = map toEnum [fromEnum x1, fromEnum x2 .. fromEnum y]
+{-# PRIMITIVE enumFrom# #-}
+{-# PRIMITIVE enumFromThen# #-}
+{-# PRIMITIVE enumFromTo# #-}
+{-# PRIMITIVE enumFromThenTo# #-}
 
 instance KnownNat n => Bounded (Unsigned n) where
   minBound = minBound#
   maxBound = maxBound#
 
-{-# NOINLINE minBound# #-}
 minBound# :: Unsigned n
 minBound# = U 0
+{-# PRIMITIVE minBound# #-}
 
-{-# NOINLINE maxBound# #-}
 maxBound# :: KnownNat n => Unsigned n
 maxBound# = let res = U (bit (fromInteger (natVal res)) - 1) in res
+{-# PRIMITIVE maxBound# #-}
 
 instance KnownNat n => Num (Unsigned n) where
   (+)         = (+#)
@@ -242,22 +245,22 @@ instance KnownNat n => Num (Unsigned n) where
   fromInteger = fromInteger#
 
 (+#),(-#),(*#) :: Unsigned n -> Unsigned n -> Unsigned n
-{-# NOINLINE (+#) #-}
 (+#) (U i) (U j) = U (i + j)
+{-# PRIMITIVE (+#) #-}
 
-{-# NOINLINE (-#) #-}
 (-#) (U i) (U j) = U (i - j)
+{-# PRIMITIVE (-#) #-}
 
-{-# NOINLINE (*#) #-}
 (*#) (U i) (U j) = U (i * j)
+{-# PRIMITIVE (*#) #-}
 
-{-# NOINLINE negate# #-}
 negate# :: Unsigned n -> Unsigned n
 negate# (U i) = U (negate i)
+{-# PRIMITIVE negate# #-}
 
-{-# NOINLINE fromInteger# #-}
 fromInteger# :: Integer -> Unsigned n
 fromInteger# = U
+{-# PRIMITIVE fromInteger# #-}
 
 instance ExtendingNum (Unsigned m) (Unsigned n) where
   type AResult (Unsigned m) (Unsigned n) = Unsigned (1 + Max m n)
@@ -267,15 +270,15 @@ instance ExtendingNum (Unsigned m) (Unsigned n) where
   times = times#
 
 plus#, minus# :: Unsigned m -> Unsigned n -> Unsigned (1 + Max m n)
-{-# NOINLINE plus# #-}
 plus# (U a) (U b) = U (a + b)
+{-# PRIMITIVE plus# #-}
 
-{-# NOINLINE minus# #-}
 minus# (U a) (U b) = U (a - b)
+{-# PRIMITIVE minus# #-}
 
-{-# NOINLINE times# #-}
 times# :: Unsigned m -> Unsigned n -> Unsigned (m + n)
 times# (U a) (U b) = U (a * b)
+{-# PRIMITIVE times# #-}
 
 instance KnownNat n => Real (Unsigned n) where
   toRational = toRational . toInteger#
@@ -290,14 +293,14 @@ instance KnownNat n => Integral (Unsigned n) where
   toInteger   = toInteger#
 
 quot#,rem# :: Unsigned n -> Unsigned n -> Unsigned n
-{-# NOINLINE quot# #-}
 quot# (U i) (U j) = U (i `quot` j)
-{-# NOINLINE rem# #-}
+{-# PRIMITIVE quot# #-}
 rem# (U i) (U j) = U (i `rem` j)
+{-# PRIMITIVE rem# #-}
 
-{-# NOINLINE toInteger# #-}
 toInteger# :: KnownNat n => Unsigned n -> Integer
 toInteger# u@(U i) = umask (natVal u) i
+{-# PRIMITIVE toInteger# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Unsigned n) where
   (.&.)             = and#
@@ -319,41 +322,40 @@ instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Unsigned n) w
   rotateR v i       = rotateR# v i
   popCount u        = popCount (pack# u)
 
-{-# NOINLINE and# #-}
 and# :: Unsigned n -> Unsigned n -> Unsigned n
 and# (U v1) (U v2) = U (v1 .&. v2)
+{-# PRIMITIVE and# #-}
 
-{-# NOINLINE or# #-}
 or# :: Unsigned n -> Unsigned n -> Unsigned n
 or# (U v1) (U v2) = U (v1 .|. v2)
+{-# PRIMITIVE or# #-}
 
-{-# NOINLINE xor# #-}
 xor# :: Unsigned n -> Unsigned n -> Unsigned n
 xor# (U v1) (U v2) = U (v1 `xor` v2)
+{-# PRIMITIVE xor# #-}
 
-{-# NOINLINE complement# #-}
 complement# :: Unsigned n -> Unsigned n
 complement# (U i) = U (complement i)
+{-# PRIMITIVE complement# #-}
 
 shiftL#, shiftR#, rotateL#, rotateR# :: KnownNat n => Unsigned n -> Int
                                      -> Unsigned n
-{-# NOINLINE shiftL# #-}
 shiftL# (U v) i
   | i < 0     = error
               $ "'shiftL undefined for negative number: " ++ show i
   | otherwise = U (shiftL v i)
+{-# PRIMITIVE shiftL# #-}
 
-{-# NOINLINE shiftR# #-}
 shiftR# u@(U v) i
   | i < 0     = error
               $ "'shiftR undefined for negative number: " ++ show i
   | otherwise = U (shiftR_logical (fromInteger (natVal u)) v i)
+{-# PRIMITIVE shiftR# #-}
 
 shiftR_logical :: Int -> Integer -> Int -> Integer
 shiftR_logical sz n i = shiftR n i .&. (bit (sz - i) - 1)
 {-# INLINE shiftR_logical #-}
 
-{-# NOINLINE rotateL# #-}
 rotateL# _ b | b < 0 = error "'shiftL undefined for negative numbers"
 rotateL# u@(U n) b   = U (l .|. r)
   where
@@ -363,8 +365,8 @@ rotateL# u@(U n) b   = U (l .|. r)
     b'   = b `mod` sz
     b''  = sz - b'
     sz   = fromInteger (natVal u)
+{-# PRIMITIVE rotateL# #-}
 
-{-# NOINLINE rotateR# #-}
 rotateR# _ b | b < 0 = error "'shiftR undefined for negative numbers"
 rotateR# bv@(U n) b  = U (l .|. r)
   where
@@ -374,6 +376,7 @@ rotateR# bv@(U n) b  = U (l .|. r)
     b'  = b `mod` sz
     b'' = sz - b'
     sz  = fromInteger (natVal bv)
+{-# PRIMITIVE rotateR# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => FiniteBits (Unsigned n) where
   finiteBitSize = size#
@@ -384,9 +387,9 @@ instance Resize Unsigned where
   signExtend = resize#
   truncateB  = resize#
 
-{-# NOINLINE resize# #-}
 resize# :: KnownNat m => Unsigned n -> Unsigned m
 resize# (U i) = U i
+{-# PRIMITIVE resize# #-}
 
 instance Default (Unsigned n) where
   def = minBound#

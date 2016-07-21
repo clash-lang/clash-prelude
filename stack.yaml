@@ -6,3 +6,4 @@ packages:
 flags:
   clash-prelude:
     doclinks: true
+    sim: true

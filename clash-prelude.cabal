@@ -73,8 +73,17 @@ flag doclinks
   default: False
   manual: True
 
+flag sim
+  description:
+    Compile for fast simulation.
+    N.B.: This makes synthesis by the CLaSH compiler impossible.
+  default: False
+  manual: True
+
 Library
   HS-Source-Dirs:     src
+  Include-dirs:       include
+  Includes:           primitive.h
 
   default-language:   Haskell2010
   ghc-options:        -Wall -fexpose-all-unfoldings
@@ -178,6 +187,9 @@ Library
   if flag(doclinks)
     CPP-Options:      -DDOCLINKS
     build-depends:    transformers              >= 0.4.2.0
+
+  if flag(sim)
+    CPP-Options:      -DSIMULATION
 
 test-suite doctests
   type:             exitcode-stdio-1.0
