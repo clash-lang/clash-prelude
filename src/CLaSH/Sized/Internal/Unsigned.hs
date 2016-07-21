@@ -136,7 +136,7 @@ newtype Unsigned (n :: Nat) =
 
 size# :: KnownNat n => Unsigned n -> Int
 size# u = fromInteger (natVal u)
-{-# PRIMITIVE size# #-}
+{-# PRIMITIVE_I size# #-}
 
 instance KnownNat n => Show (Unsigned n) where
   showsPrec p u = showsPrec p (toInteger# u)
@@ -159,11 +159,11 @@ instance BitPack (Unsigned n) where
 
 pack# :: Unsigned n -> BitVector n
 pack# (U i) = BV i
-{-# PRIMITIVE pack# #-}
+{-# PRIMITIVE_I pack# #-}
 
 unpack# :: BitVector n -> Unsigned n
 unpack# (BV i) = U i
-{-# PRIMITIVE unpack# #-}
+{-# PRIMITIVE_I unpack# #-}
 
 instance KnownNat n => Eq (Unsigned n) where
   (==) = eq#
@@ -175,11 +175,11 @@ umask sz i = i `mod` (shiftL 1 (fromInteger sz))
 
 eq# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
 eq# u@(U v1) (U v2) = umask (natVal u) v1 == umask (natVal u) v2
-{-# PRIMITIVE eq# #-}
+{-# PRIMITIVE_I eq# #-}
 
 neq# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
 neq# u@(U v1) (U v2) = umask (natVal u) v1 /= umask (natVal u) v2
-{-# PRIMITIVE neq# #-}
+{-# PRIMITIVE_I neq# #-}
 
 instance KnownNat n => Ord (Unsigned n) where
   (<)  = lt#
@@ -189,13 +189,13 @@ instance KnownNat n => Ord (Unsigned n) where
 
 lt#,ge#,gt#,le# :: KnownNat n => Unsigned n -> Unsigned n -> Bool
 lt# u@(U n) (U m) = umask (natVal u) n < umask (natVal u) m
-{-# PRIMITIVE lt# #-}
+{-# PRIMITIVE_I lt# #-}
 ge# u@(U n) (U m) = umask (natVal u) n >= umask (natVal u) m
-{-# PRIMITIVE ge# #-}
+{-# PRIMITIVE_I ge# #-}
 gt# u@(U n) (U m) = umask (natVal u) n > umask (natVal u) m
-{-# PRIMITIVE gt# #-}
+{-# PRIMITIVE_I gt# #-}
 le# u@(U n) (U m) = umask (natVal u) n <= umask (natVal u) m
-{-# PRIMITIVE le# #-}
+{-# PRIMITIVE_I le# #-}
 
 -- | The functions: 'enumFrom', 'enumFromThen', 'enumFromTo', and
 -- 'enumFromThenTo', are not synthesisable.
@@ -218,10 +218,10 @@ enumFrom# x             = map toEnum [fromEnum x ..]
 enumFromThen# x y       = map toEnum [fromEnum x, fromEnum y ..]
 enumFromTo# x y         = map toEnum [fromEnum x .. fromEnum y]
 enumFromThenTo# x1 x2 y = map toEnum [fromEnum x1, fromEnum x2 .. fromEnum y]
-{-# PRIMITIVE enumFrom# #-}
-{-# PRIMITIVE enumFromThen# #-}
-{-# PRIMITIVE enumFromTo# #-}
-{-# PRIMITIVE enumFromThenTo# #-}
+{-# PRIMITIVE_I enumFrom# #-}
+{-# PRIMITIVE_I enumFromThen# #-}
+{-# PRIMITIVE_I enumFromTo# #-}
+{-# PRIMITIVE_I enumFromThenTo# #-}
 
 instance KnownNat n => Bounded (Unsigned n) where
   minBound = minBound#
@@ -229,11 +229,11 @@ instance KnownNat n => Bounded (Unsigned n) where
 
 minBound# :: Unsigned n
 minBound# = U 0
-{-# PRIMITIVE minBound# #-}
+{-# PRIMITIVE_I minBound# #-}
 
 maxBound# :: KnownNat n => Unsigned n
 maxBound# = let res = U (bit (fromInteger (natVal res)) - 1) in res
-{-# PRIMITIVE maxBound# #-}
+{-# PRIMITIVE_I maxBound# #-}
 
 instance KnownNat n => Num (Unsigned n) where
   (+)         = (+#)
@@ -246,21 +246,21 @@ instance KnownNat n => Num (Unsigned n) where
 
 (+#),(-#),(*#) :: Unsigned n -> Unsigned n -> Unsigned n
 (+#) (U i) (U j) = U (i + j)
-{-# PRIMITIVE (+#) #-}
+{-# PRIMITIVE_I (+#) #-}
 
 (-#) (U i) (U j) = U (i - j)
-{-# PRIMITIVE (-#) #-}
+{-# PRIMITIVE_I (-#) #-}
 
 (*#) (U i) (U j) = U (i * j)
-{-# PRIMITIVE (*#) #-}
+{-# PRIMITIVE_I (*#) #-}
 
 negate# :: Unsigned n -> Unsigned n
 negate# (U i) = U (negate i)
-{-# PRIMITIVE negate# #-}
+{-# PRIMITIVE_I negate# #-}
 
 fromInteger# :: Integer -> Unsigned n
 fromInteger# = U
-{-# PRIMITIVE fromInteger# #-}
+{-# PRIMITIVE_I fromInteger# #-}
 
 instance ExtendingNum (Unsigned m) (Unsigned n) where
   type AResult (Unsigned m) (Unsigned n) = Unsigned (1 + Max m n)
@@ -271,14 +271,14 @@ instance ExtendingNum (Unsigned m) (Unsigned n) where
 
 plus#, minus# :: Unsigned m -> Unsigned n -> Unsigned (1 + Max m n)
 plus# (U a) (U b) = U (a + b)
-{-# PRIMITIVE plus# #-}
+{-# PRIMITIVE_I plus# #-}
 
 minus# (U a) (U b) = U (a - b)
-{-# PRIMITIVE minus# #-}
+{-# PRIMITIVE_I minus# #-}
 
 times# :: Unsigned m -> Unsigned n -> Unsigned (m + n)
 times# (U a) (U b) = U (a * b)
-{-# PRIMITIVE times# #-}
+{-# PRIMITIVE_I times# #-}
 
 instance KnownNat n => Real (Unsigned n) where
   toRational = toRational . toInteger#
@@ -294,13 +294,13 @@ instance KnownNat n => Integral (Unsigned n) where
 
 quot#,rem# :: Unsigned n -> Unsigned n -> Unsigned n
 quot# (U i) (U j) = U (i `quot` j)
-{-# PRIMITIVE quot# #-}
+{-# PRIMITIVE_I quot# #-}
 rem# (U i) (U j) = U (i `rem` j)
-{-# PRIMITIVE rem# #-}
+{-# PRIMITIVE_I rem# #-}
 
 toInteger# :: KnownNat n => Unsigned n -> Integer
 toInteger# u@(U i) = umask (natVal u) i
-{-# PRIMITIVE toInteger# #-}
+{-# PRIMITIVE_I toInteger# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Unsigned n) where
   (.&.)             = and#
@@ -324,19 +324,19 @@ instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Unsigned n) w
 
 and# :: Unsigned n -> Unsigned n -> Unsigned n
 and# (U v1) (U v2) = U (v1 .&. v2)
-{-# PRIMITIVE and# #-}
+{-# PRIMITIVE_I and# #-}
 
 or# :: Unsigned n -> Unsigned n -> Unsigned n
 or# (U v1) (U v2) = U (v1 .|. v2)
-{-# PRIMITIVE or# #-}
+{-# PRIMITIVE_I or# #-}
 
 xor# :: Unsigned n -> Unsigned n -> Unsigned n
 xor# (U v1) (U v2) = U (v1 `xor` v2)
-{-# PRIMITIVE xor# #-}
+{-# PRIMITIVE_I xor# #-}
 
 complement# :: Unsigned n -> Unsigned n
 complement# (U i) = U (complement i)
-{-# PRIMITIVE complement# #-}
+{-# PRIMITIVE_I complement# #-}
 
 shiftL#, shiftR#, rotateL#, rotateR# :: KnownNat n => Unsigned n -> Int
                                      -> Unsigned n
@@ -389,7 +389,7 @@ instance Resize Unsigned where
 
 resize# :: KnownNat m => Unsigned n -> Unsigned m
 resize# (U i) = U i
-{-# PRIMITIVE resize# #-}
+{-# PRIMITIVE_I resize# #-}
 
 instance Default (Unsigned n) where
   def = minBound#

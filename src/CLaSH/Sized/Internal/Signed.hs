@@ -145,7 +145,7 @@ newtype Signed (n :: Nat) =
     S { unsafeToInteger :: Integer}
   deriving Data
 
-{-# PRIMITIVE size# #-}
+{-# PRIMITIVE_I size# #-}
 size# :: KnownNat n => Signed n -> Int
 size# bv = fromInteger (natVal bv)
 
@@ -168,11 +168,11 @@ instance KnownNat n => BitPack (Signed n) where
   pack   = pack#
   unpack = unpack#
 
-{-# PRIMITIVE pack# #-}
+{-# PRIMITIVE_I pack# #-}
 pack# :: Signed n -> BitVector n
 pack# (S i) = BV i
 
-{-# PRIMITIVE unpack# #-}
+{-# PRIMITIVE_I unpack# #-}
 unpack# :: BitVector n -> Signed n
 unpack# (BV i) = S i
 
@@ -193,11 +193,11 @@ smask sz i
 
 eq# :: KnownNat n => Signed n -> Signed n -> Bool
 eq# s@(S v1) (S v2) = smask (natVal s) v1 == smask (natVal s) v2
-{-# PRIMITIVE eq# #-}
+{-# PRIMITIVE_I eq# #-}
 
 neq# :: KnownNat n => Signed n -> Signed n -> Bool
 neq# s@(S v1) (S v2) = smask (natVal s) v1 /= smask (natVal s) v2
-{-# PRIMITIVE neq# #-}
+{-# PRIMITIVE_I neq# #-}
 
 instance KnownNat n => Ord (Signed n) where
   (<)  = lt#
@@ -207,13 +207,13 @@ instance KnownNat n => Ord (Signed n) where
 
 lt#,ge#,gt#,le# :: KnownNat n => Signed n -> Signed n -> Bool
 lt# s@(S n) (S m) = smask (natVal s) n <  smask (natVal s) m
-{-# PRIMITIVE lt# #-}
+{-# PRIMITIVE_I lt# #-}
 ge# s@(S n) (S m) = smask (natVal s) n >= smask (natVal s)  m
-{-# PRIMITIVE ge# #-}
+{-# PRIMITIVE_I ge# #-}
 gt# s@(S n) (S m) = smask (natVal s) n >  smask (natVal s) m
-{-# PRIMITIVE gt# #-}
+{-# PRIMITIVE_I gt# #-}
 le# s@(S n) (S m) = smask (natVal s) n <= smask (natVal s)  m
-{-# PRIMITIVE le# #-}
+{-# PRIMITIVE_I le# #-}
 
 -- | The functions: 'enumFrom', 'enumFromThen', 'enumFromTo', and
 -- 'enumFromThenTo', are not synthesisable.
@@ -269,24 +269,24 @@ instance KnownNat n => Num (Signed n) where
 
 (+#), (-#), (*#) :: Signed n -> Signed n -> Signed n
 (S a) +# (S b) = S (a + b)
-{-# PRIMITIVE (+#) #-}
+{-# PRIMITIVE_I (+#) #-}
 
 (S a) -# (S b) = S (a - b)
-{-# PRIMITIVE (-#) #-}
+{-# PRIMITIVE_I (-#) #-}
 
 (S a) *# (S b) = S (a * b)
-{-# PRIMITIVE (*#) #-}
+{-# PRIMITIVE_I (*#) #-}
 
 negate#,abs# :: Signed n -> Signed n
 negate# (S n) = S (negate n)
-{-# PRIMITIVE negate# #-}
+{-# PRIMITIVE_I negate# #-}
 
 abs# (S n) = S (abs n)
-{-# PRIMITIVE abs# #-}
+{-# PRIMITIVE_I abs# #-}
 
 fromInteger# :: Integer -> Signed (n :: Nat)
 fromInteger# = S
-{-# PRIMITIVE fromInteger# #-}
+{-# PRIMITIVE_I fromInteger# #-}
 
 instance ExtendingNum (Signed m) (Signed n) where
   type AResult (Signed m) (Signed n) = Signed (1 + Max m n)
@@ -297,14 +297,14 @@ instance ExtendingNum (Signed m) (Signed n) where
 
 plus#, minus# :: Signed m -> Signed n -> Signed (1 + Max m n)
 plus# (S a) (S b) = S (a + b)
-{-# PRIMITIVE plus# #-}
+{-# PRIMITIVE_I plus# #-}
 
 minus# (S a) (S b) = S (a - b)
-{-# PRIMITIVE minus# #-}
+{-# PRIMITIVE_I minus# #-}
 
 times# :: Signed m -> Signed n -> Signed (m + n)
 times# (S a) (S b) = S (a * b)
-{-# PRIMITIVE times# #-}
+{-# PRIMITIVE_I times# #-}
 
 instance KnownNat n => Real (Signed n) where
   toRational = toRational . toInteger#
@@ -320,19 +320,19 @@ instance KnownNat n => Integral (Signed n) where
 
 quot#,rem# :: Signed n -> Signed n -> Signed n
 quot# (S a) (S b) = S (a `quot` b)
-{-# PRIMITIVE quot# #-}
+{-# PRIMITIVE_I quot# #-}
 rem# (S a) (S b) = S (a `rem` b)
-{-# PRIMITIVE rem# #-}
+{-# PRIMITIVE_I rem# #-}
 
 div#,mod# :: Signed n -> Signed n -> Signed n
 div# (S a) (S b) = S (a `div` b)
-{-# PRIMITIVE div# #-}
+{-# PRIMITIVE_I div# #-}
 mod# (S a) (S b) = S (a `mod` b)
-{-# PRIMITIVE mod# #-}
+{-# PRIMITIVE_I mod# #-}
 
 toInteger# :: KnownNat n => Signed n -> Integer
 toInteger# s@(S n) = smask (natVal s) n
-{-# PRIMITIVE toInteger# #-}
+{-# PRIMITIVE_I toInteger# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Signed n) where
   (.&.)             = and#
@@ -356,15 +356,15 @@ instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Signed n) whe
 
 and#,or#,xor# :: KnownNat n => Signed n -> Signed n -> Signed n
 and# (S a) (S b) = S (a .&. b)
-{-# PRIMITIVE and# #-}
+{-# PRIMITIVE_I and# #-}
 or# (S a) (S b)  = S (a .|. b)
-{-# PRIMITIVE or# #-}
+{-# PRIMITIVE_I or# #-}
 xor# (S a) (S b) = S (xor a b)
-{-# PRIMITIVE xor# #-}
+{-# PRIMITIVE_I xor# #-}
 
 complement# :: KnownNat n => Signed n -> Signed n
 complement# (S a) = S (complement a)
-{-# PRIMITIVE complement# #-}
+{-# PRIMITIVE_I complement# #-}
 
 shiftL#,shiftR#,rotateL#,rotateR# :: KnownNat n => Signed n -> Int -> Signed n
 shiftL# _ b | b < 0  = error "'shiftL undefined for negative numbers"
@@ -427,7 +427,7 @@ resize# s@(S i) | n <= m    = extended
 
 truncateB# :: Signed (m + n) -> Signed m
 truncateB# (S n) = S n
-{-# PRIMITIVE truncateB# #-}
+{-# PRIMITIVE_I truncateB# #-}
 
 instance KnownNat n => Default (Signed n) where
   def = fromInteger# 0
