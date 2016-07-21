@@ -170,7 +170,7 @@ instance KnownNat n => Eq (Unsigned n) where
   (/=) = neq#
 
 umask :: Integer -> Integer -> Integer
-umask n i = i .&. ((bit (fromInteger n)) - 1)
+umask sz i = i `mod` (shiftL 1 (fromInteger sz))
 {-# INLINE umask #-}
 
 eq# :: KnownNat n => Unsigned n -> Unsigned n -> Bool

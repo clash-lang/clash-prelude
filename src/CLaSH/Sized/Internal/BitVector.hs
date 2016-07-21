@@ -188,7 +188,7 @@ instance KnownNat n => Eq (BitVector n) where
   (/=) = neq#
 
 bvmask :: Integer -> Integer -> Integer
-bvmask n i = i .&. ((bit (fromInteger n)) - 1)
+bvmask sz i = i `mod` (shiftL 1 (fromInteger sz))
 {-# INLINE bvmask #-}
 
 {-# NOINLINE eq# #-}
