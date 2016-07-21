@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -18,6 +19,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Sized.Internal.Signed
   ( -- * Datatypes
@@ -142,11 +145,11 @@ newtype Signed (n :: Nat) =
     S { unsafeToInteger :: Integer}
   deriving Data
 
-{-# NOINLINE size# #-}
+{-# PRIMITIVE size# #-}
 size# :: KnownNat n => Signed n -> Int
 size# bv = fromInteger (natVal bv)
 
-instance Show (Signed n) where
+instance KnownNat n => Show (Signed n) where
   showsPrec p s = showsPrec p (toInteger# s)
   show s = show (toInteger# s)
   -- We cannot say:
@@ -165,43 +168,52 @@ instance KnownNat n => BitPack (Signed n) where
   pack   = pack#
   unpack = unpack#
 
-{-# NOINLINE pack# #-}
-pack# :: KnownNat n => Signed n -> BitVector n
-pack# s@(S i) = BV (i `mod` maxI)
-  where
-    maxI = 2 ^ natVal s
+{-# PRIMITIVE pack# #-}
+pack# :: Signed n -> BitVector n
+pack# (S i) = BV i
 
-{-# NOINLINE unpack# #-}
-unpack# :: KnownNat n => BitVector n -> Signed n
-unpack# (BV i) = fromInteger_INLINE i
+{-# PRIMITIVE unpack# #-}
+unpack# :: BitVector n -> Signed n
+unpack# (BV i) = S i
 
-instance Eq (Signed n) where
+instance KnownNat n => Eq (Signed n) where
   (==) = eq#
   (/=) = neq#
 
-{-# NOINLINE eq# #-}
-eq# :: Signed n -> Signed n -> Bool
-eq# (S v1) (S v2) = v1 == v2
+smask :: Integer -> Integer -> Integer
+smask sz i
+  | sz == 0   = 0
+  | otherwise = res
+  where
+    mask = shiftL 1 (fromInteger sz - 1)
+    res  = case divMod i mask of
+              (s,i') | even s    -> i'
+                     | otherwise -> (i' - mask)
+{-# INLINE smask #-}
 
-{-# NOINLINE neq# #-}
-neq# :: Signed n -> Signed n -> Bool
-neq# (S v1) (S v2) = v1 /= v2
+eq# :: KnownNat n => Signed n -> Signed n -> Bool
+eq# s@(S v1) (S v2) = smask (natVal s) v1 == smask (natVal s) v2
+{-# PRIMITIVE eq# #-}
 
-instance Ord (Signed n) where
+neq# :: KnownNat n => Signed n -> Signed n -> Bool
+neq# s@(S v1) (S v2) = smask (natVal s) v1 /= smask (natVal s) v2
+{-# PRIMITIVE neq# #-}
+
+instance KnownNat n => Ord (Signed n) where
   (<)  = lt#
   (>=) = ge#
   (>)  = gt#
   (<=) = le#
 
-lt#,ge#,gt#,le# :: Signed n -> Signed n -> Bool
-{-# NOINLINE lt# #-}
-lt# (S n) (S m) = n < m
-{-# NOINLINE ge# #-}
-ge# (S n) (S m) = n >= m
-{-# NOINLINE gt# #-}
-gt# (S n) (S m) = n > m
-{-# NOINLINE le# #-}
-le# (S n) (S m) = n <= m
+lt#,ge#,gt#,le# :: KnownNat n => Signed n -> Signed n -> Bool
+lt# s@(S n) (S m) = smask (natVal s) n <  smask (natVal s) m
+{-# PRIMITIVE lt# #-}
+ge# s@(S n) (S m) = smask (natVal s) n >= smask (natVal s)  m
+{-# PRIMITIVE ge# #-}
+gt# s@(S n) (S m) = smask (natVal s) n >  smask (natVal s) m
+{-# PRIMITIVE gt# #-}
+le# s@(S n) (S m) = smask (natVal s) n <= smask (natVal s)  m
+{-# PRIMITIVE le# #-}
 
 -- | The functions: 'enumFrom', 'enumFromThen', 'enumFromTo', and
 -- 'enumFromThenTo', are not synthesisable.
@@ -215,10 +227,6 @@ instance KnownNat n => Enum (Signed n) where
   enumFromTo     = enumFromTo#
   enumFromThenTo = enumFromThenTo#
 
-{-# NOINLINE enumFrom# #-}
-{-# NOINLINE enumFromThen# #-}
-{-# NOINLINE enumFromTo# #-}
-{-# NOINLINE enumFromThenTo# #-}
 enumFrom#       :: KnownNat n => Signed n -> [Signed n]
 enumFromThen#   :: KnownNat n => Signed n -> Signed n -> [Signed n]
 enumFromTo#     :: KnownNat n => Signed n -> Signed n -> [Signed n]
@@ -227,17 +235,26 @@ enumFrom# x             = map toEnum [fromEnum x ..]
 enumFromThen# x y       = map toEnum [fromEnum x, fromEnum y ..]
 enumFromTo# x y         = map toEnum [fromEnum x .. fromEnum y]
 enumFromThenTo# x1 x2 y = map toEnum [fromEnum x1, fromEnum x2 .. fromEnum y]
-
+{-# PRIMITIVE enumFrom# #-}
+{-# PRIMITIVE enumFromThen# #-}
+{-# PRIMITIVE enumFromTo# #-}
+{-# PRIMITIVE enumFromThenTo# #-}
 
 instance KnownNat n => Bounded (Signed n) where
   minBound = minBound#
   maxBound = maxBound#
 
 minBound#,maxBound# :: KnownNat n => Signed n
-{-# NOINLINE minBound# #-}
-minBound# = let res = S $ negate $ 2 ^ (natVal res - 1) in res
-{-# NOINLINE maxBound# #-}
-maxBound# = let res = S $ 2 ^ (natVal res - 1) - 1 in res
+minBound# = let sz  = natVal res
+                res | sz == 0   = S 0
+                    | otherwise = S (negate (shiftL 1 (fromInteger sz - 1)))
+            in res
+{-# PRIMITIVE minBound# #-}
+maxBound# = let sz  = natVal res
+                res | sz == 0   = S 0
+                    | otherwise = S (shiftL 1 (fromInteger sz - 1) - 1)
+            in res
+{-# PRIMITIVE maxBound# #-}
 
 -- | Operators do @wrap-around@ on overflow
 instance KnownNat n => Num (Signed n) where
@@ -250,58 +267,44 @@ instance KnownNat n => Num (Signed n) where
                    if s > 0 then 1 else 0
   fromInteger = fromInteger#
 
-(+#), (-#), (*#) :: KnownNat n => Signed n -> Signed n -> Signed n
-{-# NOINLINE (+#) #-}
-(S a) +# (S b) = fromInteger_INLINE (a + b)
+(+#), (-#), (*#) :: Signed n -> Signed n -> Signed n
+(S a) +# (S b) = S (a + b)
+{-# PRIMITIVE (+#) #-}
 
-{-# NOINLINE (-#) #-}
-(S a) -# (S b) = fromInteger_INLINE (a - b)
+(S a) -# (S b) = S (a - b)
+{-# PRIMITIVE (-#) #-}
 
-{-# NOINLINE (*#) #-}
-(S a) *# (S b) = fromInteger_INLINE (a * b)
+(S a) *# (S b) = S (a * b)
+{-# PRIMITIVE (*#) #-}
 
-negate#,abs# :: KnownNat n => Signed n -> Signed n
-{-# NOINLINE negate# #-}
-negate# (S n) = fromInteger_INLINE (negate n)
+negate#,abs# :: Signed n -> Signed n
+negate# (S n) = S (negate n)
+{-# PRIMITIVE negate# #-}
 
-{-# NOINLINE abs# #-}
-abs# (S n) = fromInteger_INLINE (abs n)
+abs# (S n) = S (abs n)
+{-# PRIMITIVE abs# #-}
 
-{-# NOINLINE fromInteger# #-}
-fromInteger# :: KnownNat n => Integer -> Signed (n :: Nat)
-fromInteger# = fromInteger_INLINE
+fromInteger# :: Integer -> Signed (n :: Nat)
+fromInteger# = S
+{-# PRIMITIVE fromInteger# #-}
 
-{-# INLINE fromInteger_INLINE #-}
-fromInteger_INLINE :: KnownNat n => Integer -> Signed n
-fromInteger_INLINE i
-    | n == 0    = S 0
-    | otherwise = res
-  where
-    n   = natVal res
-    sz  = 2 ^ (n - 1)
-    res = case divMod i sz of
-            (s,i') | even s    -> S i'
-                   | otherwise -> S (i' - sz)
-
-instance (KnownNat (1 + Max m n), KnownNat (m + n)) =>
-  ExtendingNum (Signed m) (Signed n) where
+instance ExtendingNum (Signed m) (Signed n) where
   type AResult (Signed m) (Signed n) = Signed (1 + Max m n)
   plus  = plus#
   minus = minus#
   type MResult (Signed m) (Signed n) = Signed (m + n)
   times = times#
 
-plus#, minus# :: KnownNat (1 + Max m n) => Signed m -> Signed n
-              -> Signed (1 + Max m n)
-{-# NOINLINE plus# #-}
-plus# (S a) (S b) = fromInteger_INLINE (a + b)
+plus#, minus# :: Signed m -> Signed n -> Signed (1 + Max m n)
+plus# (S a) (S b) = S (a + b)
+{-# PRIMITIVE plus# #-}
 
-{-# NOINLINE minus# #-}
-minus# (S a) (S b) = fromInteger_INLINE (a - b)
+minus# (S a) (S b) = S (a - b)
+{-# PRIMITIVE minus# #-}
 
-{-# NOINLINE times# #-}
-times# :: KnownNat (m + n) => Signed m -> Signed n -> Signed (m + n)
-times# (S a) (S b) = fromInteger_INLINE (a * b)
+times# :: Signed m -> Signed n -> Signed (m + n)
+times# (S a) (S b) = S (a * b)
+{-# PRIMITIVE times# #-}
 
 instance KnownNat n => Real (Signed n) where
   toRational = toRational . toInteger#
@@ -316,20 +319,20 @@ instance KnownNat n => Integral (Signed n) where
   toInteger   = toInteger#
 
 quot#,rem# :: Signed n -> Signed n -> Signed n
-{-# NOINLINE quot# #-}
 quot# (S a) (S b) = S (a `quot` b)
-{-# NOINLINE rem# #-}
+{-# PRIMITIVE quot# #-}
 rem# (S a) (S b) = S (a `rem` b)
+{-# PRIMITIVE rem# #-}
 
 div#,mod# :: Signed n -> Signed n -> Signed n
-{-# NOINLINE div# #-}
 div# (S a) (S b) = S (a `div` b)
-{-# NOINLINE mod# #-}
+{-# PRIMITIVE div# #-}
 mod# (S a) (S b) = S (a `mod` b)
+{-# PRIMITIVE mod# #-}
 
-{-# NOINLINE toInteger# #-}
-toInteger# :: Signed n -> Integer
-toInteger# (S n) = n
+toInteger# :: KnownNat n => Signed n -> Integer
+toInteger# s@(S n) = smask (natVal s) n
+{-# PRIMITIVE toInteger# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Signed n) where
   (.&.)             = and#
@@ -352,27 +355,26 @@ instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => Bits (Signed n) whe
   popCount s        = popCount (pack# s)
 
 and#,or#,xor# :: KnownNat n => Signed n -> Signed n -> Signed n
-{-# NOINLINE and# #-}
-and# (S a) (S b) = fromInteger_INLINE (a .&. b)
-{-# NOINLINE or# #-}
-or# (S a) (S b)  = fromInteger_INLINE (a .|. b)
-{-# NOINLINE xor# #-}
-xor# (S a) (S b) = fromInteger_INLINE (xor a b)
+and# (S a) (S b) = S (a .&. b)
+{-# PRIMITIVE and# #-}
+or# (S a) (S b)  = S (a .|. b)
+{-# PRIMITIVE or# #-}
+xor# (S a) (S b) = S (xor a b)
+{-# PRIMITIVE xor# #-}
 
-{-# NOINLINE complement# #-}
 complement# :: KnownNat n => Signed n -> Signed n
-complement# (S a) = fromInteger_INLINE (complement a)
+complement# (S a) = S (complement a)
+{-# PRIMITIVE complement# #-}
 
 shiftL#,shiftR#,rotateL#,rotateR# :: KnownNat n => Signed n -> Int -> Signed n
-{-# NOINLINE shiftL# #-}
 shiftL# _ b | b < 0  = error "'shiftL undefined for negative numbers"
-shiftL# (S n) b      = fromInteger_INLINE (shiftL n b)
-{-# NOINLINE shiftR# #-}
+shiftL# (S n) b      = S (shiftL n b)
+{-# PRIMITIVE shiftL# #-}
 shiftR# _ b | b < 0  = error "'shiftR undefined for negative numbers"
-shiftR# (S n) b      = fromInteger_INLINE (shiftR n b)
-{-# NOINLINE rotateL# #-}
+shiftR# s@(S n) b    = S (shiftR (smask (natVal s) n) b)
+{-# PRIMITIVE shiftR# #-}
 rotateL# _ b | b < 0 = error "'shiftL undefined for negative numbers"
-rotateL# s@(S n) b   = fromInteger_INLINE (l .|. r)
+rotateL# s@(S n) b   = S (l .|. r)
   where
     l    = shiftL n b'
     r    = shiftR n b'' .&. mask
@@ -381,10 +383,10 @@ rotateL# s@(S n) b   = fromInteger_INLINE (l .|. r)
     b'   = b `mod` sz
     b''  = sz - b'
     sz   = fromInteger (natVal s)
+{-# PRIMITIVE rotateL# #-}
 
-{-# NOINLINE rotateR# #-}
 rotateR# _ b | b < 0 = error "'shiftR undefined for negative numbers"
-rotateR# s@(S n) b   = fromInteger_INLINE (l .|. r)
+rotateR# s@(S n) b   = S (l .|. r)
   where
     l    = shiftR n b' .&. mask
     r    = shiftL n b''
@@ -393,6 +395,7 @@ rotateR# s@(S n) b   = fromInteger_INLINE (l .|. r)
     b'  = b `mod` sz
     b'' = sz - b'
     sz  = fromInteger (natVal s)
+{-# PRIMITIVE rotateR# #-}
 
 instance (KnownNat n, KnownNat (n + 1), KnownNat (n + 2)) => FiniteBits (Signed n) where
   finiteBitSize = size#
@@ -404,26 +407,27 @@ instance Resize Signed where
   signExtend   = resize#
   truncateB    = truncateB#
 
-{-# NOINLINE resize# #-}
 resize# :: (KnownNat n, KnownNat m) => Signed n -> Signed m
 resize# s@(S i) | n <= m    = extended
+                | m == 0    = S 0
                 | otherwise = truncated
   where
     n = fromInteger (natVal s)
     m = fromInteger (natVal extended)
 
-    extended = fromInteger_INLINE i
+    extended  = S i
 
     mask      = (2 ^ (m - 1)) - 1
     sign      = 2 ^ (m - 1)
     i'        = i .&. mask
     truncated = if testBit i (n - 1)
-                   then fromInteger_INLINE (i' .|. sign)
-                   else fromInteger_INLINE i'
+                   then S (i' .|. sign)
+                   else S i'
+{-# PRIMITIVE resize# #-}
 
-{-# NOINLINE truncateB# #-}
-truncateB# :: KnownNat m => Signed (m + n) -> Signed m
-truncateB# (S n) = fromInteger_INLINE n
+truncateB# :: Signed (m + n) -> Signed m
+truncateB# (S n) = S n
+{-# PRIMITIVE truncateB# #-}
 
 instance KnownNat n => Default (Signed n) where
   def = fromInteger# 0
