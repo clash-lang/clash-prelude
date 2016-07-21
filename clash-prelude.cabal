@@ -83,7 +83,6 @@ flag sim
 Library
   HS-Source-Dirs:     src
   Include-dirs:       include
-  Includes:           primitive.h
 
   default-language:   Haskell2010
   ghc-options:        -Wall -fexpose-all-unfoldings
