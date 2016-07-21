@@ -1,0 +1,5 @@
+#ifdef SIMULATION
+#define PRIMITIVE INLINE
+#else
+#define PRIMITIVE NOINLINE
+#endif
