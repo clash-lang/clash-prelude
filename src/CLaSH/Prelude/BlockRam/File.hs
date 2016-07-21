@@ -63,6 +63,7 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 
 -}
 
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MagicHash           #-}
@@ -72,6 +73,8 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Prelude.BlockRam.File
   ( -- * BlockRAM synchronised to the system clock
@@ -266,7 +269,6 @@ blockRamFile' clk sz file wr rd en din = blockRamFile# clk sz file
                                                        (fromEnum <$> rd)
                                                        en din
 
-{-# NOINLINE blockRamFile# #-}
 -- | blockRamFile primitive
 blockRamFile# :: KnownNat m
               => SClock clk                -- ^ 'Clock' to synchronize to
@@ -293,6 +295,7 @@ blockRamFile# clk sz file wr rd en din = register' clk undefined dout
       d' <- readArray ram r
       when e (writeArray ram w d)
       return d'
+{-# PRIMITIVE blockRamFile# #-}
 
 {-# NOINLINE initMem #-}
 -- | __NB:__ Not synthesisable

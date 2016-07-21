@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP       #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs     #-}
 {-# LANGUAGE MagicHash #-}
@@ -11,6 +12,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Trustworthy #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Signal.Explicit
   ( -- * Explicitly clocked synchronous signal
@@ -179,7 +182,7 @@ freqCalc xs = map (`div` g) ys
     g  = foldr1 gcd ys
 
 -- ** Synchronisation primitive
-{-# NOINLINE unsafeSynchronizer #-}
+
 -- | The 'unsafeSynchronizer' function is a primitive that must be used to
 -- connect one clock domain to the other, and will be synthesised to a (bundle
 -- of) wire(s) in the eventual circuit. This function should only be used as
@@ -251,6 +254,7 @@ unsafeSynchronizer (SClock _ period1) (SClock _ period2) s = s'
     s' | t1 < t2   = compress   t2 t1 s
        | t1 > t2   = oversample t1 t2 s
        | otherwise = same s
+{-# PRIMITIVE unsafeSynchronizer #-}
 
 same :: Signal' clk1 a -> Signal' clk2 a
 same (s :- ss) = s :- same ss

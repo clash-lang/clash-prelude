@@ -6,6 +6,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 ROMs
 -}
 
+{-# LANGUAGE CPP              #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MagicHash        #-}
@@ -14,6 +15,8 @@ ROMs
 {-# LANGUAGE Safe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Prelude.ROM
   ( -- * Asynchronous ROM
@@ -70,7 +73,6 @@ asyncRomPow2 :: (KnownNat (2^n), KnownNat n)
              -> a           -- ^ The value of the ROM at address @rd@
 asyncRomPow2 = asyncRom
 
-{-# NOINLINE asyncRom# #-}
 -- | asyncROM primitive
 asyncRom# :: KnownNat n
           => Vec n a  -- ^ ROM content
@@ -82,6 +84,7 @@ asyncRom# content rd = arr ! rd
   where
     szI = maxIndex content
     arr = listArray (0,szI) (toList content)
+{-# PRIMITIVE asyncRom# #-}
 
 {-# INLINE rom #-}
 -- | A ROM with a synchronous read port, with space for @n@ elements
@@ -158,7 +161,6 @@ rom' :: (KnownNat n, Enum addr)
      -- ^ The value of the ROM at address @rd@ from the previous clock cycle
 rom' clk content rd = rom# clk content (fromEnum <$> rd)
 
-{-# NOINLINE rom# #-}
 -- | ROM primitive
 rom# :: KnownNat n
      => SClock clk      -- ^ 'Clock' to synchronize to
@@ -172,3 +174,4 @@ rom# clk content rd = register' clk undefined ((arr !) <$> rd)
   where
     szI = maxIndex content
     arr = listArray (0,szI) (toList content)
+{-# PRIMITIVE rom# #-}

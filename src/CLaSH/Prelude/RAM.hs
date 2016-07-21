@@ -24,6 +24,8 @@ RAM primitives with a combinational read port.
 
 {-# OPTIONS_HADDOCK show-extensions #-}
 
+#include "primitive.h"
+
 module CLaSH.Prelude.RAM
   ( -- * RAM synchronised to the system clock
     asyncRam
@@ -130,7 +132,6 @@ asyncRam' :: Enum addr
 asyncRam' wclk rclk sz wr rd en din = asyncRam# wclk rclk sz (fromEnum <$> wr)
                                                 (fromEnum <$> rd) en din
 
-{-# NOINLINE asyncRam# #-}
 -- | RAM primitive
 asyncRam# :: SClock wclk       -- ^ 'Clock' to which to synchronise the write
                                -- port of the RAM
@@ -155,3 +156,4 @@ asyncRam# wclk rclk sz wr rd en din = unsafeSynchronizer wclk rclk dout
       d' <- readArray ram r
       when e (writeArray ram w d)
       return d'
+{-# PRIMITIVE asyncRam# #-}

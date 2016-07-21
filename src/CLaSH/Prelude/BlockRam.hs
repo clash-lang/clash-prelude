@@ -335,6 +335,7 @@ This concludes the short introduction to using 'blockRam'.
 
 -}
 
+{-# LANGUAGE CPP              #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MagicHash        #-}
@@ -343,6 +344,8 @@ This concludes the short introduction to using 'blockRam'.
 {-# LANGUAGE Safe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Prelude.BlockRam
   ( -- * BlockRAM synchronised to the system clock
@@ -509,7 +512,6 @@ blockRamPow2' :: (KnownNat n, KnownNat (2^n))
               -- clock cycle
 blockRamPow2' = blockRam'
 
-{-# NOINLINE blockRam# #-}
 -- | blockRAM primitive
 blockRam# :: KnownNat n
           => SClock clk       -- ^ 'Clock' to synchronize to
@@ -536,6 +538,7 @@ blockRam# clk content wr rd en din = register' clk undefined dout
       d' <- readArray ram r
       when e (writeArray ram w d)
       return d'
+{-# PRIMITIVE blockRam# #-}
 
 -- | Create read-after-write blockRAM from a read-before-write one (synchronised to specified clock)
 --

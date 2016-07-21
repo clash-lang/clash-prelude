@@ -6,6 +6,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 The Product/Signal isomorphism
 -}
 
+{-# LANGUAGE CPP               #-}
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE KindSignatures    #-}
@@ -15,6 +16,8 @@ The Product/Signal isomorphism
 {-# LANGUAGE Trustworthy #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Signal.Bundle
   ( Bundle (..)
@@ -203,6 +206,6 @@ instance KnownNat n => Bundle (Vec n a) where
   bundle'     = vecBundle#
   unbundle' _ = sequenceA
 
-{-# NOINLINE vecBundle# #-}
 vecBundle# :: SClock t -> Vec n (Signal' t a) -> Signal' t (Vec n a)
 vecBundle# _ = traverse# id
+{-# PRIMITIVE_I vecBundle# #-}

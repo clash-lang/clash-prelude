@@ -25,6 +25,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# OPTIONS_HADDOCK show-extensions #-}
 
+#include "primitive.h"
+
 module CLaSH.Signal.Internal
   ( -- * Datatypes
     Clock (..)
@@ -135,23 +137,22 @@ instance Default a => Default (Signal' clk a) where
 instance Functor (Signal' clk) where
   fmap = mapSignal#
 
-{-# NOINLINE mapSignal# #-}
 mapSignal# :: (a -> b) -> Signal' clk a -> Signal' clk b
 mapSignal# f (a :- as) = f a :- mapSignal# f as
+{-# PRIMITIVE mapSignal# #-}
 
 instance Applicative (Signal' clk) where
   pure  = signal#
   (<*>) = appSignal#
 
-{-# NOINLINE signal# #-}
 signal# :: a -> Signal' clk a
 signal# a = let s = a :- s in s
+{-# PRIMITIVE signal# #-}
 
-{-# NOINLINE appSignal# #-}
 appSignal# :: Signal' clk (a -> b) -> Signal' clk a -> Signal' clk b
 appSignal# (f :- fs) ~(a :- as) = f a :- appSignal# fs as
+{-# PRIMITIVE appSignal# #-}
 
-{-# NOINLINE joinSignal# #-}
 -- | __WARNING: EXTREMELY EXPERIMENTAL__
 --
 -- The circuit semantics of this operation are unclear and/or non-existent.
@@ -163,6 +164,7 @@ joinSignal# ~(xs :- xss) = head# xs :- joinSignal# (mapSignal# tail# xss)
   where
     head# (x' :- _ )  = x'
     tail# (_  :- xs') = xs'
+{-# PRIMITIVE joinSignal# #-}
 
 instance Num a => Num (Signal' clk a) where
   (+)         = liftA2 (+)
@@ -182,7 +184,6 @@ instance Num a => Num (Signal' clk a) where
 instance Foldable (Signal' clk) where
   foldr = foldr#
 
-{-# NOINLINE foldr# #-}
 -- | __NB__: Not synthesisable
 --
 -- __NB__: In \"@'foldr#' f z s@\":
@@ -191,13 +192,14 @@ instance Foldable (Signal' clk) where
 -- * The @z@ element will never be used.
 foldr# :: (a -> b -> b) -> b -> Signal' clk a -> b
 foldr# f z (a :- s) = a `f` (foldr# f z s)
+{-# PRIMITIVE foldr# #-}
 
 instance Traversable (Signal' clk) where
   traverse = traverse#
 
-{-# NOINLINE traverse# #-}
 traverse# :: Applicative f => (a -> f b) -> Signal' clk a -> f (Signal' clk b)
 traverse# f (a :- s) = (:-) <$> f a <*> traverse# f s
+{-# PRIMITIVE traverse# #-}
 
 infixr 2 .||.
 -- | The above type is a generalisation for:
@@ -231,16 +233,16 @@ infixr 3 .&&.
 not1 :: Functor f => f Bool -> f Bool
 not1 = fmap not
 
-{-# NOINLINE register# #-}
 register# :: SClock clk -> a -> Signal' clk a -> Signal' clk a
 register# _ i s = i :- s
+{-# PRIMITIVE_I register# #-}
 
-{-# NOINLINE regEn# #-}
 regEn# :: SClock clk -> a -> Signal' clk Bool -> Signal' clk a -> Signal' clk a
 regEn# clk i b s = r
   where
     r  = register# clk i s'
     s' = mux b s r
+{-# PRIMITIVE regEn# #-}
 
 {-# INLINE mux #-}
 -- | The above type is a generalisation for:

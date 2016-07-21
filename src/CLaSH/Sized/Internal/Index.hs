@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE KindSignatures        #-}
@@ -17,6 +18,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Sized.Internal.Index
   ( -- * Datatypes
@@ -106,25 +109,25 @@ instance KnownNat n => BitPack (Index n) where
   pack   = pack#
   unpack = unpack#
 
-{-# NOINLINE pack# #-}
 pack# :: Index n -> BitVector (CLog 2 n)
 pack# (I i) = BV i
+{-# PRIMITIVE_I pack# #-}
 
-{-# NOINLINE unpack# #-}
 unpack# :: KnownNat n => BitVector (CLog 2 n) -> Index n
 unpack# (BV i) = fromInteger_INLINE i
+{-# PRIMITIVE_I unpack# #-}
 
 instance Eq (Index n) where
   (==) = eq#
   (/=) = neq#
 
-{-# NOINLINE eq# #-}
 eq# :: (Index n) -> (Index n) -> Bool
 (I n) `eq#` (I m) = n == m
+{-# PRIMITIVE_I eq# #-}
 
-{-# NOINLINE neq# #-}
 neq# :: (Index n) -> (Index n) -> Bool
 (I n) `neq#` (I m) = n /= m
+{-# PRIMITIVE_I neq# #-}
 
 instance Ord (Index n) where
   (<)  = lt#
@@ -133,14 +136,14 @@ instance Ord (Index n) where
   (<=) = le#
 
 lt#,ge#,gt#,le# :: Index n -> Index n -> Bool
-{-# NOINLINE lt# #-}
 lt# (I n) (I m) = n < m
-{-# NOINLINE ge# #-}
+{-# PRIMITIVE_I lt# #-}
 ge# (I n) (I m) = n >= m
-{-# NOINLINE gt# #-}
+{-# PRIMITIVE_I ge# #-}
 gt# (I n) (I m) = n > m
-{-# NOINLINE le# #-}
+{-# PRIMITIVE_I gt# #-}
 le# (I n) (I m) = n <= m
+{-# PRIMITIVE_I le# #-}
 
 -- | The functions: 'enumFrom', 'enumFromThen', 'enumFromTo', and
 -- 'enumFromThenTo', are not synthesisable.
@@ -154,10 +157,6 @@ instance KnownNat n => Enum (Index n) where
   enumFromTo     = enumFromTo#
   enumFromThenTo = enumFromThenTo#
 
-{-# NOINLINE enumFrom# #-}
-{-# NOINLINE enumFromThen# #-}
-{-# NOINLINE enumFromTo# #-}
-{-# NOINLINE enumFromThenTo# #-}
 enumFrom#       :: KnownNat n => Index n -> [Index n]
 enumFromThen#   :: KnownNat n => Index n -> Index n -> [Index n]
 enumFromTo#     :: KnownNat n => Index n -> Index n -> [Index n]
@@ -166,14 +165,18 @@ enumFrom# x             = map toEnum [fromEnum x ..]
 enumFromThen# x y       = map toEnum [fromEnum x, fromEnum y ..]
 enumFromTo# x y         = map toEnum [fromEnum x .. fromEnum y]
 enumFromThenTo# x1 x2 y = map toEnum [fromEnum x1, fromEnum x2 .. fromEnum y]
+{-# PRIMITIVE enumFrom# #-}
+{-# PRIMITIVE enumFromThen# #-}
+{-# PRIMITIVE enumFromTo# #-}
+{-# PRIMITIVE enumFromThenTo# #-}
 
 instance KnownNat n => Bounded (Index n) where
   minBound = fromInteger# 0
   maxBound = maxBound#
 
-{-# NOINLINE maxBound# #-}
 maxBound# :: KnownNat n => Index n
 maxBound# = let res = I (natVal res - 1) in res
+{-# PRIMITIVE_I maxBound# #-}
 
 -- | Operators report an error on overflow and underflow
 instance KnownNat n => Num (Index n) where
@@ -186,19 +189,19 @@ instance KnownNat n => Num (Index n) where
   fromInteger = fromInteger#
 
 (+#),(-#),(*#) :: KnownNat n => Index n -> Index n -> Index n
-{-# NOINLINE (+#) #-}
 (+#) (I a) (I b) = fromInteger_INLINE $ a + b
+{-# PRIMITIVE (+#) #-}
 
-{-# NOINLINE (-#) #-}
 (-#) (I a) (I b) = fromInteger_INLINE $ a - b
+{-# PRIMITIVE (-#) #-}
 
-{-# NOINLINE (*#) #-}
 (*#) (I a) (I b) = fromInteger_INLINE $ a * b
+{-# PRIMITIVE (*#) #-}
 
 fromInteger#,fromInteger_INLINE :: KnownNat n => Integer -> Index n
-{-# NOINLINE fromInteger# #-}
 fromInteger# = fromInteger_INLINE
-{-# INLINE fromInteger_INLINE #-}
+{-# PRIMITIVE fromInteger# #-}
+
 fromInteger_INLINE i =
   let bound = natVal res
       i'    = i `mod` bound
@@ -206,6 +209,7 @@ fromInteger_INLINE i =
                      " is out of bounds: [0.." ++ show (bound - 1) ++ "]")
       res   = if i' /= i then err else I i
   in  res
+{-# INLINE fromInteger_INLINE #-}
 
 instance ExtendingNum (Index m) (Index n) where
   type AResult (Index m) (Index n) = Index (m + n - 1)
@@ -215,20 +219,20 @@ instance ExtendingNum (Index m) (Index n) where
   times = times#
 
 plus#, minus# :: Index m -> Index n -> Index (m + n - 1)
-{-# NOINLINE plus# #-}
 plus# (I a) (I b) = I (a + b)
+{-# PRIMITIVE plus# #-}
 
-{-# NOINLINE minus# #-}
 minus# (I a) (I b) =
   let z   = a - b
       err = error ("CLaSH.Sized.Index.minus: result " ++ show z ++
                    " is smaller than 0")
       res = if z < 0 then err else I z
   in  res
+{-# PRIMITIVE minus# #-}
 
-{-# NOINLINE times# #-}
 times# :: Index m -> Index n -> Index (((m - 1) * (n - 1)) + 1)
 times# (I a) (I b) = I (a * b)
+{-# PRIMITIVE times# #-}
 
 instance KnownNat n => Real (Index n) where
   toRational = toRational . toInteger#
@@ -243,14 +247,14 @@ instance KnownNat n => Integral (Index n) where
   toInteger   = toInteger#
 
 quot#,rem# :: Index n -> Index n -> Index n
-{-# NOINLINE quot# #-}
 (I a) `quot#` (I b) = I (a `div` b)
-{-# NOINLINE rem# #-}
+{-# PRIMITIVE quot# #-}
 (I a) `rem#` (I b) = I (a `rem` b)
+{-# PRIMITIVE rem# #-}
 
-{-# NOINLINE toInteger# #-}
 toInteger# :: Index n -> Integer
 toInteger# (I n) = n
+{-# PRIMITIVE toInteger# #-}
 
 instance Resize Index where
   resize     = resize#
@@ -260,7 +264,7 @@ instance Resize Index where
 
 resize# :: KnownNat m => Index n -> Index m
 resize# (I i) = fromInteger_INLINE i
-{-# NOINLINE resize# #-}
+{-# PRIMITIVE resize# #-}
 
 instance KnownNat n => Lift (Index n) where
   lift u@(I i) = sigE [| fromInteger# i |] (decIndex (natVal u))

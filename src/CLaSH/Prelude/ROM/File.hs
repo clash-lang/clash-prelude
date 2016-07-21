@@ -61,6 +61,7 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 @
 -}
 
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MagicHash           #-}
@@ -70,6 +71,8 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Prelude.ROM.File
   ( -- * Asynchronous ROM
@@ -219,7 +222,7 @@ asyncRomFilePow2 :: forall n m . (KnownNat m, KnownNat n, KnownNat (2^n))
                  -> BitVector m -- ^ The value of the ROM at address @rd@
 asyncRomFilePow2 = asyncRomFile (snat :: SNat (2^n))
 
-{-# NOINLINE asyncRomFile# #-}
+{-# PRIMITIVE asyncRomFile# #-}
 -- | asyncROMFile primitive
 asyncRomFile# :: KnownNat m
               => SNat n       -- ^ Size of the ROM
@@ -363,7 +366,7 @@ romFile' :: (KnownNat m, Enum addr)
          -- ^ The value of the ROM at address @rd@ from the previous clock cycle
 romFile' clk sz file rd = romFile# clk sz file (fromEnum <$> rd)
 
-{-# NOINLINE romFile# #-}
+{-# PRIMITIVE romFile# #-}
 -- | romFile primitive
 romFile# :: KnownNat m
          => SClock clk                -- ^ 'Clock' to synchronize to

@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE BangPatterns         #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
@@ -25,6 +26,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Sized.Vector
   ( -- * 'Vec'tor data type
@@ -262,10 +265,10 @@ instance Functor (Vec n) where
 instance (KnownNat m, m ~ (n+1)) => Traversable (Vec m) where
   traverse = traverse#
 
-{-# NOINLINE traverse# #-}
 traverse# :: Applicative f => (a -> f b) -> Vec n a -> f (Vec n b)
 traverse# _ Nil           = pure Nil
 traverse# f (x `Cons` xs) = Cons <$> f x <*> traverse# f xs
+{-# PRIMITIVE traverse# #-}
 
 instance (Default a, KnownNat n) => Default (Vec n a) where
   def = repeat def
@@ -278,7 +281,6 @@ instance (Default a, KnownNat n) => Default (Vec n a) where
 singleton :: a -> Vec 1 a
 singleton = (`Cons` Nil)
 
-{-# NOINLINE head #-}
 -- | Extract the first element of a vector
 --
 -- >>> head (1:>2:>3:>Nil)
@@ -293,8 +295,8 @@ singleton = (`Cons` Nil)
 --     In the expression: head Nil
 head :: Vec (n + 1) a -> a
 head (x `Cons` _) = x
+{-# PRIMITIVE_I head #-}
 
-{-# NOINLINE tail #-}
 -- | Extract the elements after the head of a vector
 --
 -- >>> tail (1:>2:>3:>Nil)
@@ -309,8 +311,8 @@ head (x `Cons` _) = x
 --     In the expression: tail Nil
 tail :: Vec (n + 1) a -> Vec n a
 tail (_ `Cons` xs) = xs
+{-# PRIMITIVE_I tail #-}
 
-{-# NOINLINE last #-}
 -- | Extract the last element of a vector
 --
 -- >>> last (1:>2:>3:>Nil)
@@ -326,8 +328,8 @@ tail (_ `Cons` xs) = xs
 last :: Vec (n + 1) a -> a
 last (x `Cons` Nil)         = x
 last (_ `Cons` y `Cons` ys) = last (y `Cons` ys)
+{-# PRIMITIVE last #-}
 
-{-# NOINLINE init #-}
 -- | Extract all the elements of a vector except the last element
 --
 -- >>> init (1:>2:>3:>Nil)
@@ -343,6 +345,7 @@ last (_ `Cons` y `Cons` ys) = last (y `Cons` ys)
 init :: Vec (n + 1) a -> Vec n a
 init (_ `Cons` Nil)         = Nil
 init (x `Cons` y `Cons` ys) = x `Cons` init (y `Cons` ys)
+{-# PRIMITIVE init #-}
 
 {-# INLINE shiftInAt0 #-}
 -- | Shift in elements to the head of a vector, bumping out elements at the
@@ -477,7 +480,7 @@ infixr 5 ++
 (++) :: Vec n a -> Vec m a -> Vec (n + m) a
 Nil           ++ ys = ys
 (x `Cons` xs) ++ ys = x `Cons` xs ++ ys
-{-# NOINLINE (++) #-}
+{-# PRIMITIVE (++) #-}
 
 -- | Split a vector into two vectors at the given point.
 --
@@ -487,7 +490,7 @@ Nil           ++ ys = ys
 -- (<1,2,3>,<7,8>)
 splitAt :: SNat m -> Vec (m + n) a -> (Vec m a, Vec n a)
 splitAt n xs = splitAtU (toUNat n) xs
-{-# NOINLINE splitAt #-}
+{-# PRIMITIVE_I splitAt #-}
 
 splitAtU :: UNat m -> Vec (m + n) a -> (Vec m a, Vec n a)
 splitAtU UZero     ys            = (Nil,ys)
@@ -510,7 +513,7 @@ splitAtI = withSNat splitAt
 concat :: Vec n (Vec m a) -> Vec (n * m) a
 concat Nil           = Nil
 concat (x `Cons` xs) = x ++ concat xs
-{-# NOINLINE concat #-}
+{-# PRIMITIVE concat #-}
 
 -- | Split a vector of \(n * m)\ elements into a vector of \"vectors of length
 -- /m/\", where the length /m/ is given.
@@ -519,7 +522,7 @@ concat (x `Cons` xs) = x ++ concat xs
 -- <<1,2,3,4>,<5,6,7,8>,<9,10,11,12>>
 unconcat :: KnownNat n => SNat m -> Vec (n * m) a -> Vec n (Vec m a)
 unconcat n xs = unconcatU (withSNat toUNat) (toUNat n) xs
-{-# NOINLINE unconcat #-}
+{-# PRIMITIVE_I unconcat #-}
 
 unconcatU :: UNat n -> UNat m -> Vec (n * m) a -> Vec n (Vec m a)
 unconcatU UZero      _ _  = Nil
@@ -550,7 +553,7 @@ merge x y = concat (transpose (x :> singleton y))
 reverse :: Vec n a -> Vec n a
 reverse Nil           = Nil
 reverse (x `Cons` xs) = reverse xs :< x
-{-# NOINLINE reverse #-}
+{-# PRIMITIVE reverse #-}
 
 -- | \"'map' @f xs@\" is the vector obtained by applying /f/ to each element
 -- of /xs/, i.e.,
@@ -563,7 +566,7 @@ reverse (x `Cons` xs) = reverse xs :< x
 map :: (a -> b) -> Vec n a -> Vec n b
 map _ Nil           = Nil
 map f (x `Cons` xs) = f x `Cons` map f xs
-{-# NOINLINE map #-}
+{-# PRIMITIVE map #-}
 
 -- | Apply a function of every element of a vector and its index.
 --
@@ -583,7 +586,7 @@ imap f = go 0
     go :: Index n -> Vec m a -> Vec m b
     go _ Nil           = Nil
     go n (x `Cons` xs) = f n x `Cons` go (n+1) xs
-{-# NOINLINE imap #-}
+{-# PRIMITIVE_I imap #-}
 
 -- | Zip two vectors with a functions that also takes the elements' indices.
 --
@@ -695,7 +698,7 @@ elemIndex x = findIndex (x ==)
 zipWith :: (a -> b -> c) -> Vec n a -> Vec n b -> Vec n c
 zipWith _ Nil           _  = Nil
 zipWith f (x `Cons` xs) ys = f x (head ys) `Cons` zipWith f xs (tail ys)
-{-# NOINLINE zipWith #-}
+{-# PRIMITIVE zipWith #-}
 
 -- | 'zipWith3' generalises 'zip3' by zipping with the function given
 -- as the first argument, instead of a tupling function.
@@ -734,7 +737,7 @@ zipWith3 f us vs ws = zipWith (\a (b,c) -> f a b c) us (zip vs ws)
 foldr :: (a -> b -> b) -> b -> Vec n a -> b
 foldr _ z Nil           = z
 foldr f z (x `Cons` xs) = f x (foldr f z xs)
-{-# NOINLINE foldr #-}
+{-# PRIMITIVE foldr #-}
 
 -- | 'foldl', applied to a binary operator, a starting value (typically
 -- the left-identity of the operator), and a vector, reduces the vector
@@ -827,7 +830,7 @@ fold f vs = fold' (toList vs)
     fold' xs  = fold' ys `f` fold' zs
       where
         (ys,zs) = P.splitAt (P.length xs `div` 2) xs
-{-# NOINLINE fold #-}
+{-# PRIMITIVE fold #-}
 
 -- | 'scanl' is similar to 'foldl', but returns a vector of successive reduced
 -- values from the left:
@@ -992,7 +995,7 @@ index_int xs i@(I# n0)
     sub (y `Cons` (!ys)) n = if isTrue# (n ==# 0#)
                                 then y
                                 else sub ys (n -# 1#)
-{-# NOINLINE index_int #-}
+{-# PRIMITIVE index_int #-}
 
 -- | \"@xs@ '!!' @n@\" returns the /n/'th element of /xs/.
 --
@@ -1018,7 +1021,7 @@ xs !! i = index_int xs (fromEnum i)
 -- 2
 maxIndex :: KnownNat n => Vec n a -> Int
 maxIndex = subtract 1 . length
-{-# NOINLINE maxIndex #-}
+{-# PRIMITIVE_I maxIndex #-}
 
 -- | The length of a 'Vec'tor as an 'Int' value.
 --
@@ -1026,7 +1029,7 @@ maxIndex = subtract 1 . length
 -- 3
 length :: KnownNat n => Vec n a -> Int
 length = fromInteger . natVal . asNatProxy
-{-# NOINLINE length #-}
+{-# PRIMITIVE_I length #-}
 
 replace_int :: KnownNat n => Vec n a -> Int -> a -> Vec n a
 replace_int xs i@(I# n0) a
@@ -1042,7 +1045,7 @@ replace_int xs i@(I# n0) a
     sub (y `Cons` (!ys)) n b = if isTrue# (n ==# 0#)
                                  then b `Cons` ys
                                  else y `Cons` sub ys (n -# 1#) b
-{-# NOINLINE replace_int #-}
+{-# PRIMITIVE replace_int #-}
 
 -- | \"'replace' @n a xs@\" returns the vector /xs/ where the /n/'th element is
 -- replaced by /a/.
@@ -1149,7 +1152,7 @@ select f s n xs = select' (toUNat n) $ drop f xs
     select' UZero      _               = Nil
     select' (USucc n') vs@(x `Cons` _) = x `Cons`
                                          select' n' (drop s (unsafeCoerce vs))
-{-# NOINLINE select #-}
+{-# PRIMITIVE select #-}
 
 -- | \"'selectI' @f s xs@\" selects as many elements as demanded by the context
 -- with step-size /s/ and offset /f/ from /xs/.
@@ -1172,7 +1175,7 @@ selectI f s xs = withSNat (\n -> select f s n xs)
 -- <6,6,6>
 replicate :: SNat n -> a -> Vec n a
 replicate n a = replicateU (toUNat n) a
-{-# NOINLINE replicate #-}
+{-# PRIMITIVE_I replicate #-}
 
 replicateU :: UNat n -> a -> Vec n a
 replicateU UZero     _ = Nil
@@ -1271,7 +1274,7 @@ generateI f a = iterateI f (f a)
 -- <<1,3,5>,<2,4,6>>
 transpose :: KnownNat n => Vec m (Vec n a) -> Vec n (Vec m a)
 transpose = traverse# id
-{-# NOINLINE transpose #-}
+{-# PRIMITIVE_I transpose #-}
 
 -- | 1-dimensional stencil computations
 --
@@ -1512,7 +1515,7 @@ rotateLeftS xs d = go (snatToInteger d `mod` natVal (asNatProxy xs)) xs
     go _ Nil           = Nil
     go 0 ys            = ys
     go n (y `Cons` ys) = go (n-1) (ys :< y)
-{-# NOINLINE rotateLeftS #-}
+{-# PRIMITIVE rotateLeftS #-}
 
 -- | /Statically/ rotate a 'Vec'tor to the right:
 --
@@ -1530,7 +1533,7 @@ rotateRightS xs d = go (snatToInteger d `mod` natVal (asNatProxy xs)) xs
     go _ Nil            = Nil
     go 0 ys             = ys
     go n ys@(Cons _ _)  = go (n-1) (last ys :> init ys)
-{-# NOINLINE rotateRightS #-}
+{-# PRIMITIVE rotateRightS #-}
 
 -- | Convert a vector to a list.
 --
@@ -1617,7 +1620,7 @@ lazyV = lazyV' (repeat undefined)
     lazyV' :: Vec n a -> Vec n a -> Vec n a
     lazyV' Nil           _  = Nil
     lazyV' (_ `Cons` xs) ys = head ys `Cons` lazyV' xs (tail ys)
-{-# NOINLINE lazyV #-}
+{-# PRIMITIVE lazyV #-}
 
 -- | A /dependently/ typed fold.
 --
@@ -1695,7 +1698,7 @@ dfold _ f z xs = go (natVal (asNatProxy xs) - 1) xs
     go :: Integer -> Vec n a -> (p $ n)
     go _ Nil                        = z
     go i (y `Cons` (ys :: Vec z a)) = f (unsafeSNat i :: SNat z) y (go (i-1) ys)
-{-# NOINLINE dfold #-}
+{-# PRIMITIVE dfold #-}
 
 -- | To be used as the motive /p/ for 'dfold', when the /f/ in \"'dfold' @p f@\"
 -- is a variation on (':>'), e.g.:
@@ -1765,13 +1768,13 @@ concatBitVector# = concatBitVector' . reverse
                      -> BitVector (n * m)
     concatBitVector' Nil           = 0
     concatBitVector' (x `Cons` xs) = concatBitVector' xs ++# x
-{-# NOINLINE concatBitVector# #-}
+{-# PRIMITIVE concatBitVector# #-}
 
 unconcatBitVector# :: (KnownNat n, KnownNat m)
                    => BitVector (n * m)
                    -> Vec n (BitVector m)
 unconcatBitVector# bv = withSNat (\s -> ucBV (toUNat s) bv)
-{-# NOINLINE unconcatBitVector# #-}
+{-# PRIMITIVE_I unconcatBitVector# #-}
 
 ucBV :: forall n m . KnownNat m
      => UNat n -> BitVector (n * m) -> Vec n (BitVector m)

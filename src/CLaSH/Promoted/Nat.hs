@@ -4,6 +4,7 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
@@ -15,6 +16,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Promoted.Nat
   ( SNat (..), snat, withSNat, snatToInteger, addSNat, subSNat, mulSNat, powSNat
@@ -96,19 +99,19 @@ powUNat x (USucc y) = multUNat x (powUNat x y)
 -- | Add two singleton natural numbers
 addSNat :: SNat a -> SNat b -> SNat (a+b)
 addSNat x y = reifyNat (snatToInteger x + snatToInteger y) (unsafeCoerce . SNat)
-{-# NOINLINE addSNat #-}
+{-# PRIMITIVE_I addSNat #-}
 
 -- | Subtract two singleton natural numbers
 subSNat :: SNat a -> SNat b -> SNat (a-b)
 subSNat x y = reifyNat (snatToInteger x - snatToInteger y) (unsafeCoerce . SNat)
-{-# NOINLINE subSNat #-}
+{-# PRIMITIVE_I subSNat #-}
 
 -- | Multiply two singleton natural numbers
 mulSNat :: SNat a -> SNat b -> SNat (a*b)
 mulSNat x y = reifyNat (snatToInteger x * snatToInteger y) (unsafeCoerce . SNat)
-{-# NOINLINE mulSNat #-}
+{-# PRIMITIVE_I mulSNat #-}
 
 -- | Power of two singleton natural numbers
 powSNat :: SNat a -> SNat b -> SNat (a^b)
 powSNat x y = reifyNat (snatToInteger x ^ snatToInteger y) (unsafeCoerce . SNat)
-{-# NOINLINE powSNat #-}
+{-# PRIMITIVE_I powSNat #-}

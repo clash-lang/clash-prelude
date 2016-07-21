@@ -4,11 +4,14 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_HADDOCK show-extensions #-}
+
+#include "primitive.h"
 
 module CLaSH.Prelude.Testbench
   ( -- * Testbench functions for circuits synchronised to the system slock
@@ -119,7 +122,6 @@ outputVerifier :: forall l a . (KnownNat l, Eq a, Show a)
                -> Signal Bool -- ^ Indicator that all samples are verified
 outputVerifier = outputVerifier' systemClock
 
-{-# NOINLINE assert' #-}
 -- | Compares the first two 'Signal''s for equality and logs a warning when they
 -- are not equal. The second 'Signal'' is considered the expected value. This
 -- function simply returns the third 'Signal'' unaltered as its result. This
@@ -147,6 +149,7 @@ assert' clk msg checked expected returned =
                                    , show c
                                    ]) r)
   <$> checked <*> expected <*> fromList [(0::Integer)..] <*> returned
+{-# PRIMITIVE assert' #-}
 
 {-# INLINABLE stimuliGenerator' #-}
 -- | To be used as one of the functions to create the \"magical\" 'testInput'
