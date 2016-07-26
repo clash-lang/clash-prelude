@@ -147,10 +147,10 @@ pattern BR l r <- ((\t -> (tsplit t)) -> (l,r))
   where
     BR l r = BR_ l r
 
-instance (KnownNat d, Eq a) => Eq (RTree d a) where
+instance (KnownNat d, KnownNat (2^d), Eq a) => Eq (RTree d a) where
   (==) t1 t2 = (==) (t2v t1) (t2v t2)
 
-instance (KnownNat d, Ord a) => Ord (RTree d a) where
+instance (KnownNat d, KnownNat (2^d), Ord a) => Ord (RTree d a) where
   compare t1 t2 = compare (t2v t1) (t2v t2)
 
 instance Show a => Show (RTree n a) where
