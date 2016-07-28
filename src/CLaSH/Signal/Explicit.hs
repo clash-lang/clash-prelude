@@ -4,9 +4,11 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE GADTs     #-}
-{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE MagicHash           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-# LANGUAGE Trustworthy #-}
 
@@ -15,30 +17,54 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 module CLaSH.Signal.Explicit
   ( -- * Explicitly clocked synchronous signal
     -- $relativeclocks
-    Signal'
     -- * Clock domain crossing
     -- ** Clock
-  , Clock (..)
-  , SClock (..)
-  , sclock
-  , withSClock
+    Domain (..)
+  , ClockKind (..)
+  , Clock (Clock)
+  , System
   , SystemClock
   , systemClock
   , freqCalc
     -- ** Synchronisation primitive
   , unsafeSynchronizer
+    -- ** Clock gating
+  , clockGate#
+    -- * Reset
+  , ResetKind (..)
+  , Reset (..)
+  , SystemReset
+  , systemReset
+  , unsafeFromAsyncReset#
+  , unsafeToAsyncReset#
+  , fromSyncReset#
+  , toSyncReset#
     -- * Basic circuit functions
-  , register'
-  , regEn'
+  , register#
+  , delay#
+  , regEn#
+    -- * Simulation functions (not synthesisable)
+  , simulate#
+  , simulateB#
   )
 where
 
-import GHC.TypeLits           (KnownNat, KnownSymbol)
+import Data.Proxy            (Proxy (..))
+import GHC.TypeLits          (KnownNat, natVal)
 
-import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
-import CLaSH.Promoted.Symbol  (SSymbol (..))
-import CLaSH.Signal.Internal  (Signal' (..), Clock (..), SClock (..), register#,
-                               regEn#)
+import CLaSH.Signal.Bundle   (Bundle (..))
+import CLaSH.Signal.Internal (Clock (Clock), ClockKind (..), Domain (..),
+                              Reset (..), ResetKind (..), Signal (..),
+                              clockGate#, delay#, fromSyncReset#, register#,
+                              regEn#, simulate#, toSyncReset#,
+                              unsafeFromAsyncReset#, unsafeToAsyncReset#)
+
+-- import GHC.TypeLits           (KnownNat, KnownSymbol)
+--
+-- import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
+-- import CLaSH.Promoted.Symbol  (SSymbol (..))
+-- import CLaSH.Signal.Internal  (Signal (..), Clock (..), SClock (..), register#,
+--                                regEn#)
 
 {- $setup
 >>> :set -XDataKinds
@@ -107,33 +133,24 @@ never create a clock that goes any faster!
 
 -- ** Clock
 
-{-# INLINE sclock #-}
--- | Create a singleton clock
---
--- @
--- type ClkA = 'Clk' \"A\" 100
---
--- clkA :: 'SClock' ClkA
--- clkA = 'sclock'
--- @
-sclock :: (KnownSymbol name, KnownNat period)
-       => SClock ('Clk name period)
-sclock = SClock SSymbol SNat
 
-{-# INLINE withSClock #-}
--- | Supply a function with a singleton clock @clk@ according to the context
-withSClock :: (KnownSymbol name, KnownNat period)
-           => (SClock ('Clk name period) -> a)
-           -> a
-withSClock f = f (SClock SSymbol SNat)
+-- | The standard system domain with a period of 1000
+type System = 'Domain "system" 1000
 
--- | The standard system clock with a period of 1000
-type SystemClock = 'Clk "system" 1000
 
-{-# INLINE systemClock #-}
--- | The singleton clock for 'SystemClock'
-systemClock :: SClock SystemClock
-systemClock = sclock
+-- | The clock for 'System'
+type SystemClock = Clock 'Original System
+
+-- | The clock for 'System'
+systemClock :: SystemClock
+systemClock = Clock (pure True)
+
+-- | The reset for 'System'
+type SystemReset = Reset 'Asynchronous System
+
+-- | The reset for 'System'
+systemReset :: SystemReset
+systemReset = Async (False :- pure True)
 
 -- | Calculate relative periods given a list of frequencies.
 --
@@ -235,25 +252,24 @@ freqCalc xs = map (`div` g) ys
 -- [99,50,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10]
 -- >>> sampleN 12 (almostId (fromList [1..10]))
 -- [70,99,1,2,3,4,5,6,7,8,9,10]
-unsafeSynchronizer :: SClock clk1 -- ^ 'Clock' of the incoming signal
-                   -> SClock clk2 -- ^ 'Clock' of the outgoing signal
-                   -> Signal' clk1 a
-                   -> Signal' clk2 a
-unsafeSynchronizer (SClock _ period1) (SClock _ period2) s = s'
+unsafeSynchronizer :: forall a nm1 r1 nm2 r2 . (KnownNat r1, KnownNat r2)
+                   => Signal ('Domain nm1 r1) a
+                   -> Signal ('Domain nm2 r2) a
+unsafeSynchronizer s = s'
   where
-    t1    = fromInteger (snatToInteger period1)
-    t2    = fromInteger (snatToInteger period2)
-    s' | t1 < t2   = compress   t2 t1 s
-       | t1 > t2   = oversample t1 t2 s
+    r1 = fromInteger (natVal (Proxy :: Proxy r1))
+    r2 = fromInteger (natVal (Proxy :: Proxy r2))
+    s' | r1 < r2   = compress   r2 r1 s
+       | r1 > r2   = oversample r1 r2 s
        | otherwise = same s
 
-same :: Signal' clk1 a -> Signal' clk2 a
+same :: Signal domain1 a -> Signal domain2 a
 same (s :- ss) = s :- same ss
 
-oversample :: Int -> Int -> Signal' clk1 a -> Signal' clk2 a
+oversample :: Int -> Int -> Signal domain1 a -> Signal domain2 a
 oversample high low (s :- ss) = s :- oversampleS (reverse (repSchedule high low)) ss
 
-oversampleS :: [Int] -> Signal' clk1 a -> Signal' clk2 a
+oversampleS :: [Int] -> Signal domain1 a -> Signal domain2 a
 oversampleS sched = oversample' sched
   where
     oversample' []     s       = oversampleS sched s
@@ -262,10 +278,10 @@ oversampleS sched = oversample' sched
     prefixN 0 _ s = s
     prefixN n x s = x :- prefixN (n-1) x s
 
-compress :: Int -> Int -> Signal' clk1 a -> Signal' clk2 a
+compress :: Int -> Int -> Signal domain1 a -> Signal domain2 a
 compress high low s = compressS (repSchedule high low) s
 
-compressS :: [Int] -> Signal' clk1 a -> Signal' clk2 a
+compressS :: [Int] -> Signal domain1 a -> Signal domain2 a
 compressS sched = compress' sched
   where
     compress' []     s           = compressS sched s
@@ -281,42 +297,15 @@ repSchedule high low = take low $ repSchedule' low high 1
       | cnt < th  = repSchedule' (cnt+low) th (rep + 1)
       | otherwise = rep : repSchedule' (cnt + low) (th + high) 1
 
--- * Basic circuit functions
+-- * Product/Signal isomorphism
 
-{-# INLINE register' #-}
--- | \"@'register'' i s@\" delays the values in 'Signal'' @s@ for one cycle,
--- and sets the value at time 0 to @i@
+-- | Simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a list of
+-- samples of type @a@
 --
--- @
--- type ClkA = 'Clk' \"A\" 100
+-- >>> simulateB (unbundle . register (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
+-- [(8,8),(1,1),(2,2),(3,3)...
+-- ...
 --
--- clkA :: 'SClock' ClkA
--- clkA = 'sclock'
--- @
---
--- >>> sampleN 3 (register' clkA 8 (fromList [1,2,3,4]))
--- [8,1,2]
-register' :: SClock clk -> a -> Signal' clk a -> Signal' clk a
-register' = register#
-
-{-# INLINE regEn' #-}
--- | Version of 'register'' that only updates its content when its third
--- argument is asserted. So given:
---
--- @
--- type ClkA = 'Clk' \"A\" 100
--- clkA :: 'SClock' ClkA
--- clkA = 'sclock'
---
--- oscillate = 'register'' clkA False ('CLaSH.Signal.not1' oscillate)
--- count     = 'regEn'' clkA 0 oscillate (count + 1)
--- @
---
--- We get:
---
--- >>> sampleN 8 oscillate
--- [False,True,False,True,False,True,False,True]
--- >>> sampleN 8 count
--- [0,0,1,1,2,2,3,3]
-regEn' :: SClock clk -> a -> Signal' clk Bool -> Signal' clk a -> Signal' clk a
-regEn' = regEn#
+-- __NB__: This function is not synthesisable
+simulateB# :: (Bundle a, Bundle b) => (Unbundled domain1 a -> Unbundled domain2 b) -> [a] -> [b]
+simulateB# f = simulate# (bundle . f . unbundle)

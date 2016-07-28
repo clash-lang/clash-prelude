@@ -10,6 +10,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImplicitParams             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MagicHash                  #-}
@@ -25,8 +26,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 module CLaSH.Signal.Delayed
   ( -- * Delay-annotated synchronous signals
     DSignal
-  , delay
-  , delayI
+  , delayD
+  , delayDI
   , feedback
     -- * Signal \<-\> DSignal conversion
   , fromSignal
@@ -46,6 +47,7 @@ import Data.Bits                  (Bits, FiniteBits)
 import Data.Coerce                (coerce)
 import Data.Default               (Default(..))
 import Control.Applicative        (liftA2)
+import GHC.Stack                  (HasCallStack)
 import GHC.TypeLits               (KnownNat, Nat, type (+))
 import Language.Haskell.TH.Syntax (Lift)
 import Prelude                    hiding (head, length, repeat)
@@ -55,8 +57,9 @@ import CLaSH.Class.Num            (ExtendingNum (..), SaturatingNum)
 import CLaSH.Promoted.Nat         (SNat)
 import CLaSH.Sized.Vector         (Vec, head, length, repeat, shiftInAt0,
                                    singleton)
-import CLaSH.Signal               (Signal, fromList, fromList_lazy, register,
-                                   bundle, unbundle)
+import CLaSH.Signal               (Signal, SystemClock, SystemReset, fromList,
+                                   fromList_lazy, register, bundle, unbundle)
+import CLaSH.Signal.Explicit      (System)
 
 {- $setup
 >>> :set -XDataKinds
@@ -81,9 +84,9 @@ let mac :: DSignal 0 Int -> DSignal 0 Int -> DSignal 0 Int
 -- along its path.
 newtype DSignal (delay :: Nat) a =
     DSignal { -- | Strip a 'DSignal' from its delay information.
-              toSignal :: Signal a
+              toSignal :: Signal System a
             }
-  deriving (Show,Default,Functor,Applicative,Num,Bounded,Fractional,
+  deriving (Default,Functor,Applicative,Num,Bounded,Fractional,
             Real,Integral,SaturatingNum,Eq,Ord,Enum,Bits,FiniteBits,Foldable,
             Traversable,Arbitrary,CoArbitrary,Lift)
 
@@ -127,13 +130,13 @@ dfromList_lazy = coerce . fromList_lazy
 --
 -- >>> sampleN 6 (delay3 (dfromList [1..]))
 -- [0,0,0,1,2,3]
-delay :: forall a n d . KnownNat d
-      => Vec d a
-      -> DSignal n a
-      -> DSignal (n + d) a
-delay m ds = coerce (delay' (coerce ds))
+delayD :: forall a n d . (HasCallStack, KnownNat d, ?reset :: SystemReset, ?clk :: SystemClock)
+       => Vec d a
+       -> DSignal n a
+       -> DSignal (n + d) a
+delayD m ds = coerce (delay' (coerce ds))
   where
-    delay' :: Signal a -> Signal a
+    delay' :: Signal System a -> Signal System a
     delay' s = case length m of
       0 -> s
       _ -> let (r',o) = shiftInAt0 (unbundle r) (singleton s)
@@ -149,10 +152,10 @@ delay m ds = coerce (delay' (coerce ds))
 --
 -- >>> sampleN 6 (delay2 (dfromList [1..]))
 -- [0,0,1,2,3,4]
-delayI :: (Default a, KnownNat d)
-       => DSignal n a
-       -> DSignal (n + d) a
-delayI = delay (repeat def)
+delayDI :: (HasCallStack, Default a, KnownNat d, ?reset :: SystemReset, ?clk :: SystemClock)
+        => DSignal n a
+        -> DSignal (n + d) a
+delayDI = delayD (repeat def)
 
 -- | Feed the delayed result of a function back to its input:
 --
@@ -175,7 +178,7 @@ feedback f = let (o,r) = f (coerce r) in o
 -- | 'Signal's are not delayed
 --
 -- > sample s == dsample (fromSignal s)
-fromSignal :: Signal a -> DSignal 0 a
+fromSignal :: Signal System a -> DSignal 0 a
 fromSignal = coerce
 
 -- | __EXPERIMENTAL__
@@ -184,7 +187,7 @@ fromSignal = coerce
 --
 -- __NB__: Should only be used to interface with functions specified in terms of
 -- 'Signal'.
-unsafeFromSignal :: Signal a -> DSignal n a
+unsafeFromSignal :: Signal System a -> DSignal n a
 unsafeFromSignal = DSignal
 
 -- | __EXPERIMENTAL__

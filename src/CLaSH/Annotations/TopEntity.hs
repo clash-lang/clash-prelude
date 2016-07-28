@@ -175,16 +175,16 @@ module CLaSH.Annotations.TopEntity
     -- * Convenience functions
   , defTop
     -- ** Altera clock sources
-  , altpll
-  , alteraPll
-    -- ** Xilinx clock sources
-  , clockWizard
-  , clockWizardDifferential
+--  , altpll
+--  , alteraPll
+--    -- ** Xilinx clock sources
+--  , clockWizard
+--  , clockWizardDifferential
   )
 where
 
 import Data.Data
-import CLaSH.Signal.Explicit (systemClock)
+--import CLaSH.Signal.Explicit (systemClock)
 
 -- | TopEntity annotation
 data TopEntity
@@ -303,18 +303,18 @@ defTop = TopEntity
 -- > ,.c0 (system1000)
 -- > ,.areset (~ KEY0[0])
 -- > ,.locked (altpll50_locked));
-altpll :: String -- ^ Name of the component.
-       -> String -- ^ Clock Pin/Expression of the free running clock.
-       -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
-       -> ClockSource
-altpll pllName clkExpr resExpr = ClockSource
-  { c_name  = pllName
-  , c_inp   = pure ("inclk0",clkExpr)
-  , c_outp  = [("c0",show systemClock)]
-  , c_reset = Just ("areset",resExpr)
-  , c_lock  = "locked"
-  , c_sync  = False
-  }
+-- altpll :: String -- ^ Name of the component.
+--        -> String -- ^ Clock Pin/Expression of the free running clock.
+--        -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
+--        -> ClockSource
+-- altpll pllName clkExpr resExpr = ClockSource
+--   { c_name  = pllName
+--   , c_inp   = pure ("inclk0",clkExpr)
+--   , c_outp  = [("c0",show systemClock)]
+--   , c_reset = Just ("areset",resExpr)
+--   , c_lock  = "locked"
+--   , c_sync  = False
+--   }
 
 -- | A clock source that corresponds to the Altera \"Altera PLL\" component
 -- with default settings to provide a stable 'systemClock'.
@@ -343,18 +343,18 @@ altpll pllName clkExpr resExpr = ClockSource
 -- > ,.outclk_0 (system1000)
 -- > ,.rst (~ KEY0[0])
 -- > ,.locked (alteraPll50_locked));
-alteraPll :: String -- ^ Name of the component.
-          -> String -- ^ Clock Pin/Expression of the free running clock.
-          -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
-          -> ClockSource
-alteraPll pllName clkExpr resExpr = ClockSource
-  { c_name  = pllName
-  , c_inp   = pure ("refclk",clkExpr)
-  , c_outp  = [("outclk_0",show systemClock)]
-  , c_reset = Just ("rst",resExpr)
-  , c_lock  = "locked"
-  , c_sync  = False
-  }
+-- alteraPll :: String -- ^ Name of the component.
+--           -> String -- ^ Clock Pin/Expression of the free running clock.
+--           -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
+--           -> ClockSource
+-- alteraPll pllName clkExpr resExpr = ClockSource
+--   { c_name  = pllName
+--   , c_inp   = pure ("refclk",clkExpr)
+--   , c_outp  = [("outclk_0",show systemClock)]
+--   , c_reset = Just ("rst",resExpr)
+--   , c_lock  = "locked"
+--   , c_sync  = False
+--   }
 
 -- | A clock source that corresponds to the Xilinx PLL/MMCM component created
 -- with the \"Clock Wizard\", with settings to provide a stable 'systemClock'.
@@ -383,18 +383,18 @@ alteraPll pllName clkExpr resExpr = ClockSource
 -- > ,.CLK_OUT1 (system1000)
 -- > ,.RESET (~ KEY[0])
 -- > ,.LOCKED (clkwiz50_locked));
-clockWizard :: String -- ^ Name of the component.
-            -> String -- ^ Clock Pin/Expression of the free running clock.
-            -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
-            -> ClockSource
-clockWizard pllName clkExpr resExpr = ClockSource
-  { c_name  = pllName
-  , c_inp   = pure ("CLK_IN1",clkExpr)
-  , c_outp  = [("CLK_OUT1",show systemClock)]
-  , c_reset = Just ("RESET",resExpr)
-  , c_lock  = "LOCKED"
-  , c_sync  = False
-  }
+-- clockWizard :: String -- ^ Name of the component.
+--             -> String -- ^ Clock Pin/Expression of the free running clock.
+--             -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
+--             -> ClockSource
+-- clockWizard pllName clkExpr resExpr = ClockSource
+--   { c_name  = pllName
+--   , c_inp   = pure ("CLK_IN1",clkExpr)
+--   , c_outp  = [("CLK_OUT1",show systemClock)]
+--   , c_reset = Just ("RESET",resExpr)
+--   , c_lock  = "LOCKED"
+--   , c_sync  = False
+--   }
 
 -- | A clock source that corresponds to the Xilinx PLL/MMCM component created
 -- with the \"Clock Wizard\", with settings to provide a stable 'systemClock'
@@ -426,18 +426,18 @@ clockWizard pllName clkExpr resExpr = ClockSource
 -- > ,.CLK_OUT1 (system1000)
 -- > ,.RESET (~ KEY[0])
 -- > ,.LOCKED (clkwiz50_locked));
-clockWizardDifferential :: String -- ^ Name of the component.
-                        -> String -- ^ Clock Pin/Expression of the differential free running clock, negative phase.
-                        -> String -- ^ Clock Pin/Expression of the differential free running clock, positive phase.
-                        -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
-                        -> ClockSource
-clockWizardDifferential pllName clkExpr_n clkExpr_p resExpr = ClockSource
-  { c_name  = pllName
-  , c_inp   = [ ("CLK_IN1_D_clk_n",clkExpr_n)
-              , ("CLK_IN1_D_clk_p",clkExpr_p)
-              ]
-  , c_outp  = [("CLK_OUT1",show systemClock)]
-  , c_reset = Just ("RESET",resExpr)
-  , c_lock  = "LOCKED"
-  , c_sync  = False
-  }
+-- clockWizardDifferential :: String -- ^ Name of the component.
+--                         -> String -- ^ Clock Pin/Expression of the differential free running clock, negative phase.
+--                         -> String -- ^ Clock Pin/Expression of the differential free running clock, positive phase.
+--                         -> String -- ^ Reset Pin/Expression controlling the reset of the PLL.
+--                         -> ClockSource
+-- clockWizardDifferential pllName clkExpr_n clkExpr_p resExpr = ClockSource
+--   { c_name  = pllName
+--   , c_inp   = [ ("CLK_IN1_D_clk_n",clkExpr_n)
+--               , ("CLK_IN1_D_clk_p",clkExpr_p)
+--               ]
+--   , c_outp  = [("CLK_OUT1",show systemClock)]
+--   , c_reset = Just ("RESET",resExpr)
+--   , c_lock  = "LOCKED"
+--   , c_sync  = False
+--   }

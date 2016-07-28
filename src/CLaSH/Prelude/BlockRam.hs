@@ -335,9 +335,10 @@ This concludes the short introduction to using 'blockRam'.
 
 -}
 
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE MagicHash     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE ImplicitParams   #-}
+{-# LANGUAGE MagicHash        #-}
+{-# LANGUAGE TypeOperators    #-}
 
 {-# LANGUAGE Safe #-}
 
@@ -349,13 +350,13 @@ module CLaSH.Prelude.BlockRam
     blockRam
   , blockRamPow2
     -- * BlockRAM synchronised to an arbitrary clock
-  , blockRam'
-  , blockRamPow2'
+  , blockRam#
+  , blockRamPow2#
     -- * Read/Write conflict resolution
   , readNew
-  , readNew'
+  , readNew#
     -- * Internal
-  , blockRam#
+  , blockRam##
   )
 where
 
@@ -363,10 +364,11 @@ import Control.Monad          (when)
 import Control.Monad.ST.Lazy  (ST,runST)
 import Data.Array.MArray.Safe (newListArray,readArray,writeArray)
 import Data.Array.ST.Safe     (STArray)
+import GHC.Stack              (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits           (KnownNat, type (^))
 
-import CLaSH.Signal           (Signal, mux)
-import CLaSH.Signal.Explicit  (Signal', SClock, register', systemClock)
+import CLaSH.Signal           (Signal, Clock, ClockKind (..), Reset, ResetKind (..), mux)
+import CLaSH.Signal.Explicit  (delay#, register#)
 import CLaSH.Signal.Bundle    (bundle)
 import CLaSH.Sized.Unsigned   (Unsigned)
 import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
@@ -388,19 +390,19 @@ import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRam inits) wr rd en dt@.
-blockRam :: (KnownNat n, Enum addr)
+blockRam :: (HasCallStack, KnownNat n, Enum addr, ?clk :: Clock 'Original domain)
          => Vec n a     -- ^ Initial content of the BRAM, also
                         -- determines the size, @n@, of the BRAM.
                         --
                         -- __NB__: __MUST__ be a constant.
-         -> Signal addr -- ^ Write address @w@
-         -> Signal addr -- ^ Read address @r@
-         -> Signal Bool -- ^ Write enable
-         -> Signal a    -- ^ Value to write (at address @w@)
-         -> Signal a
+         -> Signal domain addr -- ^ Write address @w@
+         -> Signal domain addr -- ^ Read address @r@
+         -> Signal domain Bool -- ^ Write enable
+         -> Signal domain a    -- ^ Value to write (at address @w@)
+         -> Signal domain a
          -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
          -- cycle
-blockRam = blockRam' systemClock
+blockRam = blockRam# ?clk
 
 {-# INLINE blockRamPow2 #-}
 -- | Create a blockRAM with space for 2^@n@ elements
@@ -419,21 +421,21 @@ blockRam = blockRam' systemClock
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRamPow2 inits) wr rd en dt@.
-blockRamPow2 :: KnownNat n
+blockRamPow2 :: (HasCallStack, KnownNat n, ?clk :: Clock 'Original domain)
              => Vec (2^n) a         -- ^ Initial content of the BRAM, also
                                     -- determines the size, @2^n@, of the BRAM.
                                     --
                                     -- __NB__: __MUST__ be a constant.
-             -> Signal (Unsigned n) -- ^ Write address @w@
-             -> Signal (Unsigned n) -- ^ Read address @r@
-             -> Signal Bool         -- ^ Write enable
-             -> Signal a            -- ^ Value to write (at address @w@)
-             -> Signal a
+             -> Signal domain (Unsigned n) -- ^ Write address @w@
+             -> Signal domain (Unsigned n) -- ^ Read address @r@
+             -> Signal domain Bool         -- ^ Write enable
+             -> Signal domain a            -- ^ Value to write (at address @w@)
+             -> Signal domain a
              -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
              -- cycle
-blockRamPow2 = blockRamPow2' systemClock
+blockRamPow2 = blockRam
 
-{-# INLINE blockRam' #-}
+{-# INLINE blockRam# #-}
 -- | Create a blockRAM with space for @n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -455,23 +457,23 @@ blockRamPow2 = blockRamPow2' systemClock
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew'' for obtaining write-before-read semantics like this: @readNew' clk (blockRam' clk inits) wr rd en dt@.
-blockRam' :: (KnownNat n, Enum addr)
-          => SClock clk       -- ^ 'Clock' to synchronize to
+blockRam# :: (HasCallStack, KnownNat n, Enum addr)
+          => Clock clk domain -- ^ 'Clock' to synchronize to
           -> Vec n a          -- ^ Initial content of the BRAM, also
                               -- determines the size, @n@, of the BRAM.
                               --
                               -- __NB__: __MUST__ be a constant.
-          -> Signal' clk addr -- ^ Write address @w@
-          -> Signal' clk addr -- ^ Read address @r@
-          -> Signal' clk Bool -- ^ Write enable
-          -> Signal' clk a    -- ^ Value to write (at address @w@)
-          -> Signal' clk a
+          -> Signal domain addr -- ^ Write address @w@
+          -> Signal domain addr -- ^ Read address @r@
+          -> Signal domain Bool -- ^ Write enable
+          -> Signal domain a    -- ^ Value to write (at address @w@)
+          -> Signal domain a
           -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
           -- cycle
-blockRam' clk content wr rd en din = blockRam# clk content (fromEnum <$> wr)
-                                               (fromEnum <$> rd) en din
+blockRam# clk content wr rd en din = blockRam## clk content (fromEnum <$> wr)
+                                                (fromEnum <$> rd) en din
 
-{-# INLINE blockRamPow2' #-}
+{-# INLINE blockRamPow2# #-}
 -- | Create a blockRAM with space for 2^@n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -493,38 +495,38 @@ blockRam' clk content wr rd en din = blockRam# clk content (fromEnum <$> wr)
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew'' for obtaining write-before-read semantics like this: @readNew' clk (blockRamPow2' clk inits) wr rd en dt@.
-blockRamPow2' :: KnownNat n
-              => SClock clk               -- ^ 'Clock' to synchronize to
+blockRamPow2# :: (HasCallStack, KnownNat n)
+              => Clock clk domain               -- ^ 'Clock' to synchronize to
               -> Vec (2^n) a              -- ^ Initial content of the BRAM, also
                                           -- determines the size, @2^n@, of
                                           -- the BRAM.
                                           --
                                           -- __NB__: __MUST__ be a constant.
-              -> Signal' clk (Unsigned n) -- ^ Write address @w@
-              -> Signal' clk (Unsigned n) -- ^ Read address @r@
-              -> Signal' clk Bool         -- ^ Write enable
-              -> Signal' clk a            -- ^ Value to write (at address @w@)
-              -> Signal' clk a
+              -> Signal domain (Unsigned n) -- ^ Write address @w@
+              -> Signal domain (Unsigned n) -- ^ Read address @r@
+              -> Signal domain Bool         -- ^ Write enable
+              -> Signal domain a            -- ^ Value to write (at address @w@)
+              -> Signal domain a
               -- ^ Value of the @blockRAM@ at address @r@ from the previous
               -- clock cycle
-blockRamPow2' = blockRam'
+blockRamPow2# = blockRam#
 
-{-# NOINLINE blockRam# #-}
+{-# NOINLINE blockRam## #-}
 -- | blockRAM primitive
-blockRam# :: KnownNat n
-          => SClock clk       -- ^ 'Clock' to synchronize to
-          -> Vec n a          -- ^ Initial content of the BRAM, also
-                              -- determines the size, @n@, of the BRAM.
-                              --
-                              -- __NB__: __MUST__ be a constant.
-          -> Signal' clk Int  -- ^ Write address @w@
-          -> Signal' clk Int  -- ^ Read address @r@
-          -> Signal' clk Bool -- ^ Write enable
-          -> Signal' clk a    -- ^ Value to write (at address @w@)
-          -> Signal' clk a
-          -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
-          -- cycle
-blockRam# clk content wr rd en din = register' clk undefined dout
+blockRam## :: (HasCallStack, KnownNat n)
+           => Clock clk domain -- ^ 'Clock' to synchronize to
+           -> Vec n a          -- ^ Initial content of the BRAM, also
+                               -- determines the size, @n@, of the BRAM.
+                               --
+                               -- __NB__: __MUST__ be a constant.
+           -> Signal domain Int  -- ^ Write address @w@
+           -> Signal domain Int  -- ^ Read address @r@
+           -> Signal domain Bool -- ^ Write enable
+           -> Signal domain a    -- ^ Value to write (at address @w@)
+           -> Signal domain a
+           -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
+           -- cycle
+blockRam## clk content wr rd en din = (withFrozenCallStack delay#) clk dout
   where
     szI  = maxIndex content
     dout = runST $ do
@@ -539,11 +541,15 @@ blockRam# clk content wr rd en din = register' clk undefined dout
 
 -- | Create read-after-write blockRAM from a read-before-write one (synchronised to specified clock)
 --
-readNew' :: Eq addr => SClock clk -> (Signal' clk addr -> Signal' clk addr -> Signal' clk Bool -> Signal' clk a -> Signal' clk a) -> Signal' clk addr -> Signal' clk addr -> Signal' clk Bool -> Signal' clk a -> Signal' clk a
-readNew' clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wrAddr rdAddr wrEn wrData
-  where sameAddr = (==) <$> wrAddr <*> rdAddr
-        wasSame = register' clk False ((&&) <$> wrEn <*> sameAddr)
-        wasWritten = register' clk undefined wrData
+readNew# :: Eq addr
+         => Reset res domain
+         -> Clock clk domain
+         -> (Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a)
+         -> Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a
+readNew# res clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wrAddr rdAddr wrEn wrData
+  where sameAddr   = (==) <$> wrAddr <*> rdAddr
+        wasSame    = register# res clk False ((&&) <$> wrEn <*> sameAddr)
+        wasWritten = register# res clk undefined wrData
 
 -- | Create read-after-write blockRAM from a read-before-write one (synchronised to system clock)
 --
@@ -552,5 +558,7 @@ readNew' clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wrAddr
 -- readNew (blockRam (0 :> 1 :> Nil))
 --   :: (Num a, Eq addr, Enum addr) =>
 --      Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
-readNew :: Eq addr => (Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a) -> Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
-readNew = readNew' systemClock
+readNew :: (Eq addr, ?res :: Reset 'Asynchronous domain, ?clk :: Clock 'Original domain)
+        => (Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a)
+        -> Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a
+readNew = readNew# ?res ?clk
