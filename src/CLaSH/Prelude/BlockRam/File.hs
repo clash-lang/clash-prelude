@@ -64,6 +64,7 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 -}
 
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE ImplicitParams      #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -79,10 +80,10 @@ module CLaSH.Prelude.BlockRam.File
     blockRamFile
   , blockRamFilePow2
     -- * BlockRAM synchronised to an arbitrary clock
-  , blockRamFile'
-  , blockRamFilePow2'
-    -- * Internal
   , blockRamFile#
+  , blockRamFilePow2#
+    -- * Internal
+  , blockRamFile##
   , initMem
   )
 where
@@ -94,13 +95,14 @@ import Data.Array.MArray            (newListArray,readArray,writeArray)
 import Data.Array.ST                (STArray)
 import Data.Char                    (digitToInt)
 import Data.Maybe                   (listToMaybe)
+import GHC.Stack                    (HasCallStack)
 import GHC.TypeLits                 (KnownNat)
 import Numeric                      (readInt)
 
 import CLaSH.Promoted.Nat    (SNat (..), pow2SNat, snatToInteger)
 import CLaSH.Sized.BitVector (BitVector)
-import CLaSH.Signal          (Signal)
-import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
+import CLaSH.Signal          (Clock,Signal)
+import CLaSH.Signal.Explicit (delay#)
 import CLaSH.Signal.Bundle   (bundle)
 import CLaSH.Sized.Unsigned  (Unsigned)
 
@@ -131,18 +133,19 @@ import CLaSH.Sized.Unsigned  (Unsigned)
 -- to instantiate a Block RAM with the contents of a data file.
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
-blockRamFile :: (KnownNat m, Enum addr)
-             => SNat n               -- ^ Size of the blockRAM
-             -> FilePath             -- ^ File describing the initial content
-                                     -- of the blockRAM
-             -> Signal addr          -- ^ Write address @w@
-             -> Signal addr          -- ^ Read address @r@
-             -> Signal Bool          -- ^ Write enable
-             -> Signal (BitVector m) -- ^ Value to write (at address @w@)
-             -> Signal (BitVector m)
+blockRamFile :: (HasCallStack, KnownNat m, Enum addr,
+                 ?clk :: Clock clk dom)
+             => SNat n                   -- ^ Size of the blockRAM
+             -> FilePath                 -- ^ File describing the initial content
+                                         -- of the blockRAM
+             -> Signal dom addr          -- ^ Write address @w@
+             -> Signal dom addr          -- ^ Read address @r@
+             -> Signal dom Bool          -- ^ Write enable
+             -> Signal dom (BitVector m) -- ^ Value to write (at address @w@)
+             -> Signal dom (BitVector m)
              -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
              -- cycle
-blockRamFile = blockRamFile' systemClock
+blockRamFile = blockRamFile# ?clk
 
 {-# INLINE blockRamFilePow2 #-}
 -- | Create a blockRAM with space for 2^@n@ elements
@@ -171,19 +174,20 @@ blockRamFile = blockRamFile' systemClock
 -- to instantiate a Block RAM with the contents of a data file.
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
-blockRamFilePow2 :: (KnownNat m, KnownNat n)
-                 => FilePath             -- ^ File describing the initial
-                                         -- content of the blockRAM
-                 -> Signal (Unsigned n)  -- ^ Write address @w@
-                 -> Signal (Unsigned n)  -- ^ Read address @r@
-                 -> Signal Bool          -- ^ Write enable
-                 -> Signal (BitVector m) -- ^ Value to write (at address @w@)
-                 -> Signal (BitVector m)
+blockRamFilePow2 :: (HasCallStack, KnownNat m, KnownNat n,
+                     ?clk :: Clock clk dom)
+                 => FilePath                 -- ^ File describing the initial
+                                             -- content of the blockRAM
+                 -> Signal dom (Unsigned n)  -- ^ Write address @w@
+                 -> Signal dom (Unsigned n)  -- ^ Read address @r@
+                 -> Signal dom Bool          -- ^ Write enable
+                 -> Signal dom (BitVector m) -- ^ Value to write (at address @w@)
+                 -> Signal dom (BitVector m)
                  -- ^ Value of the @blockRAM@ at address @r@ from the previous
                  -- clock cycle
-blockRamFilePow2 = blockRamFilePow2' systemClock
+blockRamFilePow2 = blockRamFilePow2# ?clk
 
-{-# INLINE blockRamFilePow2' #-}
+{-# INLINE blockRamFilePow2# #-}
 -- | Create a blockRAM with space for 2^@n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -210,20 +214,20 @@ blockRamFilePow2 = blockRamFilePow2' systemClock
 -- to instantiate a Block RAM with the contents of a data file.
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
-blockRamFilePow2' :: forall clk n m . (KnownNat m, KnownNat n)
-                  => SClock clk                -- ^ 'Clock' to synchronize to
-                  -> FilePath                  -- ^ File describing the initial
-                                               -- content of the blockRAM
-                  -> Signal' clk (Unsigned n)  -- ^ Write address @w@
-                  -> Signal' clk (Unsigned n)  -- ^ Read address @r@
-                  -> Signal' clk Bool          -- ^ Write enable
-                  -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
-                  -> Signal' clk (BitVector m)
+blockRamFilePow2# :: forall dom clk n m . (HasCallStack, KnownNat m, KnownNat n)
+                  => Clock clk dom            -- ^ 'Clock' to synchronize to
+                  -> FilePath                 -- ^ File describing the initial
+                                              -- content of the blockRAM
+                  -> Signal dom (Unsigned n)  -- ^ Write address @w@
+                  -> Signal dom (Unsigned n)  -- ^ Read address @r@
+                  -> Signal dom Bool          -- ^ Write enable
+                  -> Signal dom (BitVector m) -- ^ Value to write (at address @w@)
+                  -> Signal dom (BitVector m)
                   -- ^ Value of the @blockRAM@ at address @r@ from the previous
                   -- clock cycle
-blockRamFilePow2' clk = blockRamFile' clk (pow2SNat (SNat @ n))
+blockRamFilePow2# clk = blockRamFile# clk (pow2SNat (SNat @ n))
 
-{-# INLINE blockRamFile' #-}
+{-# INLINE blockRamFile# #-}
 -- | Create a blockRAM with space for @n@ elements
 --
 -- * __NB__: Read value is delayed by 1 cycle
@@ -250,38 +254,38 @@ blockRamFilePow2' clk = blockRamFile' clk (pow2SNat (SNat @ n))
 -- to instantiate a Block RAM with the contents of a data file.
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
-blockRamFile' :: (KnownNat m, Enum addr)
-              => SClock clk                -- ^ 'Clock' to synchronize to
-              -> SNat n                    -- ^ Size of the blockRAM
-              -> FilePath                  -- ^ File describing the initial
-                                           -- content of the blockRAM
-              -> Signal' clk addr          -- ^ Write address @w@
-              -> Signal' clk addr          -- ^ Read address @r@
-              -> Signal' clk Bool          -- ^ Write enable
-              -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
-              -> Signal' clk (BitVector m)
+blockRamFile# :: (HasCallStack, KnownNat m, Enum addr)
+              => Clock clk dom            -- ^ 'Clock' to synchronize to
+              -> SNat n                   -- ^ Size of the blockRAM
+              -> FilePath                 -- ^ File describing the initial
+                                          -- content of the blockRAM
+              -> Signal dom addr          -- ^ Write address @w@
+              -> Signal dom addr          -- ^ Read address @r@
+              -> Signal dom Bool          -- ^ Write enable
+              -> Signal dom (BitVector m) -- ^ Value to write (at address @w@)
+              -> Signal dom (BitVector m)
               -- ^ Value of the @blockRAM@ at address @r@ from the previous
               -- clock cycle
-blockRamFile' clk sz file wr rd en din = blockRamFile# clk sz file
-                                                       (fromEnum <$> wr)
-                                                       (fromEnum <$> rd)
-                                                       en din
+blockRamFile# clk sz file wr rd en din = blockRamFile## clk sz file
+                                                        (fromEnum <$> wr)
+                                                        (fromEnum <$> rd)
+                                                        en din
 
-{-# NOINLINE blockRamFile# #-}
+{-# NOINLINE blockRamFile## #-}
 -- | blockRamFile primitive
-blockRamFile# :: KnownNat m
-              => SClock clk                -- ^ 'Clock' to synchronize to
-              -> SNat n                    -- ^ Size of the blockRAM
-              -> FilePath                  -- ^ File describing the initial
+blockRamFile## :: (HasCallStack, KnownNat m)
+               => Clock clk dom            -- ^ 'Clock' to synchronize to
+               -> SNat n                   -- ^ Size of the blockRAM
+               -> FilePath                 -- ^ File describing the initial
                                            -- content of the blockRAM
-              -> Signal' clk Int           -- ^ Write address @w@
-              -> Signal' clk Int           -- ^ Read address @r@
-              -> Signal' clk Bool          -- ^ Write enable
-              -> Signal' clk (BitVector m) -- ^ Value to write (at address @w@)
-              -> Signal' clk (BitVector m)
-              -- ^ Value of the @blockRAM@ at address @r@ from the previous
-              -- clock cycle
-blockRamFile# clk sz file wr rd en din = register' clk undefined dout
+               -> Signal dom Int           -- ^ Write address @w@
+               -> Signal dom Int           -- ^ Read address @r@
+               -> Signal dom Bool          -- ^ Write enable
+               -> Signal dom (BitVector m) -- ^ Value to write (at address @w@)
+               -> Signal dom (BitVector m)
+               -- ^ Value of the @blockRAM@ at address @r@ from the previous
+               -- clock cycle
+blockRamFile## clk sz file wr rd en din = delay# clk dout
   where
     szI  = fromInteger $ snatToInteger sz
     dout = runST $ do

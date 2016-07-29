@@ -57,9 +57,9 @@ import CLaSH.Class.Num            (ExtendingNum (..), SaturatingNum)
 import CLaSH.Promoted.Nat         (SNat)
 import CLaSH.Sized.Vector         (Vec, head, length, repeat, shiftInAt0,
                                    singleton)
-import CLaSH.Signal               (Signal, SystemClock, SystemReset, fromList,
-                                   fromList_lazy, register, bundle, unbundle)
-import CLaSH.Signal.Explicit      (System)
+import CLaSH.Signal               (Signal, Clock, Reset, fromList, fromList_lazy,
+                                   register, bundle, unbundle)
+import CLaSH.Signal.Explicit      (Domain)
 
 {- $setup
 >>> :set -XDataKinds
@@ -82,19 +82,19 @@ let mac :: DSignal 0 Int -> DSignal 0 Int -> DSignal 0 Int
 -- | A synchronized signal with samples of type @a@, synchronized to \"system\"
 -- clock (period 1000), that has accumulated @delay@ amount of samples delay
 -- along its path.
-newtype DSignal (delay :: Nat) a =
+newtype DSignal (domain :: Domain) (delay :: Nat) a =
     DSignal { -- | Strip a 'DSignal' from its delay information.
-              toSignal :: Signal System a
+              toSignal :: Signal domain a
             }
   deriving (Default,Functor,Applicative,Num,Bounded,Fractional,
             Real,Integral,SaturatingNum,Eq,Ord,Enum,Bits,FiniteBits,Foldable,
             Traversable,Arbitrary,CoArbitrary,Lift)
 
-instance ExtendingNum a b => ExtendingNum (DSignal n a) (DSignal n b) where
-  type AResult (DSignal n a) (DSignal n b) = DSignal n (AResult a b)
+instance ExtendingNum a b => ExtendingNum (DSignal dom n a) (DSignal dom n b) where
+  type AResult (DSignal dom n a) (DSignal dom n b) = DSignal dom n (AResult a b)
   plus  = liftA2 plus
   minus = liftA2 minus
-  type MResult (DSignal n a) (DSignal n b) = DSignal n (MResult a b)
+  type MResult (DSignal dom n a) (DSignal dom n b) = DSignal dom n (MResult a b)
   times = liftA2 times
 
 -- | Create a 'DSignal' from a list
@@ -106,7 +106,7 @@ instance ExtendingNum a b => ExtendingNum (DSignal n a) (DSignal n b) where
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
-dfromList :: NFData a => [a] -> DSignal 0 a
+dfromList :: NFData a => [a] -> DSignal dom 0 a
 dfromList = coerce . fromList
 
 -- | Create a 'DSignal' from a list
@@ -118,7 +118,7 @@ dfromList = coerce . fromList
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
-dfromList_lazy :: [a] -> DSignal 0 a
+dfromList_lazy :: [a] -> DSignal dom 0 a
 dfromList_lazy = coerce . fromList_lazy
 
 -- | Delay a 'DSignal' for @d@ periods.
@@ -130,13 +130,16 @@ dfromList_lazy = coerce . fromList_lazy
 --
 -- >>> sampleN 6 (delay3 (dfromList [1..]))
 -- [0,0,0,1,2,3]
-delayD :: forall a n d . (HasCallStack, KnownNat d, ?reset :: SystemReset, ?clk :: SystemClock)
+delayD :: forall domain res clk a n d .
+          (HasCallStack, KnownNat d,
+           ?res :: Reset res domain,
+           ?clk :: Clock clk domain)
        => Vec d a
-       -> DSignal n a
-       -> DSignal (n + d) a
+       -> DSignal domain n a
+       -> DSignal domain (n + d) a
 delayD m ds = coerce (delay' (coerce ds))
   where
-    delay' :: Signal System a -> Signal System a
+    delay' :: Signal domain a -> Signal domain a
     delay' s = case length m of
       0 -> s
       _ -> let (r',o) = shiftInAt0 (unbundle r) (singleton s)
@@ -152,9 +155,11 @@ delayD m ds = coerce (delay' (coerce ds))
 --
 -- >>> sampleN 6 (delay2 (dfromList [1..]))
 -- [0,0,1,2,3,4]
-delayDI :: (HasCallStack, Default a, KnownNat d, ?reset :: SystemReset, ?clk :: SystemClock)
-        => DSignal n a
-        -> DSignal (n + d) a
+delayDI :: (HasCallStack, Default a, KnownNat d,
+            ?res :: Reset res domain,
+            ?clk :: Clock clk domain)
+        => DSignal domain n a
+        -> DSignal domain (n + d) a
 delayDI = delayD (repeat def)
 
 -- | Feed the delayed result of a function back to its input:
@@ -171,14 +176,14 @@ delayDI = delayD (repeat def)
 --
 -- >>> sampleN 6 (mac (dfromList [1..]) (dfromList [1..]))
 -- [0,1,5,14,30,55]
-feedback :: (DSignal n a -> (DSignal n a,DSignal (n + m + 1) a))
-         -> DSignal n a
+feedback :: (DSignal dom n a -> (DSignal dom n a,DSignal dom (n + m + 1) a))
+         -> DSignal dom n a
 feedback f = let (o,r) = f (coerce r) in o
 
 -- | 'Signal's are not delayed
 --
 -- > sample s == dsample (fromSignal s)
-fromSignal :: Signal System a -> DSignal 0 a
+fromSignal :: Signal dom a -> DSignal dom 0 a
 fromSignal = coerce
 
 -- | __EXPERIMENTAL__
@@ -187,7 +192,7 @@ fromSignal = coerce
 --
 -- __NB__: Should only be used to interface with functions specified in terms of
 -- 'Signal'.
-unsafeFromSignal :: Signal System a -> DSignal n a
+unsafeFromSignal :: Signal dom a -> DSignal dom n a
 unsafeFromSignal = DSignal
 
 -- | __EXPERIMENTAL__
@@ -201,5 +206,5 @@ unsafeFromSignal = DSignal
 --     acc' = (x * y) + 'antiDelay' d1 acc
 --     acc  = 'delay' ('singleton' 0) acc'
 -- @
-antiDelay :: SNat d -> DSignal (n + d) a -> DSignal n a
+antiDelay :: SNat d -> DSignal dom (n + d) a -> DSignal dom n a
 antiDelay _ = coerce

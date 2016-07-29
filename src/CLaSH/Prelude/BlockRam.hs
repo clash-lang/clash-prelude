@@ -367,7 +367,7 @@ import Data.Array.ST.Safe     (STArray)
 import GHC.Stack              (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits           (KnownNat, type (^))
 
-import CLaSH.Signal           (Signal, Clock, ClockKind (..), Reset, ResetKind (..), mux)
+import CLaSH.Signal           (Signal, Clock, Reset, mux)
 import CLaSH.Signal.Explicit  (delay#, register#)
 import CLaSH.Signal.Bundle    (bundle)
 import CLaSH.Sized.Unsigned   (Unsigned)
@@ -390,7 +390,7 @@ import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRam inits) wr rd en dt@.
-blockRam :: (HasCallStack, KnownNat n, Enum addr, ?clk :: Clock 'Original domain)
+blockRam :: (HasCallStack, KnownNat n, Enum addr, ?clk :: Clock clk domain)
          => Vec n a     -- ^ Initial content of the BRAM, also
                         -- determines the size, @n@, of the BRAM.
                         --
@@ -421,7 +421,7 @@ blockRam = blockRam# ?clk
 -- * See "CLaSH.Prelude.BlockRam#usingrams" for more information on how to use a
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRamPow2 inits) wr rd en dt@.
-blockRamPow2 :: (HasCallStack, KnownNat n, ?clk :: Clock 'Original domain)
+blockRamPow2 :: (HasCallStack, KnownNat n, ?clk :: Clock clk domain)
              => Vec (2^n) a         -- ^ Initial content of the BRAM, also
                                     -- determines the size, @2^n@, of the BRAM.
                                     --
@@ -558,7 +558,7 @@ readNew# res clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wr
 -- readNew (blockRam (0 :> 1 :> Nil))
 --   :: (Num a, Eq addr, Enum addr) =>
 --      Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
-readNew :: (Eq addr, ?res :: Reset 'Asynchronous domain, ?clk :: Clock 'Original domain)
+readNew :: (Eq addr, ?res :: Reset res domain, ?clk :: Clock clk domain)
         => (Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a)
         -> Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a
 readNew = readNew# ?res ?clk

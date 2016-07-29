@@ -19,7 +19,9 @@ module CLaSH.Signal
     Signal
   , Clock, ClockKind (..)
   , Reset, ResetKind (..)
+    -- ** System clock and reset
   , System, SystemClock, SystemReset
+  , systemClock, systemReset
     -- * Basic circuit functions
   , signal
   , register
@@ -77,8 +79,9 @@ import Control.DeepSeq       (NFData)
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 import Data.Bits             (Bits) -- Haddock only
 
-import CLaSH.Signal.Internal (Clock, ClockKind (..), Reset, ResetKind (..),
-                              Signal, register#, delay#, regEn#, (.==.), (./=.),
+import CLaSH.Signal.Internal (Clock (Clock), ClockKind (..), Domain (..),
+                              Reset (..), ResetKind (..), Signal (..),
+                              register#, delay#, regEn#, (.==.), (./=.),
                               compare1, (.<.), (.<=.), (.>=.), (.>.), fromEnum1,
                               toRational1, toInteger1, testBit1, popCount1,
                               shift1, rotate1, setBit1, clearBit1, shiftL1,
@@ -87,13 +90,31 @@ import CLaSH.Signal.Internal (Clock, ClockKind (..), Reset, ResetKind (..),
                               sampleN, fromList, simulate#, signal, testFor,
                               sample_lazy, sampleN_lazy, simulate_lazy#,
                               fromList_lazy)
-import CLaSH.Signal.Explicit (System, SystemClock, SystemReset, systemClock, systemReset)
 import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
 >>> let oscillate = register False (not1 oscillate)
 >>> let count = regEn 0 oscillate (count + 1)
 -}
+
+-- * Clock
+
+-- | The standard system domain with a period of 1000
+type System = 'Domain "system" 1000
+
+-- | The clock for 'System'
+type SystemClock = Clock 'Original System
+
+-- | The clock for 'System'
+systemClock :: SystemClock
+systemClock = Clock (pure True)
+
+-- | The reset for 'System'
+type SystemReset = Reset 'Asynchronous System
+
+-- | The reset for 'System'
+systemReset :: SystemReset
+systemReset = Async (False :- pure True)
 
 -- * Basic circuit functions
 
@@ -103,12 +124,12 @@ import CLaSH.Signal.Bundle   (Bundle (..))
 --
 -- >>> sampleN 3 (register 8 (fromList [1,2,3,4]))
 -- [8,1,2]
-register :: ( ?reset :: Reset 'Asynchronous domain
-            , ?clk :: Clock 'Original domain
+register :: ( ?res :: Reset rst domain
+            , ?clk :: Clock clk domain
             , HasCallStack
             )
          => a -> Signal domain a -> Signal domain a
-register i d = withFrozenCallStack (register# ?reset ?clk i d)
+register i d = withFrozenCallStack (register# ?res ?clk i d)
 infixr 3 `register`
 
 delay :: (?clk :: Clock 'Original domain)
@@ -131,9 +152,9 @@ delay d = withFrozenCallStack (delay# ?clk d)
 -- [False,True,False,True,False,True,False,True]
 -- >>> sampleN 8 count
 -- [0,0,1,1,2,2,3,3]
-regEn :: (?reset :: Reset 'Asynchronous domain, ?clk :: Clock 'Original domain)
+regEn :: (?res :: Reset rst domain, ?clk :: Clock clk domain)
       => a -> Signal domain Bool -> Signal domain a -> Signal domain a
-regEn i en d = withFrozenCallStack (regEn# ?reset ?clk i en d)
+regEn i en d = withFrozenCallStack (regEn# ?res ?clk i en d)
 
 
 simulate :: (NFData a, NFData b)

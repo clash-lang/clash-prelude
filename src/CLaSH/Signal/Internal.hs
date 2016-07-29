@@ -104,13 +104,15 @@ import Control.Exception          (SomeException, catch, evaluate, throw)
 import Data.Bits                  (Bits (..), FiniteBits (..))
 import Data.Default               (Default (..))
 import GHC.Stack                  (HasCallStack, withFrozenCallStack)
-import GHC.TypeLits               (Nat, Symbol)
+import GHC.TypeLits               (KnownNat, KnownSymbol, Nat, Symbol)
 import Language.Haskell.TH.Syntax (Lift (..))
 import System.IO.Unsafe           (unsafeDupablePerformIO)
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary(..), Property,
                                    property)
 
 import CLaSH.Class.Num            (ExtendingNum (..), SaturatingNum (..))
+import CLaSH.Promoted.Nat         (SNat (..))
+import CLaSH.Promoted.Symbol      (SSymbol (..))
 import CLaSH.XException           (errorX)
 
 {- $setup
@@ -140,17 +142,25 @@ data ClockKind = Original -- ^ A clock signal coming straight from the clock sou
 
 -- | A clock signal belonging to a @domain@
 data Clock (clockKind :: ClockKind) (domain :: Domain) where
-  Clock# :: { clkEn :: Signal domain Bool } -> Clock clockKind domain
+  Clock# :: SSymbol name
+         -> SNat rate
+         -> Signal ('Domain name rate) Bool
+         -> Clock clockKind ('Domain name rate)
+
+instance Show (Clock clk domain) where
+  show (Clock# nm rt _) = show nm ++ show rt
 
 -- | We can only create 'Original' clock signals
-pattern Clock :: Signal domain Bool -> Clock 'Original domain
-pattern Clock en <- Clock# en
+pattern Clock :: (KnownSymbol name, KnownNat rate) => ()
+              => Signal ('Domain name rate) Bool
+              -> Clock 'Original ('Domain name rate)
+pattern Clock en <- Clock# _nm _rt en
   where
-    Clock en = Clock# en
+    Clock en = Clock# SSymbol SNat en
 
 -- | Clock gating primitive
 clockGate# :: Clock clk domain -> Signal domain Bool -> Clock 'Derived domain
-clockGate# (Clock# en) en' = (Clock# ((&&) <$> en <*> en'))
+clockGate# (Clock# nm rt en) en' = (Clock# nm rt ((&&) <$> en <*> en'))
 {-# NOINLINE clockGate# #-}
 
 -- | The \"kind\" of reset
@@ -331,7 +341,7 @@ register# :: HasCallStack
           -> a
           -> Signal domain a
           -> Signal domain a
-register# (Sync r) (Clock# en) i d =
+register# (Sync r) (Clock# _ _ en) i d =
   let q  = reg q'
       q' = mux en d' q
       d' = mux r d (pure i) -- negated reset
@@ -339,7 +349,7 @@ register# (Sync r) (Clock# en) i d =
   where reg s = withFrozenCallStack (errorX msg) :- s
         msg   = "register: initial value undefined"
 
-register# (Async r) (Clock# en) i d =
+register# (Async r) (Clock# _ _ en) i d =
   let q  = reg q'
       q' = mux en d q
   in  mux r q (pure i) -- negated reset
@@ -351,7 +361,7 @@ delay# :: HasCallStack
        => Clock clk domain
        -> Signal domain a
        -> Signal domain a
-delay# (Clock# en) d =
+delay# (Clock# _ _ en) d =
   let q  = reg q'
       q' = mux en d q
   in  q

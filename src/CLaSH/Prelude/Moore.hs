@@ -10,6 +10,9 @@
   requirements.
 -}
 
+{-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE MagicHash      #-}
+
 {-# LANGUAGE Safe #-}
 
 module CLaSH.Prelude.Moore
@@ -17,14 +20,14 @@ module CLaSH.Prelude.Moore
     moore
   , mooreB
     -- * Moore machine synchronised to an arbitrary clock
-  , moore'
-  , mooreB'
+  , moore#
+  , mooreB#
   )
 where
 
-import CLaSH.Signal          (Signal, Unbundled)
-import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
-import CLaSH.Signal.Bundle   (Bundle (..), Unbundled')
+import CLaSH.Signal          (Clock, Reset, Signal)
+import CLaSH.Signal.Explicit (register#)
+import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
 >>> :set -XDataKinds
@@ -52,7 +55,7 @@ let mac s (x,y) = x * y + s
 --     -> Int        -- Updated state
 -- mac s (x,y) = x * y + s
 --
--- topEntity :: 'Signal' (Int, Int) -> 'Signal' Int
+-- topEntity :: 'Unbundled (Int, Int) -> 'Unbundled Int
 -- topEntity = 'moore' mac id 0
 -- @
 --
@@ -64,23 +67,24 @@ let mac s (x,y) = x * y + s
 -- combinational counterpart:
 --
 -- @
--- dualMac :: ('Signal' Int, 'Signal' Int)
---         -> ('Signal' Int, 'Signal' Int)
---         -> 'Signal' Int
+-- dualMac :: ('Unbundled Int, 'Unbundled Int)
+--         -> ('Unbundled Int, 'Unbundled Int)
+--         -> 'Unbundled Int
 -- dualMac (a,b) (x,y) = s1 + s2
 --   where
 --     s1 = 'moore' mac id 0 ('CLaSH.Signal.bundle' (a,x))
 --     s2 = 'moore' mac id 0 ('CLaSH.Signal.bundle' (b,y))
 -- @
-moore :: (s -> i -> s) -- ^ Transfer function in moore machine form:
+moore :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+      => (s -> i -> s) -- ^ Transfer function in moore machine form:
                        -- @state -> input -> newstate@
       -> (s -> o)      -- ^ Output function in moore machine form:
                        -- @state -> output@
       -> s             -- ^ Initial state
-      -> (Signal i -> Signal o)
+      -> (Signal dom i -> Signal dom o)
       -- ^ Synchronous sequential function with input and output matching that
       -- of the moore machine
-moore = moore' systemClock
+moore = moore# ?res ?clk
 
 {-# INLINE mooreB #-}
 -- | A version of 'moore' that does automatic 'Bundle'ing
@@ -110,18 +114,18 @@ moore = moore' systemClock
 --     (i1,b1) = 'mooreB' t o 0 (a,b)
 --     (i2,b2) = 'mooreB' t o 3 (i1,c)
 -- @
-mooreB :: (Bundle i, Bundle o)
-      => (s -> i -> s) -- ^ Transfer function in moore machine form:
-                       -- @state -> input -> newstate@
-      -> (s -> o)      -- ^ Output function in moore machine form:
-                       -- @state -> output@
-      -> s             -- ^ Initial state
-      -> (Unbundled i -> Unbundled o)
+mooreB :: (Bundle i, Bundle o, ?res :: Reset res dom, ?clk :: Clock clk dom)
+       => (s -> i -> s) -- ^ Transfer function in moore machine form:
+                        -- @state -> input -> newstate@
+       -> (s -> o)      -- ^ Output function in moore machine form:
+                        -- @state -> output@
+       -> s             -- ^ Initial state
+       -> (Unbundled dom i -> Unbundled dom o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the moore machine
-mooreB = mooreB' systemClock
+mooreB = mooreB# ?res ?clk
 
-{-# INLINABLE moore' #-}
+{-# INLINABLE moore# #-}
 -- | Create a synchronous function from a combinational function describing
 -- a moore machine
 --
@@ -136,7 +140,7 @@ mooreB = mooreB' systemClock
 -- clkA :: 'SClock' ClkA
 -- clkA = 'CLaSH.Signal.Explicit.sclock'
 --
--- topEntity :: 'Signal'' ClkA (Int, Int) -> 'Signal'' ClkA Int
+-- topEntity :: 'Unbundled ClkA (Int, Int) -> 'Unbundled ClkA Int
 -- topEntity = 'moore'' clkA mac id 0
 -- @
 --
@@ -148,28 +152,29 @@ mooreB = mooreB' systemClock
 -- combinational counterpart:
 --
 -- @
--- dualMac :: ('Signal'' clkA Int, 'Signal'' clkA Int)
---         -> ('Signal'' clkA Int, 'Signal'' clkA Int)
---         -> 'Signal'' clkA Int
+-- dualMac :: ('Unbundled clkA Int, 'Unbundled clkA Int)
+--         -> ('Unbundled clkA Int, 'Unbundled clkA Int)
+--         -> 'Unbundled clkA Int
 -- dualMac (a,b) (x,y) = s1 + s2
 --   where
 --     s1 = 'moore'' clkA mac id 0 ('CLaSH.Signal.Explicit.bundle'' clkA (a,x))
 --     s2 = 'moore'' clkA mac id 0 ('CLaSH.Signal.Explicit.bundle'' clkA (b,y))
 -- @
-moore' :: SClock clk    -- ^ 'Clock' to synchronize to
+moore# :: Reset res dom
+       -> Clock clk dom -- ^ 'Clock' to synchronize to
        -> (s -> i -> s) -- ^ Transfer function in moore machine form:
                         -- @state -> input -> newstate@
        -> (s -> o)      -- ^ Output function in moore machine form:
                         -- @state -> output@
        -> s             -- ^ Initial state
-       -> (Signal' clk i -> Signal' clk o)
+       -> (Signal dom i -> Signal dom o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the moore machine
-moore' clk ft fo iS = \i -> let s' = ft <$> s <*> i
-                                s  = register' clk iS s'
-                        in fo <$> s
+moore# res clk ft fo iS = \i -> let s' = ft <$> s <*> i
+                                    s  = register# res clk iS s'
+                                in fo <$> s
 
-{-# INLINE mooreB' #-}
+{-# INLINE mooreB# #-}
 -- | A version of 'moore'' that does automatic 'Bundle'ing
 --
 -- Given a functions @t@ and @o@ of types:
@@ -183,28 +188,29 @@ moore' clk ft fo iS = \i -> let s' = ft <$> s <*> i
 -- write:
 --
 -- @
--- g clk a b c = (b1,b2,i2)
+-- g dom a b c = (b1,b2,i2)
 --   where
---     (i1,b1) = 'CLaSH.Signal.Explicit.unbundle'' clk (moore' clk t o 0 ('CLaSH.Signal.Explicit.bundle'' clk (a,b)))
---     (i2,b2) = 'CLaSH.Signal.Explicit.unbundle'' clk (moore' clk t o 3 ('CLaSH.Signal.Explicit.bundle'' clk (i1,c)))
+--     (i1,b1) = 'CLaSH.Signal.Explicit.unbundle'' dom (moore' dom t o 0 ('CLaSH.Signal.Explicit.bundle'' dom (a,b)))
+--     (i2,b2) = 'CLaSH.Signal.Explicit.unbundle'' dom (moore' dom t o 3 ('CLaSH.Signal.Explicit.bundle'' dom (i1,c)))
 -- @
 --
 -- Using 'mooreB'' however we can write:
 --
 -- @
--- g clk a b c = (b1,b2,i2)
+-- g dom a b c = (b1,b2,i2)
 --   where
---     (i1,b1) = 'mooreB'' clk t o 0 (a,b)
---     (i2,b2) = 'mooreB'' clk to 3 (i1,c)
+--     (i1,b1) = 'mooreB'' dom t o 0 (a,b)
+--     (i2,b2) = 'mooreB'' dom to 3 (i1,c)
 -- @
-mooreB' :: (Bundle i, Bundle o)
-        => SClock clk
+mooreB# :: (Bundle i, Bundle o)
+        => Reset res dom
+        -> Clock clk dom
         -> (s -> i -> s) -- ^ Transfer function in moore machine form:
                          -- @state -> input -> newstate@
         -> (s -> o)      -- ^ Output function in moore machine form:
                          -- @state -> output@
         -> s             -- ^ Initial state
-        -> (Unbundled' clk i -> Unbundled' clk o)
+        -> (Unbundled dom i -> Unbundled dom o)
         -- ^ Synchronous sequential function with input and output matching that
         -- of the moore machine
-mooreB' clk ft fo iS i = unbundle (moore' clk ft fo iS (bundle i))
+mooreB# res dom ft fo iS i = unbundle (moore# res dom ft fo iS (bundle i))

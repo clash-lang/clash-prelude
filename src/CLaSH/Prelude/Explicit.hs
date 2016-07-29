@@ -13,6 +13,7 @@ using explicitly clocked signals.
 -}
 
 {-# LANGUAGE DataKinds     #-}
+{-# LANGUAGE MagicHash     #-}
 {-# LANGUAGE TypeOperators #-}
 
 {-# LANGUAGE Unsafe #-}
@@ -22,38 +23,40 @@ using explicitly clocked signals.
 
 module CLaSH.Prelude.Explicit
   ( -- * Creating synchronous sequential circuits
-    mealy'
-  , mealyB'
-  , moore'
-  , mooreB'
-  , registerB'
+    mealy#
+  , mealyB#
+  , moore#
+  , mooreB#
+  , registerB#
     -- * Synchronizer circuits for safe clock domain crossings
   , dualFlipFlopSynchronizer
   , asyncFIFOSynchronizer
     -- * ROMs
-  , rom'
-  , romPow2'
+  , rom#
+  , romPow2#
     -- ** ROMs initialised with a data file
-  , romFile'
-  , romFilePow2'
+  , romFile#
+  , romFilePow2#
     -- * RAM primitives with a combinational read port
-  , asyncRam'
-  , asyncRamPow2'
+  , asyncRam#
+  , asyncRamPow2#
     -- * BlockRAM primitives
-  , blockRam'
-  , blockRamPow2'
+  , blockRam#
+  , blockRamPow2#
     -- ** BlockRAM primitives initialised with a data file
-  , blockRamFile'
-  , blockRamFilePow2'
+  , blockRamFile#
+  , blockRamFilePow2#
+    -- ** BlockRAM read/write conflict resolution
+  , readNew#
     -- * Utility functions
-  , window'
-  , windowD'
-  , isRising'
-  , isFalling'
+  , window#
+  , windowD#
+  , isRising#
+  , isFalling#
     -- * Testbench functions
-  , assert'
-  , stimuliGenerator'
-  , outputVerifier'
+  , assert#
+  , stimuliGenerator#
+  , outputVerifier#
     -- * Exported modules
     -- ** Explicitly clocked synchronous signals
   , module CLaSH.Signal.Explicit
@@ -61,13 +64,15 @@ module CLaSH.Prelude.Explicit
 where
 
 import Data.Default                 (Default (..))
+import GHC.Stack                    (HasCallStack)
 import GHC.TypeLits                 (KnownNat, type (+), natVal)
 import Prelude                      hiding (repeat)
 
 import CLaSH.Prelude.Explicit.Safe
-import CLaSH.Prelude.BlockRam.File (blockRamFile', blockRamFilePow2')
-import CLaSH.Prelude.ROM.File      (romFile', romFilePow2')
-import CLaSH.Prelude.Testbench     (assert', stimuliGenerator', outputVerifier')
+import CLaSH.Prelude.BlockRam.File (blockRamFile#, blockRamFilePow2#)
+import CLaSH.Prelude.ROM.File      (romFile#, romFilePow2#)
+import CLaSH.Prelude.Testbench     (assert#, stimuliGenerator#, outputVerifier#)
+import CLaSH.Signal                (Signal)
 import CLaSH.Signal.Explicit
 import CLaSH.Sized.Vector          (Vec (..), (+>>), asNatProxy, repeat)
 
@@ -80,7 +85,7 @@ import CLaSH.Sized.Vector          (Vec (..), (+>>), asNatProxy, repeat)
 >>> let windowD3 = windowD' clkA :: Signal' ClkA Int -> Vec 3 (Signal' ClkA Int)
 -}
 
-{-# INLINABLE window' #-}
+{-# INLINABLE window# #-}
 -- | Give a window over a 'Signal''
 --
 -- @
@@ -96,20 +101,20 @@ import CLaSH.Sized.Vector          (Vec (..), (+>>), asNatProxy, repeat)
 -- >>> simulateB window4 [1::Int,2,3,4,5] :: [Vec 4 Int]
 -- [<1,0,0,0>,<2,1,0,0>,<3,2,1,0>,<4,3,2,1>,<5,4,3,2>...
 -- ...
-window' :: (KnownNat n, Default a)
-        => SClock clk                  -- ^ Clock to which the incoming
-                                       -- signal is synchronized
-        -> Signal' clk a               -- ^ Signal to create a window over
-        -> Vec (n + 1) (Signal' clk a) -- ^ Window of at least size 1
-window' clk x = res
+window# :: (HasCallStack, KnownNat n, Default a)
+        => Reset res dom
+        -> Clock clk dom              -- ^ Clock to which the incoming
+                                      -- signal is synchronized
+        -> Signal dom a               -- ^ Signal to create a window over
+        -> Vec (n + 1) (Signal dom a) -- ^ Window of at least size 1
+window# res clk x = x :> prev
   where
-    res  = x :> prev
     prev = case natVal (asNatProxy prev) of
              0 -> repeat def
              _ -> let next = x +>> prev
-                  in  registerB' clk (repeat def) next
+                  in  registerB# res clk (repeat def) next
 
-{-# INLINABLE windowD' #-}
+{-# INLINABLE windowD# #-}
 -- | Give a delayed window over a 'Signal''
 --
 -- @
@@ -125,12 +130,13 @@ window' clk x = res
 -- >>> simulateB windowD3 [1::Int,2,3,4] :: [Vec 3 Int]
 -- [<0,0,0>,<1,0,0>,<2,1,0>,<3,2,1>,<4,3,2>...
 -- ...
-windowD' :: (KnownNat n, Default a)
-         => SClock clk                   -- ^ Clock to which the incoming signal
-                                         -- is synchronized
-         -> Signal' clk a                -- ^ Signal to create a window over
-         -> Vec (n + 1) (Signal' clk a)  -- ^ Window of at least size 1
-windowD' clk x =
-  let prev = registerB' clk (repeat def) next
-      next = x +>> prev
-  in  prev
+windowD# :: (HasCallStack, KnownNat n, Default a)
+         => Reset res dom
+         -> Clock clk dom              -- ^ Clock to which the incoming signal
+                                       -- is synchronized
+         -> Signal dom a               -- ^ Signal to create a window over
+         -> Vec (n + 1) (Signal dom a) -- ^ Window of at least size 1
+windowD# res clk x = prev
+  where
+    prev = registerB# res clk (repeat def) next
+    next = x +>> prev

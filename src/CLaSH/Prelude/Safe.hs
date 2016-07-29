@@ -29,6 +29,8 @@
 
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ImplicitParams   #-}
+{-# LANGUAGE MagicHash        #-}
 {-# LANGUAGE TypeOperators    #-}
 
 {-# LANGUAGE Safe #-}
@@ -54,9 +56,8 @@ module CLaSH.Prelude.Safe
     -- * BlockRAM primitives
   , blockRam
   , blockRamPow2
-    -- * BlockRAM read/write conflict resolution
+    -- ** BlockRAM read/write conflict resolution
   , readNew
-  , readNew'
     -- * Utility functions
   , isRising
   , isFalling
@@ -105,6 +106,7 @@ where
 
 import Control.Applicative
 import Data.Bits
+import GHC.Stack                   (HasCallStack)
 import GHC.TypeLits
 import GHC.TypeLits.Extra
 import Prelude                     hiding ((++), (!!), concat, drop, foldl,
@@ -120,8 +122,8 @@ import CLaSH.Class.Num
 import CLaSH.Class.Resize
 import CLaSH.Prelude.BitIndex
 import CLaSH.Prelude.BitReduction
-import CLaSH.Prelude.BlockRam      (blockRam, blockRamPow2, readNew, readNew')
-import CLaSH.Prelude.Explicit.Safe (registerB', isRising', isFalling')
+import CLaSH.Prelude.BlockRam      (blockRam, blockRamPow2, readNew)
+import CLaSH.Prelude.Explicit.Safe (registerB#, isRising#, isFalling#)
 import CLaSH.Prelude.Mealy         (mealy, mealyB, (<^>))
 import CLaSH.Prelude.Moore         (moore, mooreB)
 import CLaSH.Prelude.RAM           (asyncRam,asyncRamPow2)
@@ -139,7 +141,6 @@ import CLaSH.Sized.Unsigned
 import CLaSH.Sized.Vector
 import CLaSH.Signal
 import CLaSH.Signal.Delayed
-import CLaSH.Signal.Explicit       (systemClock)
 
 {- $setup
 >>> let rP = registerB (8,8)
@@ -164,22 +165,23 @@ It instead exports the identically named functions defined in terms of
 -- >>> simulateB rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
 -- ...
-registerB :: Bundle a => a -> Unbundled a -> Unbundled a
-registerB = registerB' systemClock
+registerB :: (HasCallStack, Bundle a, ?res :: Reset res dom, ?clk :: Clock clk dom)
+          => a -> Unbundled dom a -> Unbundled dom a
+registerB = registerB# ?res ?clk
 infixr 3 `registerB`
 
 {-# INLINE isRising #-}
 -- | Give a pulse when the 'Signal' goes from 'minBound' to 'maxBound'
-isRising :: (Bounded a, Eq a)
+isRising :: (HasCallStack, Bounded a, Eq a, ?res :: Reset res dom, ?clk :: Clock clk dom)
          => a -- ^ Starting value
-         -> Signal a
-         -> Signal Bool
-isRising = isRising' systemClock
+         -> Signal dom a
+         -> Signal dom Bool
+isRising = isRising# ?res ?clk
 
 {-# INLINE isFalling #-}
 -- | Give a pulse when the 'Signal' goes from 'maxBound' to 'minBound'
-isFalling :: (Bounded a, Eq a)
+isFalling :: (HasCallStack, Bounded a, Eq a, ?res :: Reset res dom, ?clk :: Clock clk dom)
           => a -- ^ Starting value
-          -> Signal a
-          -> Signal Bool
-isFalling = isFalling' systemClock
+          -> Signal dom a
+          -> Signal dom Bool
+isFalling = isFalling# ?res ?clk

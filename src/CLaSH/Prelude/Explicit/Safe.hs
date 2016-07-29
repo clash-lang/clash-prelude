@@ -16,6 +16,7 @@ using explicitly clocked signals.
 
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MagicHash        #-}
 {-# LANGUAGE TypeOperators    #-}
 
 {-# LANGUAGE Safe #-}
@@ -24,26 +25,28 @@ using explicitly clocked signals.
 
 module CLaSH.Prelude.Explicit.Safe
   ( -- * Creating synchronous sequential circuits
-    mealy'
-  , mealyB'
-  , moore'
-  , mooreB'
-  , registerB'
+    mealy#
+  , mealyB#
+  , moore#
+  , mooreB#
+  , registerB#
     -- * Synchronizer circuits for safe clock domain crossing
   , dualFlipFlopSynchronizer
   , asyncFIFOSynchronizer
     -- * ROMs
-  , rom'
-  , romPow2'
+  , rom#
+  , romPow2#
     -- * RAM primitives with a combinational read port
-  , asyncRam'
-  , asyncRamPow2'
+  , asyncRam#
+  , asyncRamPow2#
     -- * BlockRAM primitives
-  , blockRam'
-  , blockRamPow2'
+  , blockRam#
+  , blockRamPow2#
+    -- ** BlockRAM read/write conflict resolution
+  , readNew#
     -- * Utility functions
-  , isRising'
-  , isFalling'
+  , isRising#
+  , isFalling#
     -- * Exported modules
     -- ** Explicitly clocked synchronous signals
   , module CLaSH.Signal.Explicit
@@ -51,16 +54,18 @@ module CLaSH.Prelude.Explicit.Safe
 where
 
 import Control.Applicative        (liftA2)
+import GHC.Stack                  (HasCallStack)
 import Prelude                    hiding (repeat)
 
-import CLaSH.Prelude.BlockRam     (blockRam', blockRamPow2')
-import CLaSH.Prelude.Mealy        (mealy', mealyB')
-import CLaSH.Prelude.Moore        (moore', mooreB')
-import CLaSH.Prelude.RAM          (asyncRam',asyncRamPow2')
-import CLaSH.Prelude.ROM          (rom', romPow2')
+import CLaSH.Prelude.BlockRam     (blockRam#, blockRamPow2#, readNew#)
+import CLaSH.Prelude.Mealy        (mealy#, mealyB#)
+import CLaSH.Prelude.Moore        (moore#, mooreB#)
+import CLaSH.Prelude.RAM          (asyncRam#,asyncRamPow2#)
+import CLaSH.Prelude.ROM          (rom#, romPow2#)
 import CLaSH.Prelude.Synchronizer (dualFlipFlopSynchronizer,
                                    asyncFIFOSynchronizer)
-import CLaSH.Signal.Bundle        (Bundle(..), Unbundled')
+import CLaSH.Signal               (Clock,Reset,Signal)
+import CLaSH.Signal.Bundle        (Bundle(..))
 import CLaSH.Signal.Explicit
 
 {- $setup
@@ -71,7 +76,7 @@ import CLaSH.Signal.Explicit
 >>> let rP = registerB' clkA (8::Int,8::Int)
 -}
 
-{-# INLINE registerB' #-}
+{-# INLINE registerB# #-}
 -- | Create a 'register' function for product-type like signals (e.g.
 -- @('Signal' a, 'Signal' b)@)
 --
@@ -88,29 +93,31 @@ import CLaSH.Signal.Explicit
 -- >>> simulateB rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
 -- ...
-registerB' :: Bundle a => SClock clk -> a -> Unbundled' clk a -> Unbundled' clk a
-registerB' clk i = unbundle Prelude.. register' clk i Prelude.. bundle
+registerB# :: (HasCallStack, Bundle a) => Reset res dom -> Clock clk dom -> a -> Unbundled dom a -> Unbundled dom a
+registerB# res clk i = unbundle Prelude.. register# res clk i Prelude.. bundle
 
-{-# INLINABLE isRising' #-}
+{-# INLINABLE isRising# #-}
 -- | Give a pulse when the 'Signal'' goes from 'minBound' to 'maxBound'
-isRising' :: (Bounded a, Eq a)
-          => SClock clk
+isRising# :: (HasCallStack, Bounded a, Eq a)
+          => Reset res dom
+          -> Clock clk dom
           -> a -- ^ Starting value
-          -> Signal' clk a
-          -> Signal' clk Bool
-isRising' clk is s = liftA2 edgeDetect prev s
+          -> Signal dom a
+          -> Signal dom Bool
+isRising# res clk is s = liftA2 edgeDetect prev s
   where
-    prev = register' clk is s
+    prev = register# res clk is s
     edgeDetect old new = old == minBound && new == maxBound
 
-{-# INLINABLE isFalling' #-}
+{-# INLINABLE isFalling# #-}
 -- | Give a pulse when the 'Signal'' goes from 'maxBound' to 'minBound'
-isFalling' :: (Bounded a, Eq a)
-           => SClock clk
+isFalling# :: (HasCallStack, Bounded a, Eq a)
+           => Reset res dom
+           -> Clock clk dom
            -> a -- ^ Starting value
-           -> Signal' clk a
-           -> Signal' clk Bool
-isFalling' clk is s = liftA2 edgeDetect prev s
+           -> Signal dom a
+           -> Signal dom Bool
+isFalling# res clk is s = liftA2 edgeDetect prev s
   where
-    prev = register' clk is s
+    prev = register# res clk is s
     edgeDetect old new = old == maxBound && new == minBound

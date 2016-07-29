@@ -8,6 +8,7 @@ Synchronizer circuits for safe clock domain crossings
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MagicHash             #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -31,13 +32,12 @@ import GHC.TypeLits                (type (+))
 
 import CLaSH.Class.BitPack         (boolToBV)
 import CLaSH.Prelude.BitIndex      (slice)
-import CLaSH.Prelude.Mealy         (mealyB')
-import CLaSH.Prelude.RAM           (asyncRam')
+import CLaSH.Prelude.Mealy         (mealyB#)
+import CLaSH.Prelude.RAM           (asyncRam#)
 import CLaSH.Promoted.Nat          (SNat, pow2SNat, subSNat)
 import CLaSH.Promoted.Nat.Literals (d0, d1, d2)
-import CLaSH.Signal                ((.&&.), not1)
-import CLaSH.Signal.Explicit       (Signal', SClock, register',
-                                    unsafeSynchronizer)
+import CLaSH.Signal                (Clock,Reset,Signal,(.&&.), not1)
+import CLaSH.Signal.Explicit       (register#, unsafeSynchronizer)
 import CLaSH.Sized.BitVector       (BitVector, (++#))
 
 -- * Dual flip-flop synchronizer
@@ -64,32 +64,34 @@ import CLaSH.Sized.BitVector       (BitVector, (++#))
 --
 --      If you want to have /safe/ __word__-synchronisation use
 --      'asyncFIFOSynchronizer'.
-dualFlipFlopSynchronizer :: SClock clk1    -- ^ 'Clock' to which the incoming
-                                           -- data is synchronised
-                         -> SClock clk2    -- ^ 'Clock' to which the outgoing
-                                           -- data is synchronised
-                         -> a              -- ^ Initial value of the two
-                                           -- synchronisation registers
-                         -> Signal' clk1 a -- ^ Incoming data
-                         -> Signal' clk2 a -- ^ Outgoing, synchronised, data
-dualFlipFlopSynchronizer clk1 clk2 i = register' clk2 i
-                                     . register' clk2 i
-                                     . unsafeSynchronizer clk1 clk2
+dualFlipFlopSynchronizer :: Reset res2 dom2
+                         -> Clock clk1 dom1 -- ^ 'Clock' to which the incoming
+                                            -- data is synchronised
+                         -> Clock clk2 dom2 -- ^ 'Clock' to which the outgoing
+                                            -- data is synchronised
 
--- * Asynchronous FIFO synchronizer
+                         -> a               -- ^ Initial value of the two
+                                            -- synchronisation registers
+                         -> Signal dom1 a   -- ^ Incoming data
+                         -> Signal dom2 a   -- ^ Outgoing, synchronised, data
+dualFlipFlopSynchronizer res clk1 clk2 i = register# res clk2 i
+                                         . register# res clk2 i
+                                         . unsafeSynchronizer clk1 clk2
+
+---- * Asynchronous FIFO synchronizer
 
 fifoMem :: _
-        => SClock wclk
-        -> SClock rclk
+        => Clock wclk wdom
+        -> Clock rclk rdom
         -> SNat addrSize
-        -> Signal' wclk (BitVector addrSize)
-        -> Signal' rclk (BitVector addrSize)
-        -> Signal' wclk Bool
-        -> Signal' wclk Bool
-        -> Signal' wclk a
-        -> Signal' rclk a
+        -> Signal wdom (BitVector addrSize)
+        -> Signal rdom (BitVector addrSize)
+        -> Signal wdom Bool
+        -> Signal wdom Bool
+        -> Signal wdom a
+        -> Signal rdom a
 fifoMem wclk rclk addrSize waddr raddr winc wfull wdata =
-  asyncRam' wclk rclk
+  asyncRam# wclk rclk
             (pow2SNat addrSize)
             waddr raddr
             (winc .&&. not1 wfull)
@@ -131,24 +133,26 @@ asyncFIFOSynchronizer :: _
                       => SNat (addrSize + 2) -- ^ Size of the internally used
                                              -- addresses, the FIFO contains
                                              -- @2^addrSize@ elements.
-                      -> SClock wclk         -- ^ 'Clock' to which the write port
+                      -> Reset res wdom
+                      -> Reset res rdom
+                      -> Clock wclk wdom     -- ^ 'Clock' to which the write port
                                              -- is synchronised
-                      -> SClock rclk         -- ^ 'Clock' to which the read port
+                      -> Clock rclk rdom     -- ^ 'Clock' to which the read port
                                              -- is synchronised
-                      -> Signal' wclk a      -- ^ Element to insert
-                      -> Signal' wclk Bool   -- ^ Write request
-                      -> Signal' rclk Bool   -- ^ Read request
-                      -> (Signal' rclk a, Signal' rclk Bool, Signal' wclk Bool)
+                      -> Signal wdom a       -- ^ Element to insert
+                      -> Signal wdom Bool    -- ^ Write request
+                      -> Signal rdom Bool    -- ^ Read request
+                      -> (Signal rdom a, Signal rdom Bool, Signal wdom Bool)
                       -- ^ (Oldest element in the FIFO, @empty@ flag, @full@ flag)
-asyncFIFOSynchronizer addrSize wclk rclk wdata winc rinc = (rdata,rempty,wfull)
+asyncFIFOSynchronizer addrSize wres rres wclk rclk wdata winc rinc = (rdata,rempty,wfull)
   where
-    s_rptr = dualFlipFlopSynchronizer rclk wclk 0 rptr
-    s_wptr = dualFlipFlopSynchronizer wclk rclk 0 wptr
+    s_rptr = dualFlipFlopSynchronizer wres rclk wclk 0 rptr
+    s_wptr = dualFlipFlopSynchronizer rres wclk rclk 0 wptr
 
     rdata = fifoMem wclk rclk addrSize waddr raddr winc wfull wdata
 
-    (rempty,raddr,rptr) = mealyB' rclk (ptrCompareT addrSize (==)) (0,0,True)
+    (rempty,raddr,rptr) = mealyB# rres rclk (ptrCompareT addrSize (==)) (0,0,True)
                                   (s_wptr,rinc)
 
-    (wfull,waddr,wptr)  = mealyB' wclk (ptrCompareT addrSize (isFull addrSize))
+    (wfull,waddr,wptr)  = mealyB# wres wclk (ptrCompareT addrSize (isFull addrSize))
                                   (0,0,False) (s_rptr,winc)

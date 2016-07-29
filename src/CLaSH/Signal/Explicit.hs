@@ -12,6 +12,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# LANGUAGE Trustworthy #-}
 
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Signal.Explicit
@@ -22,9 +23,6 @@ module CLaSH.Signal.Explicit
     Domain (..)
   , ClockKind (..)
   , Clock (Clock)
-  , System
-  , SystemClock
-  , systemClock
   , freqCalc
     -- ** Synchronisation primitive
   , unsafeSynchronizer
@@ -33,8 +31,6 @@ module CLaSH.Signal.Explicit
     -- * Reset
   , ResetKind (..)
   , Reset (..)
-  , SystemReset
-  , systemReset
   , unsafeFromAsyncReset#
   , unsafeToAsyncReset#
   , fromSyncReset#
@@ -46,25 +42,22 @@ module CLaSH.Signal.Explicit
     -- * Simulation functions (not synthesisable)
   , simulate#
   , simulateB#
+    -- ** lazy versions
+  , simulate_lazy#
+  , simulateB_lazy#
   )
 where
 
-import Data.Proxy            (Proxy (..))
-import GHC.TypeLits          (KnownNat, natVal)
+import Control.DeepSeq       (NFData)
+import GHC.TypeLits          (natVal)
 
 import CLaSH.Signal.Bundle   (Bundle (..))
-import CLaSH.Signal.Internal (Clock (Clock), ClockKind (..), Domain (..),
+import CLaSH.Signal.Internal (Clock (..), ClockKind (..), Domain (..),
                               Reset (..), ResetKind (..), Signal (..),
                               clockGate#, delay#, fromSyncReset#, register#,
-                              regEn#, simulate#, toSyncReset#,
+                              regEn#, simulate#, simulate_lazy#, toSyncReset#,
                               unsafeFromAsyncReset#, unsafeToAsyncReset#)
-
--- import GHC.TypeLits           (KnownNat, KnownSymbol)
---
--- import CLaSH.Promoted.Nat     (SNat (..), snatToInteger)
--- import CLaSH.Promoted.Symbol  (SSymbol (..))
--- import CLaSH.Signal.Internal  (Signal (..), Clock (..), SClock (..), register#,
---                                regEn#)
+import CLaSH.Promoted.Nat    (SNat(..))
 
 {- $setup
 >>> :set -XDataKinds
@@ -130,27 +123,6 @@ never create a clock that goes any faster!
 -}
 
 -- * Clock domain crossing
-
--- ** Clock
-
-
--- | The standard system domain with a period of 1000
-type System = 'Domain "system" 1000
-
-
--- | The clock for 'System'
-type SystemClock = Clock 'Original System
-
--- | The clock for 'System'
-systemClock :: SystemClock
-systemClock = Clock (pure True)
-
--- | The reset for 'System'
-type SystemReset = Reset 'Asynchronous System
-
--- | The reset for 'System'
-systemReset :: SystemReset
-systemReset = Async (False :- pure True)
 
 -- | Calculate relative periods given a list of frequencies.
 --
@@ -252,13 +224,14 @@ freqCalc xs = map (`div` g) ys
 -- [99,50,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10]
 -- >>> sampleN 12 (almostId (fromList [1..10]))
 -- [70,99,1,2,3,4,5,6,7,8,9,10]
-unsafeSynchronizer :: forall a nm1 r1 nm2 r2 . (KnownNat r1, KnownNat r2)
-                   => Signal ('Domain nm1 r1) a
-                   -> Signal ('Domain nm2 r2) a
-unsafeSynchronizer s = s'
+unsafeSynchronizer :: Clock  clk1 dom1
+                   -> Clock  clk2 dom2
+                   -> Signal dom1 a
+                   -> Signal dom2 a
+unsafeSynchronizer (Clock# _ rt1@SNat _) (Clock# _ rt2@SNat _) s = s'
   where
-    r1 = fromInteger (natVal (Proxy :: Proxy r1))
-    r2 = fromInteger (natVal (Proxy :: Proxy r2))
+    r1 = fromInteger (natVal rt1)
+    r2 = fromInteger (natVal rt2)
     s' | r1 < r2   = compress   r2 r1 s
        | r1 > r2   = oversample r1 r2 s
        | otherwise = same s
@@ -307,5 +280,16 @@ repSchedule high low = take low $ repSchedule' low high 1
 -- ...
 --
 -- __NB__: This function is not synthesisable
-simulateB# :: (Bundle a, Bundle b) => (Unbundled domain1 a -> Unbundled domain2 b) -> [a] -> [b]
+simulateB# :: (Bundle a, Bundle b, NFData a, NFData b) => (Unbundled domain1 a -> Unbundled domain2 b) -> [a] -> [b]
 simulateB# f = simulate# (bundle . f . unbundle)
+
+-- | Simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a list of
+-- samples of type @a@
+--
+-- >>> simulateB (unbundle . register (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
+-- [(8,8),(1,1),(2,2),(3,3)...
+-- ...
+--
+-- __NB__: This function is not synthesisable
+simulateB_lazy# :: (Bundle a, Bundle b, NFData a, NFData b) => (Unbundled domain1 a -> Unbundled domain2 b) -> [a] -> [b]
+simulateB_lazy# f = simulate_lazy# (bundle . f . unbundle)

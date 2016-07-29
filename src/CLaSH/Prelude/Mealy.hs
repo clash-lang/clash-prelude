@@ -10,6 +10,9 @@
   requirements.
 -}
 
+{-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE MagicHash      #-}
+
 {-# LANGUAGE Safe #-}
 
 module CLaSH.Prelude.Mealy
@@ -18,14 +21,16 @@ module CLaSH.Prelude.Mealy
   , mealyB
   , (<^>)
     -- * Mealy machine synchronised to an arbitrary clock
-  , mealy'
-  , mealyB'
+  , mealy#
+  , mealyB#
   )
 where
 
-import CLaSH.Signal          (Signal, Unbundled)
-import CLaSH.Signal.Explicit (Signal', SClock, register', systemClock)
-import CLaSH.Signal.Bundle   (Bundle (..), Unbundled')
+import GHC.Stack             (HasCallStack,withFrozenCallStack)
+
+import CLaSH.Signal          (Clock, Reset, Signal)
+import CLaSH.Signal.Explicit (register#)
+import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
 >>> :set -XDataKinds
@@ -81,13 +86,14 @@ let mac s (x,y) = (s',s)
 --     s1 = 'mealy' mac 0 ('CLaSH.Signal.bundle' (a,x))
 --     s2 = 'mealy' mac 0 ('CLaSH.Signal.bundle' (b,y))
 -- @
-mealy :: (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
+mealy :: (HasCallStack, ?res :: Reset res domain, ?clk :: Clock clk domain)
+      => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                            -- @state -> input -> (newstate,output)@
       -> s                 -- ^ Initial state
-      -> (Signal i -> Signal o)
+      -> (Signal domain i -> Signal domain o)
       -- ^ Synchronous sequential function with input and output matching that
       -- of the mealy machine
-mealy = mealy' systemClock
+mealy = mealy# ?res ?clk
 
 {-# INLINE mealyB #-}
 -- | A version of 'mealy' that does automatic 'Bundle'ing
@@ -116,27 +122,27 @@ mealy = mealy' systemClock
 --     (i1,b1) = 'mealyB' f 0 (a,b)
 --     (i2,b2) = 'mealyB' f 3 (i1,c)
 -- @
-mealyB :: (Bundle i, Bundle o)
+mealyB :: (HasCallStack, Bundle i, Bundle o, ?res :: Reset res domain, ?clk :: Clock clk domain)
        => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                             -- @state -> input -> (newstate,output)@
        -> s                 -- ^ Initial state
-       -> (Unbundled i -> Unbundled o)
+       -> (Unbundled domain i -> Unbundled domain o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the mealy machine
-mealyB = mealyB' systemClock
+mealyB = mealyB# ?res ?clk
 
 {-# INLINE (<^>) #-}
 -- | Infix version of 'mealyB'
-(<^>) :: (Bundle i, Bundle o)
+(<^>) :: (HasCallStack, Bundle i, Bundle o, ?res :: Reset res domain, ?clk :: Clock clk domain)
       => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                            -- @state -> input -> (newstate,output)@
       -> s                 -- ^ Initial state
-      -> (Unbundled i -> Unbundled o)
+      -> (Unbundled domain i -> Unbundled domain o)
       -- ^ Synchronous sequential function with input and output matching that
       -- of the mealy machine
 (<^>) = mealyB
 
-{-# INLINABLE mealy' #-}
+{-# INLINABLE mealy# #-}
 -- | Create a synchronous function from a combinational function describing
 -- a mealy machine
 --
@@ -173,18 +179,20 @@ mealyB = mealyB' systemClock
 --     s1 = 'mealy'' clkA100 mac 0 ('CLaSH.Signal.Explicit.bundle'' clkA100 (a,x))
 --     s2 = 'mealy'' clkA100 mac 0 ('CLaSH.Signal.Explicit.bundle'' clkA100 (b,y))
 -- @
-mealy' :: SClock clk        -- ^ 'Clock' to synchronize to
+mealy# :: HasCallStack
+       => Reset res domain
+       -> Clock clk domain -- ^ 'Clock' to synchronize to
        -> (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                             -- @state -> input -> (newstate,output)@
        -> s                 -- ^ Initial state
-       -> (Signal' clk i -> Signal' clk o)
+       -> (Signal domain i -> Signal domain o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the mealy machine
-mealy' clk f iS = \i -> let (s',o) = unbundle $ f <$> s <*> i
-                            s      = register' clk iS s'
-                        in  o
+mealy# res clk f iS = \i -> let (s',o) = unbundle $ f <$> s <*> i
+                                s      = (withFrozenCallStack register#) res clk iS s'
+                            in  o
 
-{-# INLINE mealyB' #-}
+{-# INLINE mealyB# #-}
 -- | A version of 'mealy'' that does automatic 'Bundle'ing
 --
 -- Given a function @f@ of type:
@@ -211,12 +219,13 @@ mealy' clk f iS = \i -> let (s',o) = unbundle $ f <$> s <*> i
 --     (i1,b1) = 'mealyB'' clk f 0 (a,b)
 --     (i2,b2) = 'mealyB'' clk f 3 (i1,c)
 -- @
-mealyB' :: (Bundle i, Bundle o)
-        => SClock clk
+mealyB# :: (HasCallStack, Bundle i, Bundle o)
+        => Reset res domain
+        -> Clock clk domain
         -> (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                      -- @state -> input -> (newstate,output)@
         -> s                 -- ^ Initial state
-        -> (Unbundled' clk i -> Unbundled' clk o)
+        -> (Unbundled domain i -> Unbundled domain o)
         -- ^ Synchronous sequential function with input and output matching that
         -- of the mealy machine
-mealyB' clk f iS i = unbundle (mealy' clk f iS (bundle i))
+mealyB# res clk f iS i = unbundle (mealy# res clk f iS (bundle i))

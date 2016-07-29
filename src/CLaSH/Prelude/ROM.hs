@@ -36,7 +36,7 @@ import Data.Array             ((!),listArray)
 import GHC.Stack              (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits           (KnownNat, type (^))
 
-import CLaSH.Signal           (Signal, Clock, ClockKind (..))
+import CLaSH.Signal           (Signal, Clock)
 import CLaSH.Sized.Unsigned   (Unsigned)
 import CLaSH.Signal.Explicit  (delay#)
 import CLaSH.Sized.Vector     (Vec, maxIndex, toList)
@@ -94,7 +94,7 @@ asyncRom# content rd = arr ! rd
 --
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" and "CLaSH.Prelude.BlockRam#usingrams"
 -- for ideas on how to use ROMs and RAMs
-rom :: (HasCallStack, KnownNat n, KnownNat m, ?clk :: Clock 'Original domain)
+rom :: (HasCallStack, KnownNat n, KnownNat m, ?clk :: Clock clk domain)
     => Vec n a               -- ^ ROM content
                              --
                              -- __NB:__ must be a constant
@@ -112,7 +112,7 @@ rom = rom# ?clk
 --
 -- * See "CLaSH.Sized.Fixed#creatingdatafiles" and "CLaSH.Prelude.BlockRam#usingrams"
 -- for ideas on how to use ROMs and RAMs
-romPow2 :: (HasCallStack, KnownNat n, ?clk :: Clock 'Original domain)
+romPow2 :: (HasCallStack, KnownNat n, ?clk :: Clock clk domain)
         => Vec (2^n) a         -- ^ ROM content
                                --
                                -- __NB:__ must be a constant
