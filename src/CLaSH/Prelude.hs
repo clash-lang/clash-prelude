@@ -163,9 +163,9 @@ import CLaSH.Signal.Delayed
 import CLaSH.XException
 
 {- $setup
->>> :set -XDataKinds
->>> let window4 = window :: Signal Int -> Vec 4 (Signal Int)
->>> let windowD3 = windowD :: Signal Int -> Vec 3 (Signal Int)
+>>> :set -XDataKinds -XImplicitParams
+>>> let window4 = window :: (?res :: Reset res dom, ?clk :: Clock clk dom) => Signal dom Int -> Vec 4 (Signal dom Int)
+>>> let windowD3 = windowD :: (?res :: Reset res dom, ?clk :: Clock clk dom) => Signal dom Int -> Vec 3 (Signal dom Int)
 >>> let rP = registerB (8,8)
 -}
 
@@ -182,7 +182,8 @@ It instead exports the identically named functions defined in terms of
 {-# INLINE window #-}
 -- | Give a window over a 'Signal'
 --
--- > window4 :: Signal Int -> Vec 4 (Signal Int)
+-- > window4 :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+-- >         => Signal dom Int -> Vec 4 (Signal dom Int)
 -- > window4 = window
 --
 -- >>> simulateB window4 [1::Int,2,3,4,5] :: [Vec 4 Int]
@@ -197,7 +198,8 @@ window = window# ?res ?clk
 {-# INLINE windowD #-}
 -- | Give a delayed window over a 'Signal'
 --
--- > windowD3 :: Signal Int -> Vec 3 (Signal Int)
+-- > windowD3 :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+-- >          => Signal dom Int -> Vec 3 (Signal dom Int)
 -- > windowD3 = windowD
 --
 -- >>> simulateB windowD3 [1::Int,2,3,4] :: [Vec 3 Int]

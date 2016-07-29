@@ -51,15 +51,15 @@ module CLaSH.Signal.Internal
     -- ** lazy version
   , simulate_lazy#
     -- * List \<-\> Signal conversion (not synthesisable)
-  , sample
-  , sampleN
+  , sample#
+  , sampleN#
   , fromList
     -- ** lazy versions
-  , sample_lazy
-  , sampleN_lazy
+  , sample_lazy#
+  , sampleN_lazy#
   , fromList_lazy
     -- * QuickCheck combinators
-  , testFor
+  , testFor#
     -- * Type classes
     -- ** 'Eq'-like
   , (.==.), (./=.)
@@ -104,7 +104,7 @@ import Control.Exception          (SomeException, catch, evaluate, throw)
 import Data.Bits                  (Bits (..), FiniteBits (..))
 import Data.Default               (Default (..))
 import GHC.Stack                  (HasCallStack, withFrozenCallStack)
-import GHC.TypeLits               (KnownNat, KnownSymbol, Nat, Symbol)
+import GHC.TypeLits               (KnownNat, KnownSymbol, Nat, Symbol, natVal)
 import Language.Haskell.TH.Syntax (Lift (..))
 import System.IO.Unsafe           (unsafeDupablePerformIO)
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary(..), Property,
@@ -148,12 +148,13 @@ data Clock (clockKind :: ClockKind) (domain :: Domain) where
          -> Clock clockKind ('Domain name rate)
 
 instance Show (Clock clk domain) where
-  show (Clock# nm rt _) = show nm ++ show rt
+  show (Clock# nm rt@SNat _) = show nm ++ show (natVal rt)
 
 -- | We can only create 'Original' clock signals
-pattern Clock :: (KnownSymbol name, KnownNat rate) => ()
+pattern Clock :: forall domain name rate .
+                 (KnownSymbol name, KnownNat rate, domain ~ 'Domain name rate) => ()
               => Signal ('Domain name rate) Bool
-              -> Clock 'Original ('Domain name rate)
+              -> Clock 'Original domain
 pattern Clock en <- Clock# _nm _rt en
   where
     Clock en = Clock# SSymbol SNat en
@@ -334,7 +335,7 @@ not1 = fmap not
 -- clkA = 'sclock'
 -- @
 --
--- >>> sampleN 3 (register' clkA 8 (fromList [1,2,3,4]))
+-- >>> sampleN# 3 (register' clkA 8 (fromList [1,2,3,4]))
 -- [8,1,2]
 register# :: HasCallStack
           => Reset reset domain -> Clock clk domain
@@ -383,9 +384,9 @@ delay# (Clock# _ _ en) d =
 --
 -- We get:
 --
--- >>> sampleN 8 oscillate
+-- >>> sampleN# 8 oscillate
 -- [False,True,False,True,False,True,False,True]
--- >>> sampleN 8 count
+-- >>> sampleN# 8 count
 -- [0,0,1,1,2,2,3,3]
 regEn# :: HasCallStack
        => Reset reset domain -> Clock clk domain
@@ -749,7 +750,7 @@ instance Arbitrary a => Arbitrary (Signal domain a) where
 instance CoArbitrary a => CoArbitrary (Signal domain a) where
   coarbitrary xs gen = do
     n <- arbitrary
-    coarbitrary (take (abs n) (sample_lazy xs)) gen
+    coarbitrary (take (abs n) (sample_lazy# xs)) gen
 
 -- | The above type is a generalisation for:
 --
@@ -758,8 +759,8 @@ instance CoArbitrary a => CoArbitrary (Signal domain a) where
 -- @
 --
 -- @testFor n s@ tests the signal @s@ for @n@ cycles.
-testFor :: Foldable f => Int -> f Bool -> Property
-testFor n = property . and . take n . sample
+testFor# :: Foldable f => Int -> f Bool -> Property
+testFor# n = property . and . take n . sample#
 
 -- * List \<-\> Signal conversion (not synthesisable)
 
@@ -787,8 +788,8 @@ headStrictSignal x xs = unsafeDupablePerformIO ((:-) <$> forceNoException x <*> 
 -- > sample s == [s0, s1, s2, s3, ...
 --
 -- __NB__: This function is not synthesisable
-sample :: (Foldable f, NFData a) => f a -> [a]
-sample = foldr headStrictCons []
+sample# :: (Foldable f, NFData a) => f a -> [a]
+sample# = foldr headStrictCons []
 
 -- | The above type is a generalisation for:
 --
@@ -804,8 +805,8 @@ sample = foldr headStrictCons []
 -- > sampleN 3 s == [s0, s1, s2]
 --
 -- __NB__: This function is not synthesisable
-sampleN :: (Foldable f, NFData a) => Int -> f a -> [a]
-sampleN n = take n . sample
+sampleN# :: (Foldable f, NFData a) => Int -> f a -> [a]
+sampleN# n = take n . sample#
 
 -- | Create a 'CLaSH.Signal.Signal from a list
 --
@@ -830,7 +831,7 @@ fromList = Prelude.foldr headStrictSignal (error "finite list")
 --
 -- __NB__: This function is not synthesisable
 simulate# :: (NFData a, NFData b) => (Signal domain1 a -> Signal domain2 b) -> [a] -> [b]
-simulate# f = sample . f . fromList
+simulate# f = sample# . f . fromList
 
 -- | The above type is a generalisation for:
 --
@@ -846,8 +847,8 @@ simulate# f = sample . f . fromList
 -- > sample s == [s0, s1, s2, s3, ...
 --
 -- __NB__: This function is not synthesisable
-sample_lazy :: Foldable f => f a -> [a]
-sample_lazy = foldr (:) []
+sample_lazy# :: Foldable f => f a -> [a]
+sample_lazy# = foldr (:) []
 
 -- | The above type is a generalisation for:
 --
@@ -863,8 +864,8 @@ sample_lazy = foldr (:) []
 -- > sampleN 3 s == [s0, s1, s2]
 --
 -- __NB__: This function is not synthesisable
-sampleN_lazy :: Foldable f => Int -> f a -> [a]
-sampleN_lazy n = take n . sample_lazy
+sampleN_lazy# :: Foldable f => Int -> f a -> [a]
+sampleN_lazy# n = take n . sample_lazy#
 
 -- | Create a 'CLaSH.Signal.Signal' from a list
 --
@@ -889,4 +890,4 @@ fromList_lazy = Prelude.foldr (:-) (error "finite list")
 --
 -- __NB__: This function is not synthesisable
 simulate_lazy# :: (Signal domain1 a -> Signal domain2 b) -> [a] -> [b]
-simulate_lazy# f = sample_lazy . f . fromList_lazy
+simulate_lazy# f = sample_lazy# . f . fromList_lazy

@@ -78,6 +78,7 @@ where
 import Control.DeepSeq       (NFData)
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 import Data.Bits             (Bits) -- Haddock only
+import Test.QuickCheck       (Property)
 
 import CLaSH.Signal.Internal (Clock (Clock), ClockKind (..), Domain (..),
                               Reset (..), ResetKind (..), Signal (..),
@@ -86,10 +87,9 @@ import CLaSH.Signal.Internal (Clock (Clock), ClockKind (..), Domain (..),
                               toRational1, toInteger1, testBit1, popCount1,
                               shift1, rotate1, setBit1, clearBit1, shiftL1,
                               unsafeShiftL1, shiftR1, unsafeShiftR1, rotateL1,
-                              rotateR1, (.||.), (.&&.), not1, mux, sample,
-                              sampleN, fromList, simulate#, signal, testFor,
-                              sample_lazy, sampleN_lazy, simulate_lazy#,
-                              fromList_lazy)
+                              rotateR1, (.||.), (.&&.), not1, mux, sample#,
+                              sample_lazy#, sampleN#, sampleN_lazy#, fromList,
+                              fromList_lazy, simulate#, signal, testFor#)
 import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
@@ -161,16 +161,16 @@ simulate :: (NFData a, NFData b)
          => ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
               => Signal System a -> Signal System b)
          -> [a] -> [b]
-simulate f xs = let ?clk = systemClock in
-                let ?res = systemReset
-                in  sample (f (fromList xs))
+simulate f xs = let ?clk = systemClock
+                    ?res = systemReset
+                in  sample# (f (fromList xs))
 
 simulate_lazy :: ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
                    => Signal System a -> Signal System b)
               -> [a] -> [b]
 simulate_lazy f xs = let ?clk = systemClock in
                      let ?res = systemReset
-                     in  sample_lazy (f (fromList_lazy xs))
+                     in  sample_lazy# (f (fromList_lazy xs))
 
 -- * Product/Signal isomorphism
 
@@ -184,11 +184,11 @@ simulate_lazy f xs = let ?clk = systemClock in
 -- __NB__: This function is not synthesisable
 simulateB :: (Bundle a, Bundle b, NFData a, NFData b)
           => ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
-               => Unbundled domain1 a -> Unbundled domain2 b)
+               => Unbundled System a -> Unbundled System b)
           -> [a] -> [b]
 simulateB f xs = let ?clk = systemClock
                      ?res = systemReset
-                 in  sample (bundle (f (unbundle (fromList xs))))
+                 in  sample# (bundle (f (unbundle (fromList xs))))
 
 -- | Simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a list of
 -- samples of type @a@
@@ -204,4 +204,45 @@ simulateB_lazy :: (Bundle a, Bundle b)
                -> [a] -> [b]
 simulateB_lazy f xs = let ?clk = systemClock
                           ?res = systemReset
-                      in  sample_lazy (bundle (f (unbundle (fromList_lazy xs))))
+                      in  sample_lazy# (bundle (f (unbundle (fromList_lazy xs))))
+
+sample :: NFData a
+       => ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
+                 => Signal System a)
+       -> [a]
+sample s = let ?clk = systemClock
+               ?res = systemReset
+           in  sample# s
+
+sampleN :: NFData a
+        => Int
+        -> ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
+                 => Signal System a)
+        -> [a]
+sampleN i s = let ?clk = systemClock
+                  ?res = systemReset
+              in  sampleN# i s
+
+sample_lazy :: ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
+                      => Signal System a)
+            -> [a]
+sample_lazy s = let ?clk = systemClock
+                    ?res = systemReset
+                in  sample_lazy# s
+
+sampleN_lazy :: Int
+             -> ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
+                      => Signal System a)
+             -> [a]
+sampleN_lazy i s = let ?clk = systemClock
+                       ?res = systemReset
+                   in  sampleN_lazy# i s
+
+-- | @testFor n s@ tests the signal @s@ for @n@ cycles.
+testFor :: Int
+        -> ((?res :: Reset 'Asynchronous System, ?clk :: Clock 'Original System)
+                  => Signal System Bool)
+        -> Property
+testFor i s = let ?clk = systemClock
+                  ?res = systemReset
+              in  testFor# i s

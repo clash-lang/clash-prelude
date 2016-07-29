@@ -111,7 +111,8 @@ let sortVL xs = map fst sorted :< (snd (last sorted))
 :}
 
 >>> let mac = mealy macT 0
->>> let topEntity = mac :: Signal (Signed 9, Signed 9) -> Signal (Signed 9)
+>>> :set -XImplicitParams
+>>> let topEntity = mac :: (?res :: Reset res dom,?clk :: Clock clk dom) => Signal dom (Signed 9, Signed 9) -> Signal dom (Signed 9)
 >>> let testInput = stimuliGenerator $(v [(1,1) :: (Signed 9,Signed 9),(2,2),(3,3),(4,4)])
 >>> let expectedOutput = outputVerifier $(v [0 :: Signed 9,1,5,14])
 >>> :{
@@ -122,7 +123,8 @@ let fibR :: Unsigned 64 -> Unsigned 64
 :}
 
 >>> :{
-let fibS :: Signal (Unsigned 64)
+let fibS :: (?res :: Reset res dom,?clk :: Clock clk dom)
+         => Signal dom (Unsigned 64)
     fibS = r
       where r = register 0 r + register 0 (register 1 r)
 :}

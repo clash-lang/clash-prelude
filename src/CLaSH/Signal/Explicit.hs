@@ -45,6 +45,14 @@ module CLaSH.Signal.Explicit
     -- ** lazy versions
   , simulate_lazy#
   , simulateB_lazy#
+    -- * List \<-\> Signal conversion (not synthesisable)
+  , sample#
+  , sampleN#
+    -- ** lazy versions
+  , sample_lazy#
+  , sampleN_lazy#
+    -- * QuickCheck combinators
+  , testFor#
   )
 where
 
@@ -55,23 +63,26 @@ import CLaSH.Signal.Bundle   (Bundle (..))
 import CLaSH.Signal.Internal (Clock (..), ClockKind (..), Domain (..),
                               Reset (..), ResetKind (..), Signal (..),
                               clockGate#, delay#, fromSyncReset#, register#,
-                              regEn#, simulate#, simulate_lazy#, toSyncReset#,
-                              unsafeFromAsyncReset#, unsafeToAsyncReset#)
+                              regEn#, sample#, sample_lazy#, sampleN#,
+                              sampleN_lazy#, simulate#, simulate_lazy#,
+                              testFor#, toSyncReset#, unsafeFromAsyncReset#,
+                              unsafeToAsyncReset#)
 import CLaSH.Promoted.Nat    (SNat(..))
 
 {- $setup
->>> :set -XDataKinds
+>>> :set -XDataKinds -XMagicHash -XTypeApplications
 >>> import CLaSH.Prelude
->>> type Clk2 = Clk "clk2" 2
->>> type Clk7 = Clk "clk7" 7
->>> let clk2 = sclock :: SClock Clk2
->>> let clk7 = sclock :: SClock Clk7
->>> let oversampling = register' clk2 99 . unsafeSynchronizer clk7 clk2 . register' clk7 50
->>> let almostId = register' clk7 70 . unsafeSynchronizer clk2 clk7 . register' clk2 99 . unsafeSynchronizer clk7 clk2 . register' clk7 50
->>> type ClkA = Clk "A" 100
->>> let clkA = sclock :: SClock ClkA
->>> let oscillate = register' clkA False (CLaSH.Signal.not1 oscillate)
->>> let count = regEn' clkA 0 oscillate (count + 1)
+>>> import CLaSH.Signal.Internal
+>>> type ADC = 'Domain "ADC" 1000
+>>> type FFT = 'Domain "FFT" 7
+>>> let clkADC = Clock @ADC (pure True)
+>>> let clkFFT = Clock @FFT (pure True)
+>>> let oversampling res1 clk1 res2 clk2 = register# res1 clk1 99 . unsafeSynchronizer clk2 clk1 . register# res2 clk2 50
+>>> let almostId res1 clk1 res2 clk2 = register# res2 clk2 70 . unsafeSynchronizer clk1 clk2 . register# res1 clk1 99 . unsafeSynchronizer clk2 clk1 . register# res2 clk2 50
+>>> type DomA = 'Domain "A" 100
+>>> let clkA = Clock @DomA (pure True)
+>>> let oscillate res clk = register# res clk False (CLaSH.Signal.not1 oscillate)
+>>> let count res clk = regEn# res clk 0 oscillate (count + 1)
 -}
 
 {- $relativeclocks #relativeclocks#
@@ -220,9 +231,9 @@ freqCalc xs = map (`div` g) ys
 --              . 'register'' clk7 50
 -- @
 --
--- >>> sampleN 37 (oversampling (fromList [1..10]))
+-- >>> sampleN# 37 (oversampling (fromList [1..10]))
 -- [99,50,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10]
--- >>> sampleN 12 (almostId (fromList [1..10]))
+-- >>> sampleN# 12 (almostId (fromList [1..10]))
 -- [70,99,1,2,3,4,5,6,7,8,9,10]
 unsafeSynchronizer :: Clock  clk1 dom1
                    -> Clock  clk2 dom2

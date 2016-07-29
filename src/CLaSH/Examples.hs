@@ -32,7 +32,7 @@ import Control.Monad.Trans.State
 #endif
 
 {- $setup
->>> :set -XDataKinds -XFlexibleContexts -XBinaryLiterals -XTypeFamilies -XTemplateHaskell -XRecordWildCards
+>>> :set -XDataKinds -XFlexibleContexts -XBinaryLiterals -XTypeFamilies -XTemplateHaskell -XRecordWildCards -XImplicitParams
 >>> :set -fplugin GHC.TypeLits.Normalise
 >>> import CLaSH.Prelude
 >>> import Test.QuickCheck
@@ -93,7 +93,8 @@ let encoderCase :: Bool -> BitVector 16 -> BitVector 4
 :}
 
 >>> :{
-let upCounter :: Signal Bool -> Signal (Unsigned 8)
+let upCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+              => Signal dom Bool -> Signal dom (Unsigned 8)
     upCounter enable = s
       where
         s = regEn 0 enable (s + 1)
@@ -108,12 +109,14 @@ let upCounterLdT s (ld,en,dIn) = (s',s)
 :}
 
 >>> :{
-let upCounterLd :: Signal (Bool,Bool,Unsigned 8) -> Signal (Unsigned 8)
+let upCounterLd :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+                => Signal dom (Bool,Bool,Unsigned 8) -> Signal dom (Unsigned 8)
     upCounterLd = mealy upCounterLdT 0
 :}
 
 >>> :{
-let upDownCounter :: Signal Bool -> Signal (Unsigned 8)
+let upDownCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+                  => Signal dom Bool -> Signal dom (Unsigned 8)
     upDownCounter upDown = s
       where
         s = register 0 (mux upDown (s + 1) (s - 1))
@@ -127,7 +130,8 @@ let lfsrF' :: BitVector 16 -> BitVector 16
 :}
 
 >>> :{
-let lfsrF :: BitVector 16 -> Signal Bit
+let lfsrF :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+          => BitVector 16 -> Signal dom Bit
     lfsrF seed = msb <$> r
       where r = register seed (lfsrF' <$> r)
 :}
@@ -141,19 +145,22 @@ let lfsrGP taps regs = zipWith xorM taps (fb +>> regs)
 :}
 
 >>> :{
-let lfsrG :: BitVector 16 -> Signal Bit
+let lfsrG :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+          => BitVector 16 -> Signal dom Bit
     lfsrG seed = last (unbundle r)
       where r = register (unpack seed) (lfsrGP (unpack 0b0011010000000000) <$> r)
 :}
 
 >>> :{
-let grayCounter :: Signal Bool -> Signal (BitVector 8)
+let grayCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+                => Signal dom Bool -> Signal dom (BitVector 8)
     grayCounter en = gray <$> upCounter en
       where gray xs = msb xs ++# xor (slice d7 d1 xs) (slice d6 d0 xs)
 :}
 
 >>> :{
-let oneHotCounter :: Signal Bool -> Signal (BitVector 8)
+let oneHotCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+                  => Signal dom Bool -> Signal dom (BitVector 8)
     oneHotCounter enable = s
       where
         s = regEn 1 enable (rotateL s 1)
@@ -176,7 +183,8 @@ let crcT bv dIn = replaceBit 0  dInXor
 :}
 
 >>> :{
-let crc :: Signal Bool -> Signal Bool -> Signal Bit -> Signal (BitVector 16)
+let crc :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+        => Signal dom Bool -> Signal dom Bool -> Signal dom Bit -> Signal dom (BitVector 16)
     crc enable ld dIn = s
       where
         s = regEn 0xFFFF enable (mux ld 0xFFFF (crcT <$> s <*> dIn))
@@ -392,10 +400,11 @@ prop> \en decIn -> en ==> (encoderCase en (decoderCase en decIn) === decIn)
 Using `regEn`:
 
 @
-upCounter :: Signal Bool -> Signal (Unsigned 8)
+upCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+          => Signal dom Bool -> Signal dom (Unsigned 8)
 upCounter enable = s
   where
-    s = `regEn` 0 enable (s + 1)
+    s = regEn 0 enable (s + 1)
 @
 
 = 8-bit Up Counter With Load
@@ -403,8 +412,9 @@ upCounter enable = s
 Using `mealy`:
 
 @
-upCounterLd :: Signal (Bool,Bool,Unsigned 8) -> Unsigned 8
-upCounterLd = `mealy` upCounterLdT 0
+upCounterLd :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+            => Signal dom (Bool,Bool,Unsigned 8) -> Signal dom (Unsigned 8)
+upCounterLd = mealy upCounterLdT 0
 
 upCounterLdT s (ld,en,dIn) = (s',s)
   where
@@ -418,10 +428,11 @@ upCounterLdT s (ld,en,dIn) = (s',s)
 Using `register` and `mux`:
 
 @
-upDownCounter :: Signal Bool -> Signal (Unsigned 8)
+upDownCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+              => Signal dom Bool -> Signal dom (Unsigned 8)
 upDownCounter upDown = s
   where
-    s = `register` 0 (`mux` upDown (s + 1) (s - 1))
+    s = register 0 (mux upDown (s + 1) (s - 1))
 @
 
 The following property holds:
@@ -438,9 +449,10 @@ lfsrF' s = feedback '++#' 'slice' d15 d1 s
   where
     feedback = s'!'5 ``xor`` s'!'3 ``xor`` s'!'2 ``xor`` s'!'0
 
-lfsrF :: BitVector 16 -> Signal Bit
-lfsrF seed = 'msb' '<$>' r
-  where r = 'register' seed (lfsrF' '<$>' r)
+lfsrF :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+      => BitVector 16 -> Signal dom Bit
+lfsrF seed = msb <$> r
+  where r = register seed (lfsrF' <$> r)
 @
 
 We can also build a internal/Galois LFSR which has better timing characteristics.
@@ -457,9 +469,10 @@ lfsrGP taps regs = 'zipWith' xorM taps (fb '+>>' regs)
 Then we can instantiate a 16-bit LFSR as follows:
 
 @
-lfsrG :: BitVector 16 -> Signal Bit
-lfsrG seed = 'last' ('unbundle' r)
-  where r = 'register' ('unpack' seed) (lfsrGP ('unpack' 0b0011010000000000) '<$>' r)
+let lfsrG :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+          => BitVector 16 -> Signal dom Bit
+    lfsrG seed = last (unbundle r)
+      where r = register (unpack seed) (lfsrGP (unpack 0b0011010000000000) <$> r)
 @
 
 The following property holds:
@@ -471,9 +484,10 @@ prop> testFor 100 (lfsrF 0xACE1 .==. lfsrG 0x4645)
 Using the previously defined @upCounter@:
 
 @
-grayCounter :: Signal Bool -> Signal (BitVector 8)
-grayCounter en = gray '<$>' upCounter en
-  where gray xs = 'msb' xs '++#' 'xor' ('slice' d7 d1 xs) ('slice' d6 d0 xs)
+grayCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+            => Signal dom Bool -> Signal dom (BitVector 8)
+grayCounter en = gray <$> upCounter en
+  where gray xs = msb xs ++# xor (slice d7 d1 xs) (slice d6 d0 xs)
 @
 
 = One-hot counter
@@ -481,10 +495,11 @@ grayCounter en = gray '<$>' upCounter en
 Basically a barrel-shifter:
 
 @
-oneHotCounter :: Signal Bool -> Signal (BitVector 8)
+oneHotCounter :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+              => Signal dom Bool -> Signal dom (BitVector 8)
 oneHotCounter enable = s
   where
-    s = 'regEn' 1 enable ('rotateL' s 1)
+    s = regEn 1 enable (rotateL s 1)
 @
 -}
 

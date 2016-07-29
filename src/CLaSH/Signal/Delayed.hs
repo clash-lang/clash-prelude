@@ -14,6 +14,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE KindSignatures             #-}
 {-# LANGUAGE MagicHash                  #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -57,24 +58,26 @@ import CLaSH.Class.Num            (ExtendingNum (..), SaturatingNum)
 import CLaSH.Promoted.Nat         (SNat)
 import CLaSH.Sized.Vector         (Vec, head, length, repeat, shiftInAt0,
                                    singleton)
-import CLaSH.Signal               (Signal, Clock, Reset, fromList, fromList_lazy,
-                                   register, bundle, unbundle)
+import CLaSH.Signal               (Clock, Reset, Signal, bundle, fromList,
+                                   fromList_lazy, register, unbundle)
 import CLaSH.Signal.Explicit      (Domain)
 
 {- $setup
->>> :set -XDataKinds
->>> :set -XTypeOperators
+>>> :set -XDataKinds -XTypeOperators -XImplicitParams
 >>> import CLaSH.Prelude
->>> let delay3 = delay (0 :> 0 :> 0 :> Nil)
->>> let delay2 = delayI :: DSignal n Int -> DSignal (n + 2) Int
+>>> let delay3 = delayD (0 :> 0 :> 0 :> Nil)
 >>> :{
-let mac :: DSignal 0 Int -> DSignal 0 Int -> DSignal 0 Int
+let delay2 :: (?res :: Reset res dom, ?clk :: Clock clk dom) => DSignal dom n Int -> DSignal dom (n + 2) Int
+    delay2 = delayDI
+:}
+
+>>> :{
+let mac :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+        => DSignal dom 0 Int -> DSignal dom 0 Int -> DSignal dom 0 Int
     mac x y = feedback (mac' x y)
       where
-        mac' :: DSignal 0 Int -> DSignal 0 Int -> DSignal 0 Int
-             -> (DSignal 0 Int, DSignal 1 Int)
         mac' a b acc = let acc' = a * b + acc
-                       in  (acc, delay (singleton 0) acc')
+                       in  (acc, delayD (singleton 0) acc')
 :}
 
 -}
@@ -102,7 +105,7 @@ instance ExtendingNum a b => ExtendingNum (DSignal dom n a) (DSignal dom n b) wh
 -- Every element in the list will correspond to a value of the signal for one
 -- clock cycle.
 --
--- >>> sampleN 2 (dfromList [1,2,3,4,5])
+-- >>> sampleN 2 (toSignal (dfromList [1,2,3,4,5]))
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
@@ -124,11 +127,12 @@ dfromList_lazy = coerce . fromList_lazy
 -- | Delay a 'DSignal' for @d@ periods.
 --
 -- @
--- delay3 :: 'DSignal' n Int -> 'DSignal' (n + 3) Int
+-- delay3 :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+--        => 'DSignal' dom n Int -> 'DSignal' dom (n + 3) Int
 -- delay3 = 'delay' (0 ':>' 0 ':>' 0 ':>' 'Nil')
 -- @
 --
--- >>> sampleN 6 (delay3 (dfromList [1..]))
+-- >>> sampleN 6 (toSignal (delay3 (dfromList [1..])))
 -- [0,0,0,1,2,3]
 delayD :: forall domain res clk a n d .
           (HasCallStack, KnownNat d,
@@ -149,11 +153,12 @@ delayD m ds = coerce (delay' (coerce ds))
 -- | Delay a 'DSignal' for @m@ periods, where @m@ is derived from the context.
 --
 -- @
--- delay2 :: 'DSignal' n Int -> 'DSignal' (n + 2) Int
+-- delay2 :: (?res :: Reset res domain, ?clk :: Clock clk domain)
+--        => 'DSignal' dom n Int -> 'DSignal' dom (n + 2) Int
 -- delay2 = 'delayI'
 -- @
 --
--- >>> sampleN 6 (delay2 (dfromList [1..]))
+-- >>> sampleN 6 (toSignal (delay2 (dfromList [1..])))
 -- [0,0,1,2,3,4]
 delayDI :: (HasCallStack, Default a, KnownNat d,
             ?res :: Reset res domain,
@@ -165,16 +170,15 @@ delayDI = delayD (repeat def)
 -- | Feed the delayed result of a function back to its input:
 --
 -- @
--- mac :: 'DSignal' 0 Int -> 'DSignal' 0 Int -> 'DSignal' 0 Int
+-- mac :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+--     => 'DSignal' dom 0 Int -> 'DSignal' dom 0 Int -> 'DSignal' dom 0 Int
 -- mac x y = 'feedback' (mac' x y)
 --   where
---     mac' :: 'DSignal' 0 Int -> 'DSignal' 0 Int -> 'DSignal' 0 Int
---          -> ('DSignal' 0 Int, 'DSignal' 1 Int)
 --     mac' a b acc = let acc' = a * b + acc
 --                    in  (acc, 'delay' ('singleton' 0) acc')
 -- @
 --
--- >>> sampleN 6 (mac (dfromList [1..]) (dfromList [1..]))
+-- >>> sampleN 6 (toSignal (mac (dfromList [1..]) (dfromList [1..])))
 -- [0,1,5,14,30,55]
 feedback :: (DSignal dom n a -> (DSignal dom n a,DSignal dom (n + m + 1) a))
          -> DSignal dom n a
@@ -200,7 +204,8 @@ unsafeFromSignal = DSignal
 -- Access a /delayed/ signal in the present.
 --
 -- @
--- mac :: 'DSignal' 0 Int -> 'DSignal' 0 Int -> 'DSignal' 0 Int
+-- mac :: (?res :: Reset res dom, ?clk :: Clock clk dom)
+--     => 'DSignal' dom 0 Int -> 'DSignal' dom 0 Int -> 'DSignal' dom 0 Int
 -- mac x y = acc'
 --   where
 --     acc' = (x * y) + 'antiDelay' d1 acc
