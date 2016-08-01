@@ -28,12 +28,6 @@ module CLaSH.Signal.Internal
   ( -- * Datatypes
     Domain (..)
   , Signal (..)
-    -- * Basic circuits
-  , register#
-  , delay#
-  , regEn#
-  , mux
-  , signal
     -- * Clocks and resets
   , ClockKind (..)
   , Clock (..,Clock)
@@ -44,6 +38,12 @@ module CLaSH.Signal.Internal
   , unsafeToAsyncReset#
   , fromSyncReset#
   , toSyncReset#
+    -- * Basic circuits
+  , register#
+  , delay#
+  , regEn#
+  , mux
+  , signal
     -- * Boolean connectives
   , (.&&.), (.||.), not1
     -- * Simulation functions (not synthesisable)
