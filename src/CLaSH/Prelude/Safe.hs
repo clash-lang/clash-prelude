@@ -82,6 +82,8 @@ module CLaSH.Prelude.Safe
   , module CLaSH.Sized.Vector
     -- *** Perfect depth trees
   , module CLaSH.Sized.RTree
+    -- ** FPGA Clock & Reset sources
+  , module CLaSH.TopEntity
     -- ** Annotations
   , module CLaSH.Annotations.TopEntity
     -- ** Type-level natural numbers
@@ -141,6 +143,7 @@ import CLaSH.Sized.Unsigned
 import CLaSH.Sized.Vector
 import CLaSH.Signal
 import CLaSH.Signal.Delayed
+import CLaSH.TopEntity
 
 {- $setup
 >>> let rP = registerB (8,8)

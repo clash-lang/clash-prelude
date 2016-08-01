@@ -96,6 +96,8 @@ module CLaSH.Prelude
   , module CLaSH.Sized.RTree
     -- ** Annotations
   , module CLaSH.Annotations.TopEntity
+    -- ** FPGA Clock & Reset sources
+  , module CLaSH.TopEntity
     -- ** Type-level natural numbers
   , module GHC.TypeLits
   , module GHC.TypeLits.Extra
@@ -160,6 +162,7 @@ import CLaSH.Sized.Unsigned
 import CLaSH.Sized.Vector
 import CLaSH.Signal
 import CLaSH.Signal.Delayed
+import CLaSH.TopEntity
 import CLaSH.XException
 
 {- $setup

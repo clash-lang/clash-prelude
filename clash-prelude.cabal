@@ -133,6 +133,8 @@ Library
                       CLaSH.Sized.Internal.Signed
                       CLaSH.Sized.Internal.Unsigned
 
+                      CLaSH.TopEntity
+
                       CLaSH.XException
 
                       CLaSH.Tutorial
