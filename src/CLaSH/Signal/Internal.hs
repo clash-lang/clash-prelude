@@ -153,7 +153,7 @@ instance Show (Clock clk domain) where
 -- | We can only create 'Original' clock signals
 pattern Clock :: forall domain name period .
                  (KnownSymbol name, KnownNat period, domain ~ 'Domain name period) => ()
-              => Signal ('Domain name period) Bool
+              => Signal domain Bool
               -> Clock 'Original domain
 pattern Clock en <- Clock# _nm _rt en
   where
@@ -172,7 +172,7 @@ data Reset (resetKind :: ResetKind) (domain :: Domain) where
   Sync  :: Signal domain Bool -> Reset 'Synchronous  domain
   Async :: Signal domain Bool -> Reset 'Asynchronous domain
 
--- | ´unsafeFromAsyncReset#' is HIGHLY unsafe as it can introduce:
+-- | 'unsafeFromAsyncReset#' is HIGHLY unsafe as it can introduce:
 --
 -- * meta-stability
 -- * combinational loops
