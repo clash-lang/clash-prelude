@@ -8,6 +8,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE ImplicitParams      #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 {-# LANGUAGE Unsafe #-}
 
@@ -22,16 +23,21 @@ module CLaSH.Prelude.Testbench
   , assert#
   , stimuliGenerator#
   , outputVerifier#
+    -- * Clocks & Resets
+  , clockGen
+  , asyncResetGen
+  , syncResetGen
   )
 where
 
 import Debug.Trace           (trace)
-import GHC.TypeLits          (KnownNat)
+import GHC.TypeLits          (KnownNat,KnownSymbol)
 import Prelude               hiding ((!!))
 
-import CLaSH.Signal          (Clock, Reset, Signal, fromList)
+import CLaSH.Signal          (ClockKind (..), ResetKind (..), signal, fromList)
 import CLaSH.Signal.Bundle   (unbundle)
 import CLaSH.Signal.Explicit (register#)
+import CLaSH.Signal.Internal (Clock(..), Domain(..), Reset (..), Signal (..))
 import CLaSH.Sized.Index     (Index)
 import CLaSH.Sized.Vector    (Vec, (!!), maxIndex)
 
@@ -251,3 +257,35 @@ outputVerifier# res clk samples i =
                 else s
 
         finished = s == maxI
+
+-- | To be used like:
+--
+-- @
+-- type DomA = 'Domain "A" 100
+-- clkA = clockGen @DomA
+-- @
+clockGen :: forall domain nm period .
+            (KnownSymbol nm, KnownNat period, domain ~ 'Domain nm period)
+         => Clock 'Original domain
+clockGen = Clock (signal True)
+{-# NOINLINE clockGen #-}
+
+-- | To be used like:
+--
+-- @
+-- type DomA = 'Domain "A" 100
+-- rstA = asyncResetGen @DomA
+-- @
+asyncResetGen :: Reset 'Asynchronous domain
+asyncResetGen = Async (True :- signal False)
+{-# NOINLINE asyncResetGen #-}
+
+-- | To be used like:
+--
+-- @
+-- type DomA = 'Domain "A" 100
+-- rstA = syncResetGen @DomA
+-- @
+syncResetGen :: Reset 'Synchronous domain
+syncResetGen = Sync (True :- signal False)
+{-# NOINLINE syncResetGen #-}
