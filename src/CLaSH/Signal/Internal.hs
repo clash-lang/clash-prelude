@@ -116,17 +116,17 @@ import CLaSH.Promoted.Symbol      (SSymbol (..))
 import CLaSH.XException           (errorX)
 
 {- $setup
->>> :set -XDataKinds
->>> :set -XMagicHash
->>> import CLaSH.Promoted.Nat
->>> import CLaSH.Promoted.Symbol
->>> type SystemClock = Clk "System" 1000
->>> type Signal a = Signal SystemClock a
->>> let register = register# (SClock SSymbol SNat :: SClock SystemClock)
+>>> :set -XDataKinds -XMagicHash -XTypeApplications
+>>> import qualified Data.List as L
+>>> type DomA = 'Domain "A" 100
+>>> let clkA = Clock @DomA (signal True)
+>>> let rstA = unsafeToAsyncReset# @DomA (fromList (False : L.repeat True))
+>>> let oscillate res clk = let s = register# res clk False (CLaSH.Signal.not1 s) in s
+>>> let count res clk = let s = regEn# res clk 0 (oscillate res clk) (s + 1) in s
 -}
 
--- | A domain with a name ('Symbol') and a clock rate ('Nat')
-data Domain = Domain { domainName :: Symbol, clockRate :: Nat }
+-- | A domain with a name ('Symbol') and a clock period ('Nat')
+data Domain = Domain { domainName :: Symbol, clockPeriod :: Nat }
 
 infixr 5 :-
 -- | A synchronized signal with samples of type @a@, explicitly synchronized to
@@ -143,17 +143,17 @@ data ClockKind = Original -- ^ A clock signal coming straight from the clock sou
 -- | A clock signal belonging to a @domain@
 data Clock (clockKind :: ClockKind) (domain :: Domain) where
   Clock# :: SSymbol name
-         -> SNat rate
-         -> Signal ('Domain name rate) Bool
-         -> Clock clockKind ('Domain name rate)
+         -> SNat period
+         -> Signal ('Domain name period) Bool
+         -> Clock clockKind ('Domain name period)
 
 instance Show (Clock clk domain) where
   show (Clock# nm rt@SNat _) = show nm ++ show (natVal rt)
 
 -- | We can only create 'Original' clock signals
-pattern Clock :: forall domain name rate .
-                 (KnownSymbol name, KnownNat rate, domain ~ 'Domain name rate) => ()
-              => Signal ('Domain name rate) Bool
+pattern Clock :: forall domain name period .
+                 (KnownSymbol name, KnownNat period, domain ~ 'Domain name period) => ()
+              => Signal ('Domain name period) Bool
               -> Clock 'Original domain
 pattern Clock en <- Clock# _nm _rt en
   where
@@ -335,7 +335,7 @@ not1 = fmap not
 -- clkA = 'sclock'
 -- @
 --
--- >>> sampleN# 3 (register' clkA 8 (fromList [1,2,3,4]))
+-- >>> sampleN# 3 (register# rstA clkA 8 (fromList [1,2,3,4]))
 -- [8,1,2]
 register# :: HasCallStack
           => Reset reset domain -> Clock clk domain
@@ -384,9 +384,9 @@ delay# (Clock# _ _ en) d =
 --
 -- We get:
 --
--- >>> sampleN# 8 oscillate
+-- >>> sampleN# 8 (oscillate rstA clkA)
 -- [False,True,False,True,False,True,False,True]
--- >>> sampleN# 8 count
+-- >>> sampleN# 8 (count rstA clkA)
 -- [0,0,1,1,2,2,3,3]
 regEn# :: HasCallStack
        => Reset reset domain -> Clock clk domain
@@ -421,7 +421,7 @@ mux = liftA3 (\b t f -> if b then t else f)
 --
 -- Create a constant 'CLaSH.Signal.Signal from a combinational value
 --
--- >>> sampleN 5 (signal 4 :: Signal Int)
+-- >>> sampleN# 5 (signal 4 :: Signal dom Int)
 -- [4,4,4,4,4]
 signal :: Applicative f => a -> f a
 signal = pure
@@ -813,7 +813,7 @@ sampleN# n = take n . sample#
 -- Every element in the list will correspond to a value of the signal for one
 -- clock cycle.
 --
--- >>> sampleN 2 (fromList [1,2,3,4,5])
+-- >>> sampleN# 2 (fromList [1,2,3,4,5])
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
@@ -825,7 +825,7 @@ fromList = Prelude.foldr headStrictSignal (error "finite list")
 -- | Simulate a (@'CLaSH.Signal.Signal a -> 'CLaSH.Signal.Signal b@) function
 -- given a list of samples of type @a@
 --
--- >>> simulate (register 8) [1, 2, 3]
+-- >>> simulate# (register# rstA clkA 8) [1, 2, 3]
 -- [8,1,2,3...
 -- ...
 --

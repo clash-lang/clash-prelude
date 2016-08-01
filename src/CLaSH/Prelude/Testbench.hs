@@ -36,16 +36,17 @@ import CLaSH.Sized.Index     (Index)
 import CLaSH.Sized.Vector    (Vec, (!!), maxIndex)
 
 {- $setup
->>> :set -XTemplateHaskell
->>> :set -XDataKinds
+>>> :set -XTemplateHaskell -XDataKinds -XMagicHash -XTypeApplications
 >>> import CLaSH.Prelude
 >>> let testInput = stimuliGenerator $(v [(1::Int),3..21])
 >>> let expectedOutput = outputVerifier $(v ([70,99,2,3,4,5,7,8,9,10]::[Int]))
 >>> import CLaSH.Prelude.Explicit
->>> type ClkA = Clk "A" 100
->>> let clkA = sclock :: SClock ClkA
->>> let testInput' = stimuliGenerator' clkA $(v [(1::Int),3..21])
->>> let expectedOutput' = outputVerifier' clkA $(v ([70,99,2,3,4,5,7,8,9,10]::[Int]))
+>>> import qualified Data.List as L
+>>> type DomA = 'Domain "A" 100
+>>> let clkA = Clock @DomA (signal True)
+>>> let rstA = unsafeToAsyncReset# @DomA (fromList (False : L.repeat True))
+>>> let testInput# = stimuliGenerator# rstA clkA $(v [(1::Int),3..21])
+>>> let expectedOutput# = outputVerifier# rstA clkA $(v ([70,99,2,3,4,5,7,8,9,10]::[Int]))
 -}
 
 {-# INLINE assert #-}
@@ -169,7 +170,7 @@ assert# clk msg checked expected returned =
 -- testInput' = 'stimuliGenerator'' clkA $('CLaSH.Sized.Vector.v' [(1::Int),3..21])
 -- @
 --
--- >>> sampleN 13 testInput'
+-- >>> sampleN# 13 testInput#
 -- [1,3,5,7,9,11,13,15,17,19,21,21,21]
 stimuliGenerator# :: forall domain res clk l a . KnownNat l
                   => Reset res domain
@@ -208,7 +209,7 @@ stimuliGenerator# res clk samples =
 -- @
 --
 -- >>> import qualified Data.List as List
--- >>> sampleN 12 (expectedOutput' (fromList ([0..10] List.++ [10,10,10])))
+-- >>> sampleN# 12 (expectedOutput# (fromList ([0..10] List.++ [10,10,10])))
 -- <BLANKLINE>
 -- cycle(A100): 0, outputVerifier
 -- expected value: 70, not equal to actual value: 0

@@ -33,7 +33,7 @@ import CLaSH.Signal.Explicit (register#)
 import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
->>> :set -XDataKinds
+>>> :set -XDataKinds -XMagicHash
 >>> import CLaSH.Prelude
 >>> :{
 let mac s (x,y) = (s',s)
@@ -43,15 +43,13 @@ let mac s (x,y) = (s',s)
 :}
 
 >>> import CLaSH.Prelude.Explicit
->>> type ClkA = Clk "A" 100
->>> let clkA = sclock :: SClock ClkA
 >>> :{
 let mac s (x,y) = (s',s)
       where
         s' = x * y + s
 :}
 
->>> let topEntity = mealy' clkA mac 0
+>>> let topEntity = mealy# systemReset systemClock mac 0
 -}
 
 {-# INLINE mealy #-}
@@ -163,7 +161,7 @@ mealyB = mealyB# ?res ?clk
 -- topEntity = 'mealy'' clkA mac 0
 -- @
 --
--- >>> simulate topEntity [(1,1),(2,2),(3,3),(4,4)]
+-- >>> simulate# topEntity [(1,1),(2,2),(3,3),(4,4)]
 -- [0,1,5,14...
 -- ...
 --

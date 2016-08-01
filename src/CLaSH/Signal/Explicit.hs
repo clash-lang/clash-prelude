@@ -73,63 +73,63 @@ import CLaSH.Promoted.Nat    (SNat(..))
 >>> :set -XDataKinds -XMagicHash -XTypeApplications
 >>> import CLaSH.Prelude
 >>> import CLaSH.Signal.Internal
->>> type ADC = 'Domain "ADC" 1000
+>>> import qualified Data.List as L
+>>> type ADC = 'Domain "ADC" 2
 >>> type FFT = 'Domain "FFT" 7
 >>> let clkADC = Clock @ADC (pure True)
+>>> let rstADC = unsafeToAsyncReset# @ADC (fromList (False : L.repeat True))
 >>> let clkFFT = Clock @FFT (pure True)
+>>> let rstFFT = unsafeToAsyncReset# @FFT (fromList (False : L.repeat True))
 >>> let oversampling res1 clk1 res2 clk2 = register# res1 clk1 99 . unsafeSynchronizer clk2 clk1 . register# res2 clk2 50
 >>> let almostId res1 clk1 res2 clk2 = register# res2 clk2 70 . unsafeSynchronizer clk1 clk2 . register# res1 clk1 99 . unsafeSynchronizer clk2 clk1 . register# res2 clk2 50
 >>> type DomA = 'Domain "A" 100
 >>> let clkA = Clock @DomA (pure True)
->>> let oscillate res clk = register# res clk False (CLaSH.Signal.not1 oscillate)
->>> let count res clk = regEn# res clk 0 oscillate (count + 1)
 -}
 
 {- $relativeclocks #relativeclocks#
 CλaSH supports explicitly clocked 'CLaSH.Signal's in the form of:
 
 @
-'Signal'' (clk :: 'Clock') a
+'Signal'' (dom :: 'Domain') a
 @
 
-Where @a@ is the type of the elements, and @clk@ is the clock to which the
-signal is synchronised. The type-parameter, @clk@, is of the kind 'Clock' which
+Where @a@ is the type of the elements, and @dom@ is the clock domain to which the
+signal is synchronised. The type-parameter, @dom@, is of the kind 'Domain' which
 has types of the following shape:
 
 @
-Clk \{\- name :: \-\} 'GHC.TypeLits.Symbol' \{\- period :: \-\} 'GHC.TypeLits.Nat'
+data Domain = Domain { domainName :: Symbol, clockPeriod :: Nat }
 @
 
-Where @name@ is a type-level string ('GHC.TypeLits.Symbol') representing the the
-name of the clock, and @period@ is a type-level natural number ('GHC.TypeLits.Nat')
-representing the clock period. Two concrete instances of a 'Clk' could be:
+Where @domainName@ is a type-level string ('GHC.TypeLits.Symbol') representing the
+name of the domain, and @clockPeriod@ is a type-level natural number ('GHC.TypeLits.Nat')
+representing the clock period. Two concrete instances of a 'Domain' could be:
 
-> type ClkA500  = Clk "A500" 500
-> type ClkB3250 = Clk "B3250" 3250
+> type A500  = 'Domain "A" 500
+> type B3250 = 'Domain "B" 3250
 
-The periods of these clocks are however dimension-less, they do not refer to any
+The periods of these clock domains are dimension-less, they do not refer to any
 explicit time-scale (e.g. nano-seconds). The reason for the lack of an explicit
 time-scale is that the CλaSH compiler would not be able guarantee that the
 circuit can run at the specified frequency. The clock periods are just there to
-indicate relative frequency differences between two different clocks. That is, a
-signal:
+indicate relative differences between two different clocks. That is, a signal:
 
 @
-'Signal'' ClkA500 a
+'Signal' A500 a
 @
 
 is synchronized to a clock that runs 6.5 times faster than the clock to which
 the signal:
 
 @
-'Signal'' ClkB3250 a
+'Signal' B3250 a
 @
 
 is synchronized to.
 
 * __NB__: \"Bad things\"™  happen when you actually use a clock period of @0@,
 so do __not__ do that!
-* __NB__: You should be judicious using a clock with period of @1@ as you can
+* __NB__: You should be judicious using a clock with a period of @1@ as you can
 never create a clock that goes any faster!
 -}
 
@@ -231,9 +231,9 @@ freqCalc xs = map (`div` g) ys
 --              . 'register'' clk7 50
 -- @
 --
--- >>> sampleN# 37 (oversampling (fromList [1..10]))
+-- >>> sampleN# 37 (oversampling rstADC clkADC rstFFT clkFFT (fromList [1..10]))
 -- [99,50,1,1,1,2,2,2,2,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10]
--- >>> sampleN# 12 (almostId (fromList [1..10]))
+-- >>> sampleN# 12 (almostId rstADC clkADC rstFFT clkFFT (fromList [1..10]))
 -- [70,99,1,2,3,4,5,6,7,8,9,10]
 unsafeSynchronizer :: Clock  clk1 dom1
                    -> Clock  clk2 dom2
@@ -283,10 +283,10 @@ repSchedule high low = take low $ repSchedule' low high 1
 
 -- * Product/Signal isomorphism
 
--- | Simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a list of
+-- | Simulate a (@'Unbundled' dom1 a -> 'Unbundled' dom2 b@) function given a list of
 -- samples of type @a@
 --
--- >>> simulateB (unbundle . register (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
+-- >>> simulateB# (unbundle . register# rstADC clkADC (8,8) . bundle) [(1,1), (2,2), (3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
 -- ...
 --

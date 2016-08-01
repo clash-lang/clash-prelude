@@ -30,7 +30,7 @@ import CLaSH.Signal.Explicit (register#)
 import CLaSH.Signal.Bundle   (Bundle (..))
 
 {- $setup
->>> :set -XDataKinds
+>>> :set -XDataKinds -XMagicHash
 >>> import CLaSH.Prelude
 >>> :{
 let mac s (x,y) = x * y + s
@@ -38,11 +38,9 @@ let mac s (x,y) = x * y + s
 :}
 
 >>> import CLaSH.Prelude.Explicit
->>> type ClkA = Clk "A" 100
->>> let clkA = sclock :: SClock ClkA
 >>> let mac s (x,y) = x * y + s
 
->>> let topEntity = moore' clkA mac id 0
+>>> let topEntity = moore# systemReset systemClock mac id 0
 -}
 
 {-# INLINE moore #-}

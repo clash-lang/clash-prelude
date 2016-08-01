@@ -69,11 +69,13 @@ import CLaSH.Signal.Bundle        (Bundle(..))
 import CLaSH.Signal.Explicit
 
 {- $setup
->>> :set -XDataKinds
+>>> :set -XDataKinds -XMagicHash -XTypeApplications
 >>> import CLaSH.Prelude
->>> type ClkA = Clk "A" 100
->>> let clkA = sclock :: SClock ClkA
->>> let rP = registerB' clkA (8::Int,8::Int)
+>>> import qualified Data.List as L
+>>> type DomA = 'Domain "A" 100
+>>> let clkA = Clock @DomA (signal True)
+>>> let rstA = unsafeToAsyncReset# @DomA (fromList (False : L.repeat True))
+>>> let rP = registerB# rstA clkA (8::Int,8::Int)
 -}
 
 {-# INLINE registerB# #-}
@@ -87,10 +89,10 @@ import CLaSH.Signal.Explicit
 -- clkA = 'sclock'
 --
 -- rP :: ('Signal'' ClkA Int, 'Signal'' ClkA Int) -> ('Signal'' ClkA Int, 'Signal'' ClkA Int)
--- rP = 'registerB'' clkA (8,8)
+-- rP = 'registerB#' clkA (8,8)
 -- @
 --
--- >>> simulateB rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
+-- >>> simulateB# rP [(1,1),(2,2),(3,3)] :: [(Int,Int)]
 -- [(8,8),(1,1),(2,2),(3,3)...
 -- ...
 registerB# :: (HasCallStack, Bundle a) => Reset res dom -> Clock clk dom -> a -> Unbundled dom a -> Unbundled dom a

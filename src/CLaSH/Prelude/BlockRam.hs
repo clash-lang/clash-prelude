@@ -549,15 +549,20 @@ readNew# :: Eq addr
 readNew# res clk ram wrAddr rdAddr wrEn wrData = mux wasSame wasWritten $ ram wrAddr rdAddr wrEn wrData
   where sameAddr   = (==) <$> wrAddr <*> rdAddr
         wasSame    = register# res clk False ((&&) <$> wrEn <*> sameAddr)
-        wasWritten = register# res clk undefined wrData
+        wasWritten = delay# clk wrData
 
--- | Create read-after-write blockRAM from a read-before-write one (synchronised to system clock)
+-- | Create read-after-write blockRAM from a read-before-write one (synchronised to an implicit clock)
 --
 -- >>> import CLaSH.Prelude
 -- >>> :t readNew (blockRam (0 :> 1 :> Nil))
 -- readNew (blockRam (0 :> 1 :> Nil))
---   :: (Num a, Eq addr, Enum addr) =>
---      Signal addr -> Signal addr -> Signal Bool -> Signal a -> Signal a
+--   :: (?res::Reset res domain, ?clk::Clock clk domain, Num a, Eq addr,
+--       Enum addr) =>
+--      Signal domain addr
+--      -> Signal domain addr
+--      -> Signal domain Bool
+--      -> Signal domain a
+--      -> Signal domain a
 readNew :: (Eq addr, ?res :: Reset res domain, ?clk :: Clock clk domain)
         => (Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a)
         -> Signal domain addr -> Signal domain addr -> Signal domain Bool -> Signal domain a -> Signal domain a
