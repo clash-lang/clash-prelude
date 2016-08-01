@@ -261,7 +261,7 @@ outputVerifier# res clk samples i =
 -- | To be used like:
 --
 -- @
--- type DomA = 'Domain "A" 100
+-- type DomA = 'Domain \"A\" 100
 -- clkA = clockGen @DomA
 -- @
 clockGen :: forall domain nm period .
@@ -273,7 +273,7 @@ clockGen = Clock (signal True)
 -- | To be used like:
 --
 -- @
--- type DomA = 'Domain "A" 100
+-- type DomA = 'Domain \"A\" 100
 -- rstA = asyncResetGen @DomA
 -- @
 asyncResetGen :: Reset 'Asynchronous domain
@@ -283,7 +283,7 @@ asyncResetGen = Async (True :- signal False)
 -- | To be used like:
 --
 -- @
--- type DomA = 'Domain "A" 100
+-- type DomA = 'Domain \"A\" 100
 -- rstA = syncResetGen @DomA
 -- @
 syncResetGen :: Reset 'Synchronous domain
