@@ -1,5 +1,16 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.10.11 *August 3rd 2016*
+* New features:
+  * Add strict version of: `sample`, `sampleN`, `fromList`, and `simulate`
+  * Make `Signal`s `<*>` slightly stricter:
+    * Feedback loops still work with this new implementation
+    * No more space-leaks when used in combination with the strict version of `sample`, `sampleN`, and `simulate`
+  * Add `NFData` instances for the numeric types
+* Speed up arithmetic operations of `Signed`, `Unsigned` and `BitVector`
+* Fixes bugs:
+  * CLaSH compiler sees internals of numeric types in their `Lift` functions
+
 ## 0.10.10 *July 15th 2016*
 * Fixes bugs:
   * `shrink` functions for numeric types throw exceptions [#153](https://github.com/clash-lang/clash-compiler/issues/153)
