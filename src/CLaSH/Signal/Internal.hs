@@ -39,10 +39,16 @@ module CLaSH.Signal.Internal
   , (.&&.), (.||.), not1
     -- * Simulation functions (not synthesisable)
   , simulate
+    -- ** strict versions
+  , simulate_strict
     -- * List \<-\> Signal conversion (not synthesisable)
   , sample
   , sampleN
   , fromList
+    -- ** strict versions
+  , sample_strict
+  , sampleN_strict
+  , fromList_strict
     -- * QuickCheck combinators
   , testFor
     -- * Type classes
@@ -84,10 +90,13 @@ module CLaSH.Signal.Internal
 where
 
 import Control.Applicative        (liftA2, liftA3)
+import Control.DeepSeq            (NFData,force)
+import Control.Exception          (SomeException,catch,evaluate,throw)
 import Data.Bits                  (Bits (..), FiniteBits (..))
 import Data.Default               (Default (..))
 import GHC.TypeLits               (Nat, Symbol)
 import Language.Haskell.TH.Syntax (Lift (..))
+import System.IO.Unsafe           (unsafeDupablePerformIO)
 import Test.QuickCheck            (Arbitrary (..), CoArbitrary(..), Property,
                                    property)
 
@@ -685,3 +694,43 @@ fromList = Prelude.foldr (:-) (error "finite list")
 -- __NB__: This function is not synthesisable
 simulate :: (Signal' clk1 a -> Signal' clk2 b) -> [a] -> [b]
 simulate f = sample . f . fromList
+
+-- | A 'force' that lazily returns exceptions
+forceNoException :: NFData a => a -> IO a
+forceNoException x = catch (evaluate (force x)) (\(e :: SomeException) -> return (throw e))
+
+headStrictCons :: NFData a => a -> [a] -> [a]
+headStrictCons x xs = unsafeDupablePerformIO ((:) <$> forceNoException x <*> pure xs)
+
+headStrictSignal :: NFData a => a -> Signal' clk a -> Signal' clk a
+headStrictSignal x xs = unsafeDupablePerformIO ((:-) <$> forceNoException x <*> pure xs)
+
+-- | Version of 'sample' that strictly evaluates the samples
+--
+-- __N.B:__ Exceptions are lazily rethrown
+sample_strict :: (Foldable f, NFData a) => f a -> [a]
+sample_strict = foldr headStrictCons []
+{-# DEPRECATED sample_strict "'sample' will be strict in CLaSH 1.0, and 'sample_strict' will be removed" #-}
+
+-- | Version of 'sampleN' that strictly evaluates the samples
+--
+-- __N.B:__ Exceptions are lazily rethrown
+sampleN_strict :: (Foldable f, NFData a) => Int -> f a -> [a]
+sampleN_strict n = take n . sample_strict
+{-# DEPRECATED sampleN_strict "'sampleN' will be strict in CLaSH 1.0, and 'sampleN_strict' will be removed" #-}
+
+-- | Version of 'fromList' that strictly evaluates the elements of the list
+--
+-- __N.B:__ Exceptions are lazily rethrown
+fromList_strict :: NFData a => [a] -> Signal' clk a
+fromList_strict = foldr headStrictSignal (error "finite list")
+{-# DEPRECATED fromList_strict "'fromList' will be strict in CLaSH 1.0, and 'fromList_strict' will be removed" #-}
+
+-- | Version of 'simulate' that strictly evaluates the input elements and the
+-- output elements
+--
+-- __N.B:__ Exceptions are lazily rethrown
+simulate_strict :: (NFData a, NFData b)
+                => (Signal' clk1 a -> Signal' clk2 b) -> [a] -> [b]
+simulate_strict f = sample_strict . f . fromList_strict
+{-# DEPRECATED simulate_strict "'simulate' will be strict in CLaSH 1.0, and 'simulate_strict' will be removed" #-}

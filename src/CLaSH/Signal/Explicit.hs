@@ -10,6 +10,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# LANGUAGE Trustworthy #-}
 
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Signal.Explicit
@@ -34,15 +35,18 @@ module CLaSH.Signal.Explicit
   , Bundle (..)
     -- * Simulation functions (not synthesisable)
   , simulateB'
+    -- ** Strict version
+  , simulateB'_strict
   )
 where
 
+import Control.DeepSeq        (NFData)
 import GHC.TypeLits           (KnownNat, KnownSymbol)
 
 import CLaSH.Promoted.Nat     (snat, snatToInteger)
 import CLaSH.Promoted.Symbol  (ssymbol)
 import CLaSH.Signal.Internal  (Signal' (..), Clock (..), SClock (..), register#,
-                               regEn#, simulate)
+                               regEn#, simulate, simulate_strict)
 import CLaSH.Signal.Bundle    (Bundle (..), Unbundled')
 
 {- $setup
@@ -341,3 +345,15 @@ simulateB' :: (Bundle a, Bundle b)
            -> (Unbundled' clk1 a -> Unbundled' clk2 b) -- ^ Function to simulate
            -> [a] -> [b]
 simulateB' clk1 clk2 f = simulate (bundle' clk2 . f . unbundle' clk1)
+
+-- | Version of 'simulateB'' that strictly evaluates the input elements and the
+-- output elements
+--
+-- __N.B:__ Exceptions are lazily rethrown
+simulateB'_strict :: (Bundle a, Bundle b, NFData a, NFData b)
+                  => SClock clk1 -- ^ 'Clock' of the incoming signal
+                  -> SClock clk2 -- ^ 'Clock' of the outgoing signal
+                  -> (Unbundled' clk1 a -> Unbundled' clk2 b) -- ^ Function to simulate
+                  -> [a] -> [b]
+simulateB'_strict clk1 clk2 f = simulate_strict (bundle' clk2 . f . unbundle' clk1)
+{-# DEPRECATED simulateB'_strict "'simulateB'' will be strict in CLaSH 1.0, and 'simulateB'_strict' will be removed" #-}

@@ -8,7 +8,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# LANGUAGE Trustworthy #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-deprecations #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Signal
@@ -29,10 +29,17 @@ module CLaSH.Signal
     -- * Simulation functions (not synthesisable)
   , simulate
   , simulateB
+    -- * Strict versions
+  , simulate_strict
+  , simulateB_strict
     -- * List \<-\> Signal conversion (not synthesisable)
   , sample
   , sampleN
   , fromList
+    -- ** Strict versions
+  , sample_strict
+  , sampleN_strict
+  , fromList_strict
     -- * QuickCheck combinators
   , testFor
     -- * Type classes
@@ -62,6 +69,7 @@ module CLaSH.Signal
   )
 where
 
+import Control.DeepSeq       (NFData)
 import Data.Bits             (Bits) -- Haddock only
 
 import CLaSH.Signal.Internal (Signal', register#, regEn#, (.==.), (./=.),
@@ -70,8 +78,11 @@ import CLaSH.Signal.Internal (Signal', register#, regEn#, (.==.), (./=.),
                               shift1, rotate1, setBit1, clearBit1, shiftL1,
                               unsafeShiftL1, shiftR1, unsafeShiftR1, rotateL1,
                               rotateR1, (.||.), (.&&.), not1, mux, sample,
-                              sampleN, fromList, simulate, signal, testFor)
-import CLaSH.Signal.Explicit (SystemClock, systemClock, simulateB')
+                              sampleN, fromList, simulate, signal, testFor,
+                              sample_strict, sampleN_strict, simulate_strict,
+                              fromList_strict)
+import CLaSH.Signal.Explicit (SystemClock, systemClock, simulateB',
+                              simulateB'_strict)
 import CLaSH.Signal.Bundle   (Bundle (..), Unbundled')
 
 {- $setup
@@ -159,3 +170,12 @@ bundle = bundle' systemClock
 -- __NB__: This function is not synthesisable
 simulateB :: (Bundle a, Bundle b) => (Unbundled a -> Unbundled b) -> [a] -> [b]
 simulateB = simulateB' systemClock systemClock
+
+-- | Version of 'simulateB' that strictly evaluates the input elements and the
+-- output elements
+--
+-- __N.B:__ Exceptions are lazily rethrown
+simulateB_strict :: (Bundle a, Bundle b, NFData a, NFData b)
+                 => (Unbundled a -> Unbundled b) -> [a] -> [b]
+simulateB_strict = simulateB'_strict systemClock systemClock
+{-# DEPRECATED simulateB_strict "'simulateB will be strict in CLaSH 1.0, and 'simulateB_strict' will be removed" #-}
