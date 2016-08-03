@@ -1,5 +1,9 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.10.12
+* Fixes bugs:
+  * `Vec`s `unbundle` is too strict, i.e. `register (undefined :: Vec 2 Int)` /= `bundle . unbundle . register (undefined :: Vec 2 Int)`
+
 ## 0.10.11 *August 3rd 2016*
 * New features:
   * Add strict version of: `sample`, `sampleN`, `fromList`, and `simulate`
