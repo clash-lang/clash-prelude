@@ -95,6 +95,7 @@ module CLaSH.Sized.Internal.BitVector
   )
 where
 
+import Control.DeepSeq            (NFData (..))
 import Control.Lens               (Index, Ixed (..), IxValue)
 import Data.Bits                  (Bits (..), FiniteBits (..))
 import Data.Char                  (digitToInt)
@@ -142,6 +143,12 @@ newtype BitVector (n :: Nat) =
 type Bit = BitVector 1
 
 -- * Instances
+instance NFData (BitVector n) where
+  rnf (BV i) = rnf i `seq` ()
+  {-# NOINLINE rnf #-}
+  -- NOINLINE is needed so that CLaSH doesn't trip on the "BitVector ~# Integer"
+  -- coercion
+
 instance KnownNat n => Show (BitVector n) where
   show bv@(BV i) = reverse . underScore . reverse $ showBV (natVal bv) i []
     where
