@@ -1,5 +1,5 @@
 Name:                 clash-prelude
-Version:              0.10.12
+Version:              0.10.13
 Synopsis:             CAES Language for Synchronous Hardware - Prelude library
 Description:
   CλaSH (pronounced ‘clash’) is a functional hardware description language that
@@ -112,6 +112,7 @@ Library
                       CLaSH.Signal
                       CLaSH.Signal.Bundle
                       CLaSH.Signal.Delayed
+                      CLaSH.Signal.Delayed.Explicit
                       CLaSH.Signal.Explicit
                       CLaSH.Signal.Internal
 
