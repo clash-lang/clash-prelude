@@ -1,5 +1,12 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.10.13
+* New features:
+  * Thanks to Joe Hermaszewski (@expipiplus1): Add an explicitly clocked `DSignal`
+  * Add a `Real` instance for `Fixed` [#158](https://github.com/clash-lang/clash-compiler/issues/158)
+* Fixes bugs:
+  * {BitVector;Index;Signed;Unsigned} `enumFromTo` and friends overflowed on values outside `Int` range [#166](https://github.com/clash-lang/clash-compiler/issues/166)
+
 ## 0.10.12
 * Fixes bugs:
   * `Vec`s `unbundle` is too strict, i.e. `register (undefined :: Vec 2 Int)` /= `bundle . unbundle . register (undefined :: Vec 2 Int)`
