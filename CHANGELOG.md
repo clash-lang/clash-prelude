@@ -1,6 +1,6 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
-## 0.10.13
+## 0.10.13 *August 18th 2016*
 * New features:
   * Thanks to Joe Hermaszewski (@expipiplus1): Add an explicitly clocked `DSignal`
   * Add a `Real` instance for `Fixed` [#158](https://github.com/clash-lang/clash-compiler/issues/158)
