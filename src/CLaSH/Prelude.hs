@@ -128,7 +128,11 @@ import Control.Applicative
 import Data.Bits
 import Data.Default
 import GHC.TypeLits
+#if MIN_VERSION_ghc_typelits_extra(0,2,0)
+import GHC.TypeLits.Extra hiding (Max, Min)
+#else
 import GHC.TypeLits.Extra
+#endif
 import Language.Haskell.TH.Syntax  (Lift(..))
 #if __GLASGOW_HASKELL__ < 711
 import Language.Haskell.TH.Lift    (deriveLift)

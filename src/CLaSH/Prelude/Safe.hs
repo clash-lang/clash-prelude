@@ -27,6 +27,7 @@
   Some circuit examples can be found in "CLaSH.Examples".
 -}
 
+{-# LANGUAGE CPP              #-}
 {-# LANGUAGE DataKinds        #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeOperators    #-}
@@ -108,7 +109,11 @@ where
 import Control.Applicative
 import Data.Bits
 import GHC.TypeLits
+#if MIN_VERSION_ghc_typelits_extra(0,2,0)
+import GHC.TypeLits.Extra hiding (Max, Min)
+#else
 import GHC.TypeLits.Extra
+#endif
 import Prelude                     hiding ((++), (!!), concat, drop, foldl,
                                            foldl1, foldr, foldr1, head, init,
                                            iterate, last, length, map, repeat,

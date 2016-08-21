@@ -1,5 +1,8 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.10.14 *August 21st 2016*
+* Build against ghc-typelits-extra-0.2
+
 ## 0.10.13 *August 18th 2016*
 * New features:
   * Thanks to Joe Hermaszewski (@expipiplus1): Add an explicitly clocked `DSignal`

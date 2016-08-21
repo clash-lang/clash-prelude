@@ -1,5 +1,5 @@
 Name:                 clash-prelude
-Version:              0.10.13
+Version:              0.10.14
 Synopsis:             CAES Language for Synchronous Hardware - Prelude library
 Description:
   CλaSH (pronounced ‘clash’) is a functional hardware description language that
@@ -159,7 +159,7 @@ Library
                       integer-gmp               >= 0.5.1.0 && < 1.1,
                       deepseq                   >= 1.4.1.0 && < 1.5,
                       ghc-prim                  >= 0.3.1.0 && < 0.6,
-                      ghc-typelits-extra        >= 0.1     && < 0.2,
+                      ghc-typelits-extra        >= 0.1     && < 0.3,
                       ghc-typelits-natnormalise >= 0.4.1   && < 0.6,
                       lens                      >= 4.9     && < 4.15,
                       QuickCheck                >= 2.7     && < 2.10,
