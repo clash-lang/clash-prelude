@@ -872,7 +872,7 @@ sampleN_lazy# n = take n . sample_lazy#
 -- Every element in the list will correspond to a value of the signal for one
 -- clock cycle.
 --
--- >>> sampleN 2 (fromList [1,2,3,4,5])
+-- >>> sampleN# 2 (fromList [1,2,3,4,5])
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
@@ -884,7 +884,7 @@ fromList_lazy = Prelude.foldr (:-) (error "finite list")
 -- | Simulate a (@'CLaSH.Signal.Signal' a -> 'CLaSH.Signal.Signal' b@) function
 -- given a list of samples of type @a@
 --
--- >>> simulate (register 8) [1, 2, 3]
+-- >>> simulate# (register# rstA clkA 8) [1, 2, 3]
 -- [8,1,2,3...
 -- ...
 --

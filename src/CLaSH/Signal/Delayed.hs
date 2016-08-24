@@ -117,7 +117,7 @@ dfromList = coerce . fromList
 -- Every element in the list will correspond to a value of the signal for one
 -- clock cycle.
 --
--- >>> sampleN 2 (dfromList [1,2,3,4,5])
+-- >>> sampleN 2 (toSignal (dfromList_lazy [1,2,3,4,5]))
 -- [1,2]
 --
 -- __NB__: This function is not synthesisable
