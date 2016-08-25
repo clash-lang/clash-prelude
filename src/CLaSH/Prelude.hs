@@ -73,6 +73,12 @@ module CLaSH.Prelude
   , assert
   , stimuliGenerator
   , outputVerifier
+    -- ** Clocks & Resets
+  , clockGen
+  , asyncResetGen
+  , syncResetGen
+    -- ** Stop the HDL simulator
+  , hdlSimFinish
     -- * Exported modules
     -- ** Synchronous signals
   , module CLaSH.Signal
@@ -149,7 +155,9 @@ import CLaSH.Prelude.Explicit      (window#, windowD#)
 import CLaSH.Prelude.ROM.File      (asyncRomFile,asyncRomFilePow2,romFile,
                                     romFilePow2)
 import CLaSH.Prelude.Safe
-import CLaSH.Prelude.Testbench     (assert, stimuliGenerator, outputVerifier)
+import CLaSH.Prelude.Testbench     (assert, asyncResetGen, clockGen,
+                                    hdlSimFinish, syncResetGen, outputVerifier,
+                                    stimuliGenerator )
 import CLaSH.Promoted.Nat
 import CLaSH.Promoted.Nat.TH
 import CLaSH.Promoted.Nat.Literals

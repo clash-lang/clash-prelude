@@ -27,6 +27,8 @@ module CLaSH.Prelude.Testbench
   , clockGen
   , asyncResetGen
   , syncResetGen
+    -- * Finish the HDL simulator
+  , hdlSimFinish
   )
 where
 
@@ -289,3 +291,8 @@ asyncResetGen = Async (True :- signal False)
 syncResetGen :: Reset 'Synchronous domain
 syncResetGen = Sync (True :- signal False)
 {-# NOINLINE syncResetGen #-}
+
+-- | Finish the HDL simulator
+hdlSimFinish :: Signal domain Bool -> Signal domain Bool
+hdlSimFinish = id
+{-# NOINLINE hdlSimFinish #-}
