@@ -30,16 +30,6 @@ script:
 matrix:
   fast_finish: true
   include:
-  - env: GHCVER=7.10.3 CABALVER=1.24 STACK_SOLVER=YES
-    addons:
-      apt:
-        sources:
-        - hvr-ghc
-        packages:
-        - ghc-7.10.3
-        - cabal-install-1.24
-        - libgmp-dev
-    compiler: ! ': # ghc-7.10.3  YES'
   - env: GHCVER=7.10.3 STACK_YAML=stack-lts6.yaml
     addons:
       apt:
