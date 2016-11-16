@@ -88,7 +88,7 @@ moore = moore' systemClock
 
 {-# INLINE medvedev #-}
 -- | Create a synchronous function from a combinational function describing
--- a moore machine without output logic
+-- a moore machine without any output logic
 medvedev :: (s -> i -> s) -> s -> Signal i -> Signal s
 medvedev tr st = moore tr id st
 
