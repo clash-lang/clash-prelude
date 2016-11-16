@@ -16,9 +16,13 @@ module CLaSH.Prelude.Moore
   ( -- * Moore machine synchronised to the system clock
     moore
   , mooreB
+  , medvedev
+  , medvedevB
     -- * Moore machine synchronised to an arbitrary clock
   , moore'
   , mooreB'
+  --, medvedev' TODO
+  --, medvedevB'
   )
 where
 
@@ -82,6 +86,12 @@ moore :: (s -> i -> s) -- ^ Transfer function in moore machine form:
       -- of the moore machine
 moore = moore' systemClock
 
+-- | Create a synchronous function from a combinational function describing
+-- a moore machine without output logic
+{-# INLINE medvedev #-}
+medvedev :: (s -> i -> s) -> s -> Signal i -> Signal o
+medvedev tr st = moore tr id st
+
 {-# INLINE mooreB #-}
 -- | A version of 'moore' that does automatic 'Bundle'ing
 --
@@ -120,6 +130,11 @@ mooreB :: (Bundle i, Bundle o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the moore machine
 mooreB = mooreB' systemClock
+
+-- | A version of 'medvedev' that does automatic 'Bundle'ing
+medvedevB :: (Bundle i, Bundle o) => (s -> i -> s) -> s -> Unbundled i -> Unbundled o
+{-# INLINE medvedevB #-}
+medvedevB tr st = mooreB tr id st
 
 {-# INLINABLE moore' #-}
 -- | Create a synchronous function from a combinational function describing
