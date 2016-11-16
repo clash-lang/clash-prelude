@@ -132,8 +132,8 @@ mooreB :: (Bundle i, Bundle o)
 mooreB = mooreB' systemClock
 
 -- | A version of 'medvedev' that does automatic 'Bundle'ing
-medvedevB :: (Bundle i, Bundle o) => (s -> i -> s) -> s -> Unbundled i -> Unbundled o
 {-# INLINE medvedevB #-}
+medvedevB :: (Bundle i, Bundle s) => (s -> i -> s) -> s -> Unbundled i -> Unbundled s
 medvedevB tr st = mooreB tr id st
 
 {-# INLINABLE moore' #-}
