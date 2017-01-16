@@ -1,6 +1,6 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
-## 0.11
+## 0.11 *January 16th 2017*
 * New features:
   * `CLaSH.XException`: a module defining an exception representing uninitialised values. Additionally adds the `ShowX` class which has methods that print values as "X" where they would normally raise an `XException` exception.
   * Add `BNat` (and supporting functions) to `CLaSH.Promoted.Nat`: base-2 encoded natural numbers.
