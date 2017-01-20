@@ -201,7 +201,7 @@ system2 instrs = memOut
 @
 
 Again, we can simulate our system and see that it works. This time however,
-we need to drop the first few output samples, because the initial content of an
+we need to disregard the first few output samples, because the initial content of an
 'CLaSH.Prelude.RAM.asyncRam' is 'undefined', and consequently, the first few
 output samples are also 'undefined'.
 
@@ -321,7 +321,7 @@ prog2 = -- 0 := 4
 @
 
 When we simulate our system we see that it works. This time again,
-we need to drop the first sample, because the initial output of a
+we need to disregard the first sample, because the initial output of a
 'blockRam' is 'undefined', and consequently, the first output sample is
 also 'undefined'.
 
