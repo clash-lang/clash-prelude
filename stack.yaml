@@ -8,7 +8,7 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/clash-lang/ghc-typelits-knownnat.git
-    commit: a1af2abb705349b4c5c5843346bf998e13849cfb
+    commit: 7a58274cb192329f514274b76c4bac5e84c62dba
   extra-dep: true
 - location:
     git: https://github.com/clash-lang/ghc-typelits-natnormalise.git
