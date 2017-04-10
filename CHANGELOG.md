@@ -1,6 +1,6 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
-## 0.11.1
+## 0.11.1 *April 10th 2017*
 * Changes:
   * Bundle instance for `()` behaves like a product-type instance [#96](https://github.com/clash-lang/clash-prelude/issues/96)
 * Fixes bugs:
