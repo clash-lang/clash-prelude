@@ -1,5 +1,5 @@
 Name:                 clash-prelude
-Version:              0.11
+Version:              0.11.1
 Synopsis:             CAES Language for Synchronous Hardware - Prelude library
 Description:
   CλaSH (pronounced ‘clash’) is a functional hardware description language that
@@ -86,6 +86,7 @@ Library
   ghc-options:        -Wall -fexpose-all-unfoldings
 
   Exposed-modules:    CLaSH.Annotations.TopEntity
+                      CLaSH.Annotations.Primitive
 
                       CLaSH.Class.BitPack
                       CLaSH.Class.Num
@@ -180,11 +181,13 @@ Library
                       ghc-typelits-extra        >= 0.2.1   && < 0.3,
                       ghc-typelits-knownnat     >= 0.2.2   && < 0.3,
                       ghc-typelits-natnormalise >= 0.4.2   && < 0.6,
+                      half                      >= 0.2.2.3 && < 1.0,
                       lens                      >= 4.9     && < 4.16,
                       QuickCheck                >= 2.7     && < 2.10,
                       reflection                >= 2       && < 2.2,
                       singletons                >= 1.0     && < 3.0,
-                      template-haskell          >= 2.9.0.0 && < 2.12
+                      template-haskell          >= 2.9.0.0 && < 2.12,
+                      vector                    >= 0.11    && < 1.0
 
   if flag(doclinks)
     CPP-Options:      -DDOCLINKS
