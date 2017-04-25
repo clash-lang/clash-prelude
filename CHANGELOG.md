@@ -1,6 +1,6 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
-## 0.11.2
+## 0.11.2 *April 25th 2017*
 * New features:
   * Add `riseEvery`: Give a pulse every @n@ clock cycles. (Thanks to @thoughtpolice)
   * Add `oscillate`: Oscillate a @'Bool'@ with a given half-period of cycles. (Thanks to @thoughtpolice)
