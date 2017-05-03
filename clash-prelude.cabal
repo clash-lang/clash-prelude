@@ -84,6 +84,8 @@ Library
 
   default-language:   Haskell2010
   ghc-options:        -Wall -fexpose-all-unfoldings
+  if impl(ghc >= 8.2.0)
+    ghc-options:      -fno-worker-wrapper
 
   Exposed-modules:    CLaSH.Annotations.TopEntity
                       CLaSH.Annotations.Primitive
