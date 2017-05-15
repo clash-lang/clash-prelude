@@ -1732,7 +1732,7 @@ lazyV = lazyV' (repeat undefined)
 -- fold that produces a structure with a depth of O(log_2(@'length' xs@)).
 dfold :: forall p k a . KnownNat k
       => Proxy (p :: TyFun Nat * -> *) -- ^ The /motive/
-      -> (forall l . SNat l -> a -> (p @@ l) -> (p @@ (l + 1)))
+      -> (forall l . KnownNat l => SNat l -> a -> (p @@ l) -> (p @@ (l + 1)))
       -- ^ Function to fold.
       --
       -- __NB__: The @SNat l@ is __not__ the index (see (`!!`)) to the
@@ -1743,7 +1743,7 @@ dfold :: forall p k a . KnownNat k
       -> (p @@ k)
 dfold _ f z xs = go (snatProxy (asNatProxy xs)) xs
   where
-    go :: SNat n -> Vec n a -> (p @@ n)
+    go :: KnownNat n => SNat n -> Vec n a -> (p @@ n)
     go _ Nil                        = z
     go s (y `Cons` (ys :: Vec z a)) =
       let s' = s `subSNat` d1
