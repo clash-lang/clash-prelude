@@ -437,8 +437,9 @@ leToPlus
   -> (forall m . f (m + k) -> r)
   -> r
 leToPlus a f = f @ (n-k) a
+{-# INLINE leToPlus #-}
 
--- | Same as 'leToPlus' with an added 'KnownNat' constraint
+-- | Same as 'leToPlus' with added 'KnownNat' constraints
 leToPlusKN
   :: forall (k :: Nat) (n :: Nat) f r
    . (k <= n, KnownNat n, KnownNat k)
@@ -446,3 +447,4 @@ leToPlusKN
   -> (forall m . KnownNat m => f (m + k) -> r)
   -> r
 leToPlusKN a f = f @ (n-k) a
+{-# INLINE leToPlusKN #-}
