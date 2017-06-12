@@ -255,22 +255,22 @@ times# (I a) (I b) = I (a * b)
 
 instance (KnownNat n, 1 <= n) => SaturatingNum (Index n) where
   satPlus SatWrap a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case plus# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> resize# (z - m)
         z -> resize# z
   satPlus SatZero a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case plus# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> fromInteger# 0
         z -> resize# z
   satPlus _ a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case plus# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> maxBound#
@@ -287,22 +287,22 @@ instance (KnownNat n, 1 <= n) => SaturatingNum (Index n) where
        else a -# b
 
   satMult SatWrap a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case times# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> resize# (z - m)
         z -> resize# z
   satMult SatZero a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case times# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> fromInteger# 0
         z -> resize# z
   satMult _ a b =
-    leToPlusKN @1 @n a $ \a' ->
-    leToPlusKN @1 @n b $ \b' ->
+    leToPlusKN @1 a $ \a' ->
+    leToPlusKN @1 b $ \b' ->
       case times# a' b' of
         z | let m = fromInteger# (natVal (Proxy @ n))
           , z >= m -> maxBound#
