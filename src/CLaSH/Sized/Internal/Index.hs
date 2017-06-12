@@ -19,7 +19,6 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE Unsafe #-}
 
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
-{-# OPTIONS_GHC -fconstraint-solver-iterations=0      #-}
 {-# OPTIONS_HADDOCK show-extensions #-}
 
 module CLaSH.Sized.Internal.Index
