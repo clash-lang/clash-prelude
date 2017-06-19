@@ -6,6 +6,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DefaultSignatures    #-}
+{-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MagicHash            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeApplications     #-}
@@ -52,11 +54,14 @@ class BitPack a where
   -- | Number of 'CLaSH.Sized.BitVector.Bit's needed to represents elements
   -- of type @a@
   type BitSize a :: Nat
+  type BitSize a = GBitSize (Rep a)
   -- | Convert element of type @a@ to a 'BitVector'
   --
   -- >>> pack (-5 :: Signed 6)
   -- 11_1011
   pack   :: a -> BitVector (BitSize a)
+  default pack :: (Generic a, GBitPack (Rep a)) => a -> BitVector (GBitSize (Rep a))
+  pack = gpack . from
   -- | Convert a 'BitVector' to an element of type @a@
   --
   -- >>> pack (-5 :: Signed 6)
@@ -67,6 +72,8 @@ class BitPack a where
   -- >>> pack (59 :: Unsigned 6)
   -- 11_1011
   unpack :: BitVector (BitSize a) -> a
+  default unpack :: (Generic a, GBitPack (Rep a)) => BitVector (GBitSize (Rep a)) -> a
+  unpack = to . gunpack
 
 {-# INLINE bitCoerce #-}
 -- | Coerce a value from one type to another through its bit representation.
@@ -242,27 +249,27 @@ instance (BitPack a, KnownNat (BitSize a)) => BitPack (Maybe a) where
     (c,rest) | c == low  -> Nothing
              | otherwise -> Just (unpack rest)
 
-instance (BitPack (f p)) => BitPack (M1 i c f p) where
-  type BitSize (M1 i c f p) = BitSize (f p)
-  pack (M1 m1)              = pack m1
-  unpack b                  = M1 (unpack @(f p) b)
+class GBitPack f where
+  type GBitSize f :: Nat
+  gpack :: f a -> BitVector (GBitSize f)
+  gunpack :: BitVector (GBitSize f) -> f a
 
-instance (KnownNat (BitSize (g p)), BitPack (f p), BitPack (g p)) => BitPack ((:*:) f g p) where
-  type BitSize ((:*:) f g p) = (BitSize (f p)) + (BitSize (g p))
-  pack (m :*: ms)            = (pack m) ++# (pack ms)
-  unpack b                   = (unpack front) :*: (unpack back)
+instance (GBitPack a) => GBitPack (M1 m d a) where
+  type GBitSize (M1 m d a) = GBitSize a
+  gpack (M1 m1)            = gpack m1
+  gunpack b                = M1 (gunpack @a b)
+
+instance (KnownNat (GBitSize g), GBitPack f, GBitPack g) => GBitPack (f :*: g) where
+  type GBitSize (f :*: g) = GBitSize f + GBitSize g
+  gpack (m :*: ms)        = gpack m ++# gpack ms
+  gunpack b               = (gunpack front) :*: (gunpack back)
     where
-      (front, back) = split# b :: (BitVector (BitSize (f p)), BitVector (BitSize (g p)))
+      (front, back) = split# b
 
-instance (BitPack c) => BitPack (K1 i c p) where
-  type BitSize (K1 i c p) = BitSize c
-  pack (K1 i)             = pack i
-  unpack b                = K1 (unpack @(c) b)
-
-instance BitPack (U1 p) where
-  type BitSize (U1 p) = BitSize (BitVector 0)
-  pack (U1)           = 0
-  unpack _            = U1
+instance (BitPack c) => GBitPack (K1 i c) where
+  type GBitSize (K1 i c) = BitSize c
+  gpack (K1 i)           = pack i
+  gunpack b              = K1 (unpack @c b)
 
 -- | Zero-extend a 'Bool'ean value to a 'BitVector' of the appropriate size.
 --
