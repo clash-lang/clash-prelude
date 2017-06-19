@@ -10,7 +10,6 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE MagicHash            #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -53,6 +52,16 @@ import CLaSH.Sized.Internal.BitVector (unsafeToInteger, split#)
 class BitPack a where
   -- | Number of 'CLaSH.Sized.BitVector.Bit's needed to represents elements
   -- of type @a@
+  --
+  -- Can be derived using `GHC.Generics`:
+  --
+  -- > {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+  -- >
+  -- > import CLaSH.Prelude
+  -- > import GHC.Generics
+  -- >
+  -- > data MyProductType = MyProductType { a :: Int, b :: Bool }
+  -- >   deriving (Generic, BitPack)
   type BitSize a :: Nat
   type BitSize a = GBitSize (Rep a)
   -- | Convert element of type @a@ to a 'BitVector'
@@ -257,19 +266,19 @@ class GBitPack f where
 instance (GBitPack a) => GBitPack (M1 m d a) where
   type GBitSize (M1 m d a) = GBitSize a
   gpack (M1 m1)            = gpack m1
-  gunpack b                = M1 (gunpack @a b)
+  gunpack b                = M1 (gunpack b)
 
 instance (KnownNat (GBitSize g), GBitPack f, GBitPack g) => GBitPack (f :*: g) where
   type GBitSize (f :*: g) = GBitSize f + GBitSize g
   gpack (m :*: ms)        = gpack m ++# gpack ms
-  gunpack b               = (gunpack front) :*: (gunpack back)
+  gunpack b               = gunpack front :*: gunpack back
     where
       (front, back) = split# b
 
 instance (BitPack c) => GBitPack (K1 i c) where
   type GBitSize (K1 i c) = BitSize c
   gpack (K1 i)           = pack i
-  gunpack b              = K1 (unpack @c b)
+  gunpack b              = K1 (unpack b)
 
 -- | Zero-extend a 'Bool'ean value to a 'BitVector' of the appropriate size.
 --
