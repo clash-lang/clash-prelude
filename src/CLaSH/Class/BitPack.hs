@@ -7,6 +7,8 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE MagicHash            #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -33,6 +35,7 @@ import Data.Word
 import Foreign.C.Types                (CUShort)
 import GHC.TypeLits                   (KnownNat, Nat, type (+))
 import Numeric.Half                   (Half (..))
+import GHC.Generics
 import Prelude                        hiding (map)
 
 import CLaSH.Class.Resize             (zeroExtend)
@@ -238,6 +241,28 @@ instance (BitPack a, KnownNat (BitSize a)) => BitPack (Maybe a) where
   unpack x = case split# x of
     (c,rest) | c == low  -> Nothing
              | otherwise -> Just (unpack rest)
+
+instance (BitPack (f p)) => BitPack (M1 i c f p) where
+  type BitSize (M1 i c f p) = BitSize (f p)
+  pack (M1 m1)              = pack m1
+  unpack b                  = M1 (unpack @(f p) b)
+
+instance (KnownNat (BitSize (g p)), BitPack (f p), BitPack (g p)) => BitPack ((:*:) f g p) where
+  type BitSize ((:*:) f g p) = (BitSize (f p)) + (BitSize (g p))
+  pack (m :*: ms)            = (pack m) ++# (pack ms)
+  unpack b                   = (unpack front) :*: (unpack back)
+    where
+      (front, back) = split# b :: (BitVector (BitSize (f p)), BitVector (BitSize (g p)))
+
+instance (BitPack c) => BitPack (K1 i c p) where
+  type BitSize (K1 i c p) = BitSize c
+  pack (K1 i)             = pack i
+  unpack b                = K1 (unpack @(c) b)
+
+instance BitPack (U1 p) where
+  type BitSize (U1 p) = BitSize (BitVector 0)
+  pack (U1)           = 0
+  unpack _            = U1
 
 -- | Zero-extend a 'Bool'ean value to a 'BitVector' of the appropriate size.
 --
