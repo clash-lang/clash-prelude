@@ -29,7 +29,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 
 module CLaSH.Sized.Vector
   ( -- * 'Vec'tor data type
-    Vec(Nil,(:>),(:<))
+    Vec(..,(:>),(:<))
     -- * Accessors
     -- ** Length information
   , length, maxIndex, lengthS
