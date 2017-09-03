@@ -195,8 +195,8 @@ It instead exports the identically named functions defined in terms of
 -- ...
 window
   :: (KnownNat n, Default a, HasClockReset domain gated synchronous)
-  => Signal domain a                -- ^ Signal to create a window over
-  -> Vec (n + 1) (Signal domain a)  -- ^ Window of at least size 1
+  => Signal domain a          -- ^ Signal to create a window over
+  -> Vec n (Signal domain a)  -- ^ Window size
 window = E.window hasClock hasReset
 {-# INLINE window #-}
 
@@ -211,7 +211,7 @@ window = E.window hasClock hasReset
 -- ...
 windowD
   :: (KnownNat n, Default a, HasClockReset domain gated synchronous)
-  => Signal domain a               -- ^ Signal to create a window over
-  -> Vec (n + 1) (Signal domain a) -- ^ Window of at least size 1
+  => Signal domain a         -- ^ Signal to create a window over
+  -> Vec n (Signal domain a) -- ^ Window size
 windowD = E.windowD hasClock hasReset
 {-# INLINE windowD #-}

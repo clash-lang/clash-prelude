@@ -160,8 +160,8 @@ import CLaSH.XException
 {- $setup
 >>> :set -XDataKinds -XTypeApplications
 >>> import CLaSH.Explicit.Prelude
->>> let window4 = window @3
->>> let windowD3 = windowD @2
+>>> let window4 = window @4
+>>> let windowD3 = windowD @3
 -}
 
 -- | Give a window over a 'Signal'
@@ -181,15 +181,9 @@ window
   => Clock domain gated
   -- ^ Clock to which the incoming signal is synchronized
   -> Reset domain synchronous
-  -> Signal domain a               -- ^ Signal to create a window over
-  -> Vec (n + 1) (Signal domain a) -- ^ Window of at least size 1
-window clk rst x = res
-  where
-    res  = x :> prev
-    prev = case natVal (asNatProxy prev) of
-             0 -> repeat def
-             _ -> let next = x +>> prev
-                  in  registerB clk rst (repeat def) next
+  -> Signal domain a         -- ^ Signal to create a window over
+  -> Vec n (Signal domain a) -- ^ Window size
+window clk rst = iterateI (register clk rst def)
 {-# INLINABLE window #-}
 
 -- | Give a delayed window over a 'Signal'
@@ -208,10 +202,7 @@ windowD
   => Clock domain gated
   -- ^ Clock to which the incoming signal is synchronized
   -> Reset domain synchronous
-  -> Signal domain a                -- ^ Signal to create a window over
-  -> Vec (n + 1) (Signal domain a)  -- ^ Window of at least size 1
-windowD clk rst x =
-  let prev = registerB clk rst (repeat def) next
-      next = x +>> prev
-  in  prev
+  -> Signal domain a          -- ^ Signal to create a window over
+  -> Vec n (Signal domain a)  -- ^ Window size
+windowD clk rst = iterateI (register clk rst def) . register clk rst def
 {-# INLINABLE windowD #-}
