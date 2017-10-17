@@ -62,8 +62,26 @@ alteraPll
   -- ^ Free running clock (i.e. a clock pin connected to a crystal)
   -> Reset pllIn 'Asynchronous
   -- ^ Reset for the PLL
-  -> (Clock pllOut 'Source, Signal pllOut Bool)
-  -- ^ (Stable PLL clock, PLL lock)
-alteraPll _ clk (Async rst) =
-  (unsafeCoerce (clockGate clk rst), unsafeCoerce rst)
+  -> ( Clock pllOut0 'Source
+     , Clock pllOut1 'Source
+     , Clock pllOut2 'Source
+     , Clock pllOut3 'Source
+     , Clock pllOut4 'Source
+     , Clock pllOut5 'Source
+     , Clock pllOut6 'Source
+     , Clock pllOut7 'Source
+     , Clock pllOut8 'Source
+     , Signal pllOut0 Bool)
+  -- ^ (Stable PLL clocks, PLL lock)
+alteraPll _ clk (Async rst) = ( unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce (clockGate clk rst)
+                              , unsafeCoerce rst
+                              )
 {-# NOINLINE alteraPll #-}
