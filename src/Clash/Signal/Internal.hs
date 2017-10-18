@@ -30,6 +30,7 @@ module Clash.Signal.Internal
   ( -- * Datatypes
     Domain (..)
   , Signal (..)
+  , InOut
     -- * Clocks
   , Clock (..)
   , ClockKind (..)
@@ -253,6 +254,9 @@ instance Traversable (Signal domain) where
 {-# NOINLINE traverse# #-}
 traverse# :: Applicative f => (a -> f b) -> Signal domain a -> f (Signal domain b)
 traverse# f (a :- s) = (:-) <$> f a <*> traverse# f s
+
+-- Passthrough `token` for inout ports
+data InOut (domain :: Domain) a
 
 -- * Clocks and resets
 
