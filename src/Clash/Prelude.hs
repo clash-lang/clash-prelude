@@ -31,10 +31,13 @@
   Some circuit examples can be found in "Clash.Examples".
 -}
 
-{-# LANGUAGE CPP              #-}
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeOperators    #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeOperators       #-}
 
 {-# LANGUAGE Unsafe #-}
 
@@ -194,10 +197,11 @@ It instead exports the identically named functions defined in terms of
 -- [<1,0,0,0>,<2,1,0,0>,<3,2,1,0>,<4,3,2,1>,<5,4,3,2>...
 -- ...
 window
-  :: (KnownNat n, Default a, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain n a
+   . (KnownNat n, Default a, HasClockReset domain gated synchronous)
   => Signal domain a                -- ^ Signal to create a window over
   -> Vec (n + 1) (Signal domain a)  -- ^ Window of at least size 1
-window = E.window hasClock hasReset
+window = E.window (hasClock @gated) (hasReset @synchronous)
 {-# INLINE window #-}
 
 -- | Give a delayed window over a 'Signal'
@@ -210,8 +214,9 @@ window = E.window hasClock hasReset
 -- [<0,0,0>,<1,0,0>,<2,1,0>,<3,2,1>,<4,3,2>...
 -- ...
 windowD
-  :: (KnownNat n, Default a, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain n a
+   . (KnownNat n, Default a, HasClockReset domain gated synchronous)
   => Signal domain a               -- ^ Signal to create a window over
   -> Vec (n + 1) (Signal domain a) -- ^ Window of at least size 1
-windowD = E.windowD hasClock hasReset
+windowD = E.windowD (hasClock @gated) (hasReset @synchronous)
 {-# INLINE windowD #-}

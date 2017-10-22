@@ -64,8 +64,10 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -120,7 +122,7 @@ import           Clash.Sized.Unsigned         (Unsigned)
 -- * See "Clash.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
 blockRamFilePow2
-  :: forall domain gated n m
+  :: forall gated domain n m
    . (KnownNat m, KnownNat n, HasClock domain gated, HasCallStack)
   => FilePath
   -- ^ File describing the initial content of the blockRAM
@@ -132,7 +134,7 @@ blockRamFilePow2
   -- ^ Value of the @blockRAM@ at address @r@ from the previous
   -- clock cycle
 blockRamFilePow2 = \fp rd wrM -> withFrozenCallStack
-  (E.blockRamFilePow2 hasClock fp rd wrM)
+  (E.blockRamFilePow2 (hasClock @gated) fp rd wrM)
 {-# INLINE blockRamFilePow2 #-}
 
 -- | Create a blockRAM with space for @n@ elements
@@ -162,7 +164,8 @@ blockRamFilePow2 = \fp rd wrM -> withFrozenCallStack
 -- * See "Clash.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
 blockRamFile
-  :: (KnownNat m, Enum addr, HasClock domain gated, HasCallStack)
+  :: forall gated domain addr n m
+   . (KnownNat m, Enum addr, HasClock domain gated, HasCallStack)
   => SNat n
   -- ^ Size of the blockRAM
   -> FilePath
@@ -175,5 +178,5 @@ blockRamFile
   -- ^ Value of the @blockRAM@ at address @r@ from the previous
   -- clock cycle
 blockRamFile = \sz fp rd wrM -> withFrozenCallStack
-  (E.blockRamFile hasClock sz fp rd wrM)
+  (E.blockRamFile (hasClock @gated) sz fp rd wrM)
 {-# INLINE blockRamFile #-}

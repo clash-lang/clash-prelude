@@ -5,11 +5,14 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
-{-# LANGUAGE CPP                        #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeOperators       #-}
 
 {-# LANGUAGE Trustworthy #-}
 
@@ -60,11 +63,12 @@ import            Clash.Signal
 -- >>> sampleN 6 (toSignal (delay3 (dfromList [1..])))
 -- [0,0,0,1,2,3]
 delayed
-  :: (KnownNat d, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain d n a
+   . (KnownNat d, HasClockReset domain gated synchronous)
   => Vec d a
   -> DSignal domain n a
   -> DSignal domain (n + d) a
-delayed = E.delayed hasClock hasReset
+delayed = E.delayed (hasClock @gated) (hasReset @synchronous)
 
 -- | Delay a 'DSignal' for @m@ periods, where @m@ is derived from the context.
 --
@@ -76,7 +80,8 @@ delayed = E.delayed hasClock hasReset
 -- >>> sampleN 6 (toSignal (delay2 (dfromList [1..])))
 -- [0,0,1,2,3,4]
 delayedI
-  :: (Default a, KnownNat d, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain d n a
+   . (Default a, KnownNat d, HasClockReset domain gated synchronous)
   => DSignal domain n a
   -> DSignal domain (n + d) a
-delayedI = E.delayedI hasClock hasReset
+delayedI = E.delayedI (hasClock @gated) (hasReset @synchronous)

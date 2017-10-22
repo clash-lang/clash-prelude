@@ -32,13 +32,15 @@ so do __not__ do that!
 never create a clock that goes any faster!
 -}
 
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE GADTs           #-}
-{-# LANGUAGE ImplicitParams  #-}
-{-# LANGUAGE MagicHash       #-}
-{-# LANGUAGE RankNTypes      #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE MagicHash           #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# LANGUAGE Trustworthy #-}
 
@@ -123,6 +125,7 @@ import           GHC.Stack             (HasCallStack, withFrozenCallStack)
 import           GHC.TypeLits          (KnownNat, KnownSymbol)
 import           Data.Bits             (Bits) -- Haddock only
 import           Data.Maybe            (isJust, fromJust)
+import           Data.Reflection       (Given (..), give)
 import           Test.QuickCheck       (Property, property)
 import           Unsafe.Coerce         (unsafeCoerce)
 
@@ -307,12 +310,12 @@ notation for binding
 -- | A /constraint/ that indicates the component needs a 'Clock'
 --
 -- <Clash-Signal.html#implicitclockandreset Click here to read more about implicit clocks and resets>
-type HasClock domain gated       = (?clk :: Clock domain gated)
+type HasClock domain gated       = Given (Clock domain gated)
 
 -- | A /constraint/ that indicates the component needs a 'Reset'
 --
 -- <Clash-Signal.html#implicitclockandreset Click here to read more about implicit clocks and resets>
-type HasReset domain synchronous = (?rst :: Reset domain synchronous)
+type HasReset domain synchronous = Given (Reset domain synchronous)
 
 -- | A /constraint/ that indicates the component needs a 'Clock' and 'Reset'
 --
@@ -336,8 +339,8 @@ type HasClockReset domain gated synchronous =
 -- the same clock.
 --
 -- <Clash-Signal.html#implicitclockandreset Click here to read more about implicit clocks and resets>
-hasClock :: HasClock domain gated => Clock domain gated
-hasClock = ?clk
+hasClock :: forall gated domain . HasClock domain gated => Clock domain gated
+hasClock = given
 {-# INLINE hasClock #-}
 
 -- | For a component with an explicit clock port, implicitly route a clock
@@ -356,8 +359,8 @@ hasClock = ?clk
 -- the same reset.
 --
 -- <Clash-Signal.html#implicitclockandreset Click here to read more about implicit clocks and resets>
-hasReset :: HasReset domain synchronous => Reset domain synchronous
-hasReset = ?rst
+hasReset :: forall synchronous domain . HasReset domain synchronous => Reset domain synchronous
+hasReset = given
 {-# INLINE hasReset #-}
 
 -- | A /constraint/ that indicates the component needs a normal 'Clock' and
@@ -376,9 +379,8 @@ withClock
   -> (HasClock domain gated => r)
   -- ^ The component with an implicitly routed clock
   -> r
-withClock clk r
-  = let ?clk = clk
-    in  r
+withClock = give
+{-# INLINE withClock #-}
 
 -- | Explicit connect a 'Reset' to a component whose reset is implicitly
 -- routed
@@ -390,9 +392,8 @@ withReset
   -> (HasReset domain synchronous => r)
   -- ^ The component with an implicitly routed reset
   -> r
-withReset rst r
-  = let ?rst = rst
-    in  r
+withReset = give
+{-# INLINE withReset #-}
 
 -- | Explicitly connect a 'Clock' and 'Reset' to a component whose clock and
 -- reset are implicitly routed
@@ -421,10 +422,8 @@ withClockReset
   -> (HasClockReset domain gated synchronous => r)
   -- ^ The component with an implicitly routed clock and reset
   -> r
-withClockReset clk rst r
-  = let ?clk = clk
-        ?rst = rst
-    in  r
+withClockReset clk rst = \f -> withReset rst (withClock clk f)
+{-# INLINE withClockReset #-}
 
 -- * Basic circuit functions
 
@@ -434,11 +433,12 @@ withClockReset clk rst r
 -- >>> printX (sampleN 3 (delay (fromList [1,2,3,4])))
 -- [X,1,2]
 delay
-  :: (HasClock domain gated, HasCallStack)
+  :: forall gated domain a
+   . (HasClock domain gated, HasCallStack)
   => Signal domain a
   -- ^ Signal to delay
   -> Signal domain a
-delay = \i -> withFrozenCallStack (delay# ?clk i)
+delay = \i -> withFrozenCallStack (delay# (hasClock @gated) i)
 {-# INLINE delay #-}
 
 -- | 'register' @i s@ delays the values in 'Signal' @s@ for one cycle, and sets
@@ -447,7 +447,8 @@ delay = \i -> withFrozenCallStack (delay# ?clk i)
 -- >>> sampleN 3 (register 8 (fromList [1,2,3,4]))
 -- [8,1,2]
 register
-  :: (HasClockReset domain gated synchronous, HasCallStack)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, HasCallStack)
   => a
   -- ^ Reset value
   --
@@ -455,7 +456,9 @@ register
   -- reset value when the reset value becomes 'True'
   -> Signal domain a
   -> Signal domain a
-register = \i s -> withFrozenCallStack (register# ?clk ?rst i s)
+register = \i s -> withFrozenCallStack (register# (hasClock @gated)
+                                                  (hasReset @synchronous)
+                                                  i s)
 {-# INLINE register #-}
 infixr 3 `register`
 
@@ -481,7 +484,8 @@ infixr 3 `register`
 -- >>> sampleN 8 countSometimes
 -- [0,0,1,1,2,2,3,3]
 regMaybe
-  :: (HasClockReset domain gated synchronous, HasCallStack)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, HasCallStack)
   => a
   -- ^ Reset value
   --
@@ -490,7 +494,8 @@ regMaybe
   -> Signal domain (Maybe a)
   -> Signal domain a
 regMaybe = \initial iM -> withFrozenCallStack
-  (register# (clockGate ?clk (fmap isJust iM)) ?rst initial (fmap fromJust iM))
+  (register# (clockGate (hasClock @gated) (fmap isJust iM))
+             (hasReset @synchronous) initial (fmap fromJust iM))
 {-# INLINE regMaybe #-}
 infixr 3 `regMaybe`
 
@@ -509,7 +514,8 @@ infixr 3 `regMaybe`
 -- >>> sampleN 8 count
 -- [0,0,1,1,2,2,3,3]
 regEn
-  :: (HasClockReset domain gated synchronous, HasCallStack)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, HasCallStack)
   => a
   -- ^ Reset value
   --
@@ -519,7 +525,8 @@ regEn
   -> Signal domain a
   -> Signal domain a
 regEn = \initial en i -> withFrozenCallStack
-  (register# (clockGate ?clk en) ?rst initial i)
+  (register# (clockGate (hasClock @gated) en)
+             (hasReset @synchronous) initial i)
 {-# INLINE regEn #-}
 
 -- * Signal -> List conversion
@@ -533,15 +540,18 @@ regEn = \initial en i -> withFrozenCallStack
 --
 -- __NB__: This function is not synthesisable
 sample
-  :: NFData a
+  :: forall domain a
+   . NFData a
   => ((HasClockReset domain 'Source 'Asynchronous) => Signal domain a)
   -- ^ 'Signal' we want to sample, whose source potentially needs an implicitly
   -- routed clock (and reset)
   -> [a]
 sample s =
-  let ?clk = unsafeCoerce (clockGen @System)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.sample s
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (clockGen @System)
+      rst = Async (True :- pure False)
+  in  S.sample (withClockReset clk rst s)
 
 -- | Get a list of /n/ samples from a 'Signal'
 --
@@ -552,7 +562,8 @@ sample s =
 --
 -- __NB__: This function is not synthesisable
 sampleN
-  :: NFData a
+  :: forall domain a
+   . NFData a
   => Int
   -- ^ The number of samples we want to see
   -> ((HasClockReset domain 'Source 'Asynchronous) => Signal domain a)
@@ -560,9 +571,11 @@ sampleN
   -- routed clock (and reset)
   -> [a]
 sampleN n s =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.sampleN n s
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.sampleN n (withClockReset clk rst s)
 
 -- | /Lazily/ get an infinite list of samples from a 'Clash.Signal.Signal'
 --
@@ -573,14 +586,17 @@ sampleN n s =
 --
 -- __NB__: This function is not synthesisable
 sample_lazy
-  :: ((HasClockReset domain 'Source 'Asynchronous) => Signal domain a)
+  :: forall domain a
+   . ((HasClockReset domain 'Source 'Asynchronous) => Signal domain a)
   -- ^ 'Signal' we want to sample, whose source potentially needs an implicitly
   -- routed clock (and reset)
   -> [a]
 sample_lazy s =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.sample_lazy s
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.sample_lazy (withClockReset clk rst s)
 
 
 -- | Lazily get a list of /n/ samples from a 'Signal'
@@ -592,15 +608,18 @@ sample_lazy s =
 --
 -- __NB__: This function is not synthesisable
 sampleN_lazy
-  :: Int
+  :: forall domain a
+   . Int
   -> ((HasClockReset domain 'Source 'Asynchronous) => Signal domain a)
   -- ^ 'Signal' we want to sample, whose source potentially needs an implicitly
   -- routed clock (and reset)
   -> [a]
 sampleN_lazy n s =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.sampleN_lazy n s
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.sampleN_lazy n (withClockReset clk rst s)
 
 -- * Simulation functions
 
@@ -613,7 +632,8 @@ sampleN_lazy n s =
 --
 -- __NB__: This function is not synthesisable
 simulate
-  :: (NFData a, NFData b)
+  :: forall domain a b
+   . (NFData a, NFData b)
   => ((HasClockReset domain 'Source 'Asynchronous) =>
       Signal domain a -> Signal domain b)
   -- ^ Function we want to simulate, whose components potentially needs an
@@ -621,9 +641,11 @@ simulate
   -> [a]
   -> [b]
 simulate f =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.simulate f
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.simulate (withClockReset clk rst f)
 
 -- | /Lazily/ simulate a (@'Signal' a -> 'Signal' b@) function given a list of
 -- samples of type /a/
@@ -634,16 +656,19 @@ simulate f =
 --
 -- __NB__: This function is not synthesisable
 simulate_lazy
-  :: ((HasClockReset domain 'Source 'Asynchronous) =>
+  :: forall domain a b
+   . ((HasClockReset domain 'Source 'Asynchronous) =>
       Signal domain a -> Signal domain b)
   -- ^ Function we want to simulate, whose components potentially needs an
   -- implicitly routed clock (and reset)
   -> [a]
   -> [b]
 simulate_lazy f =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.simulate_lazy f
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.simulate_lazy (withClockReset clk rst f)
 
 -- | Simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a list of
 -- samples of type @a@
@@ -654,7 +679,8 @@ simulate_lazy f =
 --
 -- __NB__: This function is not synthesisable
 simulateB
-  :: (Bundle a, Bundle b, NFData a, NFData b)
+  :: forall domain a b
+   . (Bundle a, Bundle b, NFData a, NFData b)
   => ((HasClockReset domain 'Source 'Asynchronous) =>
       Unbundled domain a -> Unbundled domain b)
   -- ^ Function we want to simulate, whose components potentially needs an
@@ -662,9 +688,11 @@ simulateB
   -> [a]
   -> [b]
 simulateB f =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.simulateB f
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.simulateB (withClockReset clk rst f)
 
 -- | /Lazily/ simulate a (@'Unbundled' a -> 'Unbundled' b@) function given a
 -- list of samples of type @a@
@@ -675,7 +703,8 @@ simulateB f =
 --
 -- __NB__: This function is not synthesisable
 simulateB_lazy
-  :: (Bundle a, Bundle b)
+  :: forall domain a b
+   . (Bundle a, Bundle b)
   => ((HasClockReset domain 'Source 'Asynchronous) =>
       Unbundled domain a -> Unbundled domain b)
   -- ^ Function we want to simulate, whose components potentially needs an
@@ -683,9 +712,11 @@ simulateB_lazy
   -> [a]
   -> [b]
 simulateB_lazy f =
-  let ?clk = unsafeCoerce (Clock @System SSymbol SNat)
-      ?rst = unsafeCoerce (Async @System (True :- pure False))
-  in  S.simulateB_lazy f
+  let clk = unsafeCoerce @(Clock System 'Source)
+                         @(Clock domain 'Source)
+                         (Clock @System SSymbol SNat)
+      rst = Async (True :- pure False)
+  in  S.simulateB_lazy (withClockReset clk rst f)
 
 -- * QuickCheck combinators
 

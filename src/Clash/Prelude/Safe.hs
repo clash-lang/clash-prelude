@@ -28,8 +28,11 @@
   Some circuit examples can be found in "Clash.Examples".
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeOperators       #-}
 
 {-# LANGUAGE Safe #-}
@@ -173,30 +176,33 @@ It instead exports the identically named functions defined in terms of
 -- [(8,8),(1,1),(2,2),(3,3)...
 -- ...
 registerB
-  :: (HasClockReset domain gated synchronous, Bundle a)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, Bundle a)
   => a
   -> Unbundled domain a
   -> Unbundled domain a
-registerB = E.registerB hasClock hasReset
+registerB = E.registerB (hasClock @gated) (hasReset @synchronous)
 infixr 3 `registerB`
 {-# INLINE registerB #-}
 
 -- | Give a pulse when the 'Signal' goes from 'minBound' to 'maxBound'
 isRising
-  :: (HasClockReset domain gated synchronous, Bounded a, Eq a)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, Bounded a, Eq a)
   => a -- ^ Starting value
   -> Signal domain a
   -> Signal domain Bool
-isRising = E.isRising hasClock hasReset
+isRising = E.isRising (hasClock @gated) (hasReset @synchronous)
 {-# INLINE isRising #-}
 
 -- | Give a pulse when the 'Signal' goes from 'maxBound' to 'minBound'
 isFalling
-  :: (HasClockReset domain gated synchronous, Bounded a, Eq a)
+  :: forall gated synchronous domain a
+   . (HasClockReset domain gated synchronous, Bounded a, Eq a)
   => a -- ^ Starting value
   -> Signal domain a
   -> Signal domain Bool
-isFalling = E.isFalling hasClock hasReset
+isFalling = E.isFalling (hasClock @gated) (hasReset @synchronous)
 {-# INLINE isFalling #-}
 
 -- | Give a pulse every @n@ clock cycles. This is a useful helper function when
@@ -217,10 +223,11 @@ isFalling = E.isFalling hasClock hasReset
 -- counter = 'Clash.Signal.regEn' 0 ('riseEvery' ('SNat' :: 'SNat' 10000000)) (counter + 1)
 -- @
 riseEvery
-  :: HasClockReset domain gated synchronous
+  :: forall gated synchronous domain n
+   . HasClockReset domain gated synchronous
   => SNat n
   -> Signal domain Bool
-riseEvery = E.riseEvery hasClock hasReset
+riseEvery = E.riseEvery (hasClock @gated) (hasReset @synchronous)
 {-# INLINE riseEvery #-}
 
 -- | Oscillate a @'Bool'@ for a given number of cycles. This is a convenient
@@ -245,9 +252,10 @@ riseEvery = E.riseEvery hasClock hasReset
 -- >>> sample' (oscillate False d1) == sample' osc'
 -- True
 oscillate
-  :: HasClockReset domain gated synchronous
+  :: forall gated synchronous domain n
+   . HasClockReset domain gated synchronous
   => Bool
   -> SNat n
   -> Signal domain Bool
-oscillate = E.oscillate hasClock hasReset
+oscillate = E.oscillate (hasClock @gated) (hasReset @synchronous)
 {-# INLINE oscillate #-}

@@ -11,6 +11,11 @@
   requirements.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+
 {-# LANGUAGE Safe #-}
 
 module Clash.Prelude.Mealy
@@ -67,14 +72,15 @@ let mac s (x,y) = (s',s)
 --     s1 = 'mealy' mac 0 ('Clash.Signal.bundle' (a,x))
 --     s2 = 'mealy' mac 0 ('Clash.Signal.bundle' (b,y))
 -- @
-mealy :: HasClockReset domain gated synchronous
+mealy :: forall gated synchronous domain s i o
+       . HasClockReset domain gated synchronous
       => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                            -- @state -> input -> (newstate,output)@
       -> s                 -- ^ Initial state
       -> (Signal domain i -> Signal domain o)
       -- ^ Synchronous sequential function with input and output matching that
       -- of the mealy machine
-mealy = E.mealy hasClock hasReset
+mealy = E.mealy (hasClock @gated) (hasReset @synchronous)
 {-# INLINE mealy #-}
 
 -- | A version of 'mealy' that does automatic 'Bundle'ing
@@ -103,23 +109,25 @@ mealy = E.mealy hasClock hasReset
 --     (i1,b1) = 'mealyB' f 0 (a,b)
 --     (i2,b2) = 'mealyB' f 3 (i1,c)
 -- @
-mealyB :: (Bundle i, Bundle o, HasClockReset domain gated synchronous)
+mealyB :: forall gated synchronous domain s i o
+        . (Bundle i, Bundle o, HasClockReset domain gated synchronous)
        => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                             -- @state -> input -> (newstate,output)@
        -> s                 -- ^ Initial state
        -> (Unbundled domain i -> Unbundled domain o)
        -- ^ Synchronous sequential function with input and output matching that
        -- of the mealy machine
-mealyB = E.mealyB hasClock hasReset
+mealyB = E.mealyB (hasClock @gated) (hasReset @synchronous)
 {-# INLINE mealyB #-}
 
 -- | Infix version of 'mealyB'
-(<^>) :: (Bundle i, Bundle o, HasClockReset domain gated synchronous)
+(<^>) :: forall gated synchronous domain s i o
+       . (Bundle i, Bundle o, HasClockReset domain gated synchronous)
       => (s -> i -> (s,o)) -- ^ Transfer function in mealy machine form:
                            -- @state -> input -> (newstate,output)@
       -> s                 -- ^ Initial state
       -> (Unbundled domain i -> Unbundled domain o)
       -- ^ Synchronous sequential function with input and output matching that
       -- of the mealy machine
-(<^>) = mealyB
+(<^>) = mealyB @gated @synchronous
 {-# INLINE (<^>) #-}

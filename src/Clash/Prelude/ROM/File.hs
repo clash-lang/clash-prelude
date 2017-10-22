@@ -62,6 +62,7 @@ __>>> L.tail $ sampleN 4 $ topEntity2 (fromList [3..5])__
 @
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MagicHash           #-}
@@ -258,13 +259,14 @@ asyncRomFile# sz file = (content !) -- Leave "(content !)" eta-reduced, see
 -- * See "Clash.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
 romFile
-  :: (KnownNat m, KnownNat n, HasClock domain gated)
+  :: forall gated domain m n
+   . (KnownNat m, KnownNat n, HasClock domain gated)
   => SNat n               -- ^ Size of the ROM
   -> FilePath             -- ^ File describing the content of the ROM
   -> Signal domain (Unsigned n)  -- ^ Read address @rd@
   -> Signal domain (BitVector m)
   -- ^ The value of the ROM at address @rd@ from the previous clock cycle
-romFile = E.romFile hasClock
+romFile = E.romFile (hasClock @gated)
 {-# INLINE romFile #-}
 
 -- | A ROM with a synchronous read port, with space for 2^@n@ elements
@@ -291,11 +293,11 @@ romFile = E.romFile hasClock
 -- * See "Clash.Sized.Fixed#creatingdatafiles" for ideas on how to create your
 -- own data files.
 romFilePow2
-  :: forall n m domain gated
+  :: forall gated n m domain
    . (KnownNat m, KnownNat n, HasClock domain gated)
   => FilePath                    -- ^ File describing the content of the ROM
   -> Signal domain (Unsigned n)  -- ^ Read address @rd@
   -> Signal domain (BitVector m)
   -- ^ The value of the ROM at address @rd@ from the previous clock cycle
-romFilePow2 = E.romFilePow2 hasClock
+romFilePow2 = E.romFilePow2 (hasClock @gated)
 {-# INLINE romFilePow2 #-}

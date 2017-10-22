@@ -337,11 +337,14 @@ This concludes the short introduction to using 'blockRam'.
 
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE MagicHash           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeOperators       #-}
 
 {-# LANGUAGE Safe #-}
@@ -634,7 +637,8 @@ prog2 = -- 0 := 4
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRam inits) rd wrM@.
 blockRam
-  :: (Enum addr, HasClock domain gated, HasCallStack)
+  :: forall gated domain addr n a
+   . (Enum addr, HasClock domain gated, HasCallStack)
   => Vec n a     -- ^ Initial content of the BRAM, also
                  -- determines the size, @n@, of the BRAM.
                  --
@@ -646,7 +650,7 @@ blockRam
   -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
   -- cycle
 blockRam = \cnt rd wrM -> withFrozenCallStack
-  (E.blockRam hasClock cnt rd wrM)
+  (E.blockRam (hasClock @gated) cnt rd wrM)
 {-# INLINE blockRam #-}
 
 -- | Create a blockRAM with space for 2^@n@ elements
@@ -667,7 +671,8 @@ blockRam = \cnt rd wrM -> withFrozenCallStack
 -- Block RAM.
 -- * Use the adapter 'readNew' for obtaining write-before-read semantics like this: @readNew (blockRamPow2 inits) rd wrM@.
 blockRamPow2
-  :: (KnownNat n, HasClock domain gated, HasCallStack)
+  :: forall gated domain n a
+   . (KnownNat n, HasClock domain gated, HasCallStack)
   => Vec (2^n) a         -- ^ Initial content of the BRAM, also
                          -- determines the size, @2^n@, of the BRAM.
                          --
@@ -679,7 +684,7 @@ blockRamPow2
   -- ^ Value of the @blockRAM@ at address @r@ from the previous clock
   -- cycle
 blockRamPow2 = \cnt rd wrM -> withFrozenCallStack
-  (E.blockRamPow2 hasClock cnt rd wrM)
+  (E.blockRamPow2 (hasClock @gated) cnt rd wrM)
 {-# INLINE blockRamPow2 #-}
 
 -- | Create read-after-write blockRAM from a read-before-write one (synchronised to system clock)
@@ -691,7 +696,8 @@ blockRamPow2 = \cnt rd wrM -> withFrozenCallStack
 --      ... =>
 --      Signal domain addr
 --      -> Signal domain (Maybe (addr, a)) -> Signal domain a
-readNew :: (Eq addr, HasReset domain synchronous, HasClock domain gated)
+readNew :: forall gated synchronous domain addr a
+         . (Eq addr, HasReset domain synchronous, HasClock domain gated)
         => (Signal domain addr -> Signal domain (Maybe (addr, a)) -> Signal domain a)
         -- ^ The @ram@ component
         -> Signal domain addr              -- ^ Read address @r@
@@ -699,5 +705,5 @@ readNew :: (Eq addr, HasReset domain synchronous, HasClock domain gated)
         -> Signal domain a
         -- ^ Value of the @ram@ at address @r@ from the previous clock
         -- cycle
-readNew = E.readNew hasReset hasClock
+readNew = E.readNew (hasReset @synchronous) (hasClock @gated)
 {-# INLINE readNew #-}

@@ -11,6 +11,11 @@
   requirements.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+
 {-# LANGUAGE Safe #-}
 
 module Clash.Prelude.Moore
@@ -66,7 +71,8 @@ let mac s (x,y) = x * y + s
 --     s2 = 'moore' mac id 0 ('Clash.Signal.bundle' (b,y))
 -- @
 moore
-  :: HasClockReset domain gated synchronous
+  :: forall gated synchronous domain s i o
+   . HasClockReset domain gated synchronous
   => (s -> i -> s) -- ^ Transfer function in moore machine form:
                    -- @state -> input -> newstate@
   -> (s -> o)      -- ^ Output function in moore machine form:
@@ -75,18 +81,19 @@ moore
   -> (Signal domain i -> Signal domain o)
   -- ^ Synchronous sequential function with input and output matching that
   -- of the moore machine
-moore = E.moore hasClock hasReset
+moore = E.moore (hasClock @gated) (hasReset @synchronous)
 {-# INLINE moore #-}
 
 
 -- | Create a synchronous function from a combinational function describing
 -- a moore machine without any output logic
 medvedev
-  :: HasClockReset domain gated synchronous
+  :: forall gated synchronous domain s i o
+   . HasClockReset domain gated synchronous
   => (s -> i -> s)
   -> s
   -> (Signal domain i -> Signal domain s)
-medvedev tr st = moore tr id st
+medvedev tr st = moore @gated @synchronous tr id st
 {-# INLINE medvedev #-}
 
 -- | A version of 'moore' that does automatic 'Bundle'ing
@@ -117,7 +124,8 @@ medvedev tr st = moore tr id st
 --     (i2,b2) = 'mooreB' t o 3 (i1,c)
 -- @
 mooreB
-  :: (Bundle i, Bundle o,HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain s i o
+   . (Bundle i, Bundle o,HasClockReset domain gated synchronous)
   => (s -> i -> s) -- ^ Transfer function in moore machine form:
                    -- @state -> input -> newstate@
   -> (s -> o)      -- ^ Output function in moore machine form:
@@ -126,14 +134,15 @@ mooreB
   -> (Unbundled domain i -> Unbundled domain o)
    -- ^ Synchronous sequential function with input and output matching that
    -- of the moore machine
-mooreB = E.mooreB hasClock hasReset
+mooreB = E.mooreB (hasClock @gated) (hasReset @synchronous)
 {-# INLINE mooreB #-}
 
 -- | A version of 'medvedev' that does automatic 'Bundle'ing
 medvedevB
-  :: (Bundle i, Bundle s, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain s i
+   . (Bundle i, Bundle s, HasClockReset domain gated synchronous)
   => (s -> i -> s)
   -> s
   -> (Unbundled domain i -> Unbundled domain s)
-medvedevB tr st = mooreB tr id st
+medvedevB tr st = mooreB @gated @synchronous tr id st
 {-# INLINE medvedevB #-}

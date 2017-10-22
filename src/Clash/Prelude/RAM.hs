@@ -7,6 +7,7 @@ Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 RAM primitives with a combinational read port.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
@@ -46,7 +47,8 @@ import           Clash.Sized.Unsigned (Unsigned)
 -- * See "Clash.Prelude.BlockRam#usingrams" for more information on how to use a
 -- RAM.
 asyncRam
-  :: (Enum addr, HasClock domain gated, HasCallStack)
+  :: forall gated domain addr n a
+   . (Enum addr, HasClock domain gated, HasCallStack)
   => SNat n
   -- ^ Size @n@ of the RAM
   -> Signal domain addr
@@ -56,7 +58,7 @@ asyncRam
   -> Signal domain a
    -- ^ Value of the @RAM@ at address @r@
 asyncRam = \sz rd wrM -> withFrozenCallStack
-  (E.asyncRam hasClock hasClock sz rd wrM)
+  (E.asyncRam (hasClock @gated) (hasClock @gated) sz rd wrM)
 {-# INLINE asyncRam #-}
 
 -- | Create a RAM with space for 2^@n@ elements
@@ -68,7 +70,8 @@ asyncRam = \sz rd wrM -> withFrozenCallStack
 -- * See "Clash.Prelude.BlockRam#usingrams" for more information on how to use a
 -- RAM.
 asyncRamPow2
-  :: (KnownNat n, HasClock domain gated, HasCallStack)
+  :: forall gated domain n a
+   . (KnownNat n, HasClock domain gated, HasCallStack)
   => Signal domain (Unsigned n)
   -- ^ Read address @r@
   -> Signal domain (Maybe (Unsigned n, a))
@@ -76,5 +79,5 @@ asyncRamPow2
   -> Signal domain a
   -- ^ Value of the @RAM@ at address @r@
 asyncRamPow2 = \rd wrM -> withFrozenCallStack
-  (E.asyncRamPow2 hasClock hasClock rd wrM)
+  (E.asyncRamPow2 (hasClock @gated) (hasClock @gated) rd wrM)
 {-# INLINE asyncRamPow2 #-}

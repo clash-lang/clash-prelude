@@ -5,7 +5,10 @@ License    :  BSD2 (see the file LICENSE)
 Maintainer :  Christiaan Baaij <christiaan.baaij@gmail.com>
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-# LANGUAGE Unsafe #-}
 
@@ -42,13 +45,14 @@ import Clash.XException                   (ShowX)
 --
 -- __NB__: This function /can/ be used in synthesizable designs.
 assert
-  :: (Eq a,ShowX a,HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain a b
+   . (Eq a,ShowX a,HasClockReset domain gated synchronous)
   => String   -- ^ Additional message
   -> Signal domain a -- ^ Checked value
   -> Signal domain a -- ^ Expected value
   -> Signal domain b -- ^ Return value
   -> Signal domain b
-assert = E.assert hasClock hasReset
+assert = E.assert (hasClock @gated) (hasReset @synchronous)
 {-# INLINE assert #-}
 
 -- | To be used as one of the functions to create the \"magical\" 'testInput'
@@ -67,10 +71,11 @@ assert = E.assert hasClock hasReset
 -- >>> sampleN 13 testInput
 -- [1,3,5,7,9,11,13,15,17,19,21,21,21]
 stimuliGenerator
-  :: (KnownNat l, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain l a
+   . (KnownNat l, HasClockReset domain gated synchronous)
   => Vec l a  -- ^ Samples to generate
   -> Signal domain a -- ^ Signal of given samples
-stimuliGenerator = E.stimuliGenerator hasClock hasReset
+stimuliGenerator = E.stimuliGenerator (hasClock @gated) (hasReset @synchronous)
 {-# INLINE stimuliGenerator #-}
 
 -- | To be used as one of the functions to generate the \"magical\" 'expectedOutput'
@@ -108,9 +113,10 @@ stimuliGenerator = E.stimuliGenerator hasClock hasReset
 -- expected value: 10, not equal to actual value: 9
 -- ,False,True,True]
 outputVerifier
-  :: (KnownNat l, Eq a, ShowX a, HasClockReset domain gated synchronous)
+  :: forall gated synchronous domain l a
+   . (KnownNat l, Eq a, ShowX a, HasClockReset domain gated synchronous)
   => Vec l a     -- ^ Samples to compare with
   -> Signal domain a    -- ^ Signal to verify
   -> Signal domain Bool -- ^ Indicator that all samples are verified
-outputVerifier = E.outputVerifier hasClock hasReset
+outputVerifier = E.outputVerifier (hasClock @gated) (hasReset @synchronous)
 {-# INLINE outputVerifier #-}
