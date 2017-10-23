@@ -51,6 +51,7 @@ module Clash.Signal
     Signal
   , Domain (..)
   , System
+  , InOut
     -- * Clock
   , Clock
   , ClockKind (..)
