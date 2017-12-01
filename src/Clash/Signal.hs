@@ -123,7 +123,7 @@ import           Control.DeepSeq       (NFData)
 import           GHC.Stack             (HasCallStack, withFrozenCallStack)
 import           GHC.TypeLits          (KnownNat, KnownSymbol)
 import           Data.Bits             (Bits) -- Haddock only
-import           Data.Maybe            (isJust, fromJust)
+import           Data.Maybe            (isJust)
 import           Test.QuickCheck       (Property, property)
 import           Unsafe.Coerce         (unsafeCoerce)
 
@@ -492,6 +492,10 @@ regMaybe
   -> Signal domain a
 regMaybe = \initial iM -> withFrozenCallStack
   (register# (clockGate ?clk (fmap isJust iM)) ?rst initial (fmap fromJust iM))
+  where
+    -- Data.Maybe.fromJust may not have an unfolding; see #274
+    fromJust Nothing = error "Clash.Signal.regMaybe: Nothing"
+    fromJust (Just x) = x
 {-# INLINE regMaybe #-}
 infixr 3 `regMaybe`
 

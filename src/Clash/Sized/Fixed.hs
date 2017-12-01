@@ -76,7 +76,6 @@ import Data.Data                  (Data)
 import Data.Default               (Default (..))
 import Text.Read                  (Read(..))
 import Data.List                  (find)
-import Data.Maybe                 (fromJust)
 import Data.Proxy                 (Proxy (..))
 import Data.Ratio                 ((%), denominator, numerator)
 import Data.Typeable              (Typeable, TypeRep, typeRep)
@@ -263,6 +262,9 @@ instance ( size ~ (int + frac), KnownNat frac, Integral (rep size)
       nom       = if fRepI < 0 then fRepI_abs .&. ((2 ^ nF) - 1)
                                else fRepI .&. ((2 ^ nF) - 1)
       denom     = 2 ^ nF
+
+      fromJust Nothing = error "show(Clash.Sized.Fixed.Fixed): Nothing"
+      fromJust (Just x) = x
 
 instance ( size ~ (int + frac), KnownNat frac, Integral (rep size)
          ) => ShowX (Fixed rep int frac) where

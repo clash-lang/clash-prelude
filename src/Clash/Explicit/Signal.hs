@@ -195,7 +195,7 @@ module Clash.Explicit.Signal
 where
 
 import Control.DeepSeq       (NFData)
-import Data.Maybe            (isJust, fromJust)
+import Data.Maybe            (isJust)
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 
 import Clash.Signal.Internal
@@ -517,6 +517,10 @@ regMaybe
   -> Signal domain a
 regMaybe = \clk rst initial iM -> withFrozenCallStack
   (register# (clockGate clk (fmap isJust iM)) rst initial (fmap fromJust iM))
+  where
+    -- Data.Maybe.fromJust may not have an unfolding; see #274
+    fromJust Nothing = error "Clash.Signal.Explicit.regMaybe: Nothing"
+    fromJust (Just x) = x
 {-# INLINE regMaybe #-}
 
 -- | Version of 'register' that only updates its content when its fourth
