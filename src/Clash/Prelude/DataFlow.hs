@@ -26,6 +26,8 @@ module Clash.Prelude.DataFlow
     DataFlow (..)
     -- * Creating DataFlow circuits
   , liftDF
+  , liftDF'
+  , Ready(..)
   , pureDF
   , mealyDF
   , mooreDF
@@ -139,6 +141,25 @@ liftDF :: (Signal dom i -> Signal dom Bool -> Signal dom Bool
                         -> (Signal dom o, Signal dom Bool, Signal dom Bool))
        -> DataFlow dom Bool Bool i o
 liftDF = DF
+
+-- | A readiness value.
+data Ready a = Ready | NotReady
+             deriving (Eq, Ord, Show)
+
+-- | Like 'liftDF' but with slightly more descriptive types.
+liftDF' :: (Signal dom (Maybe i) -> Signal dom (Ready o)
+                         -> (Signal dom (Maybe o), Signal dom (Ready i)))
+        -> DataFlow dom Bool Bool i o
+liftDF' f = DF $ \iData iValid oReady ->
+                   let validToMaybe valid dat
+                         | valid     = Just dat
+                         | otherwise = Nothing
+                       boolToReady b = if b then Ready else NotReady
+                       (o, iReady) = f (validToMaybe <$> iValid <*> iData)
+                                       (fmap boolToReady oReady)
+                       oValid = isJust <$> o
+                       oData  = maybe (error "liftDF': dummy data") id <$> o
+                   in (oData, oValid, (== Ready) <$> iReady)
 
 -- | Create a 'DataFlow' circuit where the given function @f@ operates on the
 -- data, and the synchronisation channels are passed unaltered.
