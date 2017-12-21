@@ -138,7 +138,10 @@ meta-stability:
 
 module Clash.Explicit.Signal
   ( -- * Synchronous signal
-    Signal, Domain (..), System
+    Signal
+  , Domain (..)
+  , System
+  , InOut
     -- * Clock
   , Clock, ClockKind (..)
   , freqCalc

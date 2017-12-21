@@ -30,6 +30,7 @@ module Clash.Signal.Internal
   ( -- * Datatypes
     Domain (..)
   , Signal (..)
+  , InOut
     -- * Clocks
   , Clock (..)
   , ClockKind (..)
@@ -253,6 +254,24 @@ instance Traversable (Signal domain) where
 {-# NOINLINE traverse# #-}
 traverse# :: Applicative f => (a -> f b) -> Signal domain a -> f (Signal domain b)
 traverse# f (a :- s) = (:-) <$> f a <*> traverse# f s
+
+-- | Similar to @Signal@, but indicates this port should be bidirectional in the target HDL.
+--
+-- === Usage example
+--
+-- > example
+-- >   :: Clock System Source
+-- >   -> Reset System Asynchronous
+-- >   -> InOut System (BitVector 16)
+-- >   -> Signal System Bool
+-- > example clk rst data = ...
+--
+-- Note that there is no way to simulate inout ports. It is merely a way to passthrough such
+-- a port. This might be used in combination with an existing IP component (for example, a
+-- DRAM controller).
+--
+-- __NB__ Can be as an input, as well as (a component of) an output
+data InOut (domain :: Domain) a
 
 -- * Clocks and resets
 
