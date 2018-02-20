@@ -98,7 +98,7 @@ module Clash.Explicit.BlockRam.File
 where
 
 import Data.Char             (digitToInt)
-import Data.Maybe            (fromJust, isJust, listToMaybe)
+import Data.Maybe            (isJust, listToMaybe)
 import qualified Data.Vector as V
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits          (KnownNat)
@@ -199,6 +199,9 @@ blockRamFile
 blockRamFile = \clk sz file rd wrM ->
   let en       = isJust <$> wrM
       (wr,din) = unbundle (fromJust <$> wrM)
+      -- Data.Maybe.fromJust may not have an unfolding; see #274
+      fromJust Nothing = error "Clash.Explicit.BlockRam.File.blockRamFile: impossible"
+      fromJust (Just x) = x
   in  withFrozenCallStack
       (blockRamFile# clk sz file (fromEnum <$> rd) en (fromEnum <$> wr) din)
 {-# INLINE blockRamFile #-}

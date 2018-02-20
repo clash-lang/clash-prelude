@@ -34,7 +34,7 @@ module Clash.Explicit.RAM
   )
 where
 
-import Data.Maybe            (fromJust, isJust)
+import Data.Maybe            (isJust)
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits          (KnownNat)
 import qualified Data.Vector as V
@@ -96,6 +96,9 @@ asyncRam
 asyncRam = \wclk rclk sz rd wrM ->
   let en       = isJust <$> wrM
       (wr,din) = unbundle (fromJust <$> wrM)
+      -- Data.Maybe.fromJust may not have an unfolding; see #274
+      fromJust Nothing = error "Clash.Explicit.RAM.asyncRam: impossible"
+      fromJust (Just x) = x
   in  withFrozenCallStack
       (asyncRam# wclk rclk sz (fromEnum <$> rd) en (fromEnum <$> wr) din)
 {-# INLINE asyncRam #-}

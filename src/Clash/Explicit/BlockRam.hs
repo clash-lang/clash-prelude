@@ -392,7 +392,7 @@ module Clash.Explicit.BlockRam
   )
 where
 
-import Data.Maybe             (fromJust, isJust)
+import Data.Maybe             (isJust)
 import qualified Data.Vector  as V
 import GHC.Stack              (HasCallStack, withFrozenCallStack)
 import GHC.TypeLits           (KnownNat, type (^))
@@ -699,6 +699,9 @@ blockRam
 blockRam = \clk content rd wrM ->
   let en       = isJust <$> wrM
       (wr,din) = unbundle (fromJust <$> wrM)
+      -- Data.Maybe.fromJust may not have an unfolding; see #274
+      fromJust Nothing = error "Clash.Explicit.BlockRam.blockRam: impossible"
+      fromJust (Just x) = x
   in  withFrozenCallStack
       (blockRam# clk content (fromEnum <$> rd) en (fromEnum <$> wr) din)
 {-# INLINE blockRam #-}
