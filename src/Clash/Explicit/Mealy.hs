@@ -17,10 +17,11 @@ module Clash.Explicit.Mealy
   ( -- * Mealy machines with explicit clock and reset ports
     mealy
   , mealyB
+  , mealyDB
   )
 where
 
-import Clash.Explicit.Signal (Bundle (..), Clock, Reset, Signal, register)
+import Clash.Explicit.Signal (Bundle (..), Clock, DBundle, Reset, Signal, register)
 
 {- $setup
 >>> :set -XDataKinds -XTypeApplications
@@ -125,3 +126,14 @@ mealyB :: (Bundle i, Bundle o)
        -- of the mealy machine
 mealyB clk rst f iS i = unbundle (mealy clk rst f iS (bundle i))
 {-# INLINE mealyB #-}
+
+-- | version of 'mealyB' that does automatic /deep/ 'Bundle'ing
+mealyDB
+  :: (DBundle i, DBundle o)
+  => Clock dom gated
+  -> Reset dom synchronous
+  -> (s -> i -> (s,o))
+  -> s
+  -> (DUnbundled dom i -> DUnbundled dom o)
+mealyDB clk rst f iS i = deepUnbundle (mealy clk rst f iS (deepBundle i))
+{-# INLINE mealyDB #-}

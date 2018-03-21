@@ -17,12 +17,14 @@ module Clash.Explicit.Moore
   ( -- * Moore machines with explicit clock and reset ports
     moore
   , mooreB
+  , mooreDB
   , medvedev
   , medvedevB
+  , medvedevDB
   )
 where
 
-import Clash.Explicit.Signal (Bundle (..), Clock, Reset, Signal, register)
+import Clash.Explicit.Signal (Bundle (..), Clock, DBundle, Reset, Signal, register)
 
 {- $setup
 >>> :set -XDataKinds -XTypeApplications
@@ -147,3 +149,30 @@ medvedevB
   -> (Unbundled domain i -> Unbundled domain s)
 medvedevB clk rst tr st = mooreB clk rst tr id st
 {-# INLINE medvedevB #-}
+
+-- | A version of 'mooreB' that does automatic /deep/ 'Bundle'ing
+mooreDB
+  :: (DBundle i, DBundle o)
+  => Clock domain gated
+  -> Reset domain synchronous
+  -> (s -> i -> s) -- ^ Transfer function in moore machine form:
+                   -- @state -> input -> newstate@
+  -> (s -> o)      -- ^ Output function in moore machine form:
+                   -- @state -> output@
+  -> s             -- ^ Initial state
+  -> (DUnbundled domain i -> DUnbundled domain o)
+  -- ^ Synchronous sequential function with input and output matching that
+  -- of the moore machine
+mooreDB clk rst ft fo iS i = deepUnbundle (moore clk rst ft fo iS (deepBundle i))
+{-# INLINE mooreDB #-}
+
+-- | A version of 'medvedevB' that does automatic /deep/ 'Bundle'ing
+medvedevDB
+  :: (DBundle i, DBundle s)
+  => Clock domain gated
+  -> Reset domain synchronous
+  -> (s -> i -> s)
+  -> s
+  -> (DUnbundled domain i -> DUnbundled domain s)
+medvedevDB clk rst tr st = mooreDB clk rst tr id st
+{-# INLINE medvedevDB #-}

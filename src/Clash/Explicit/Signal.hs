@@ -169,7 +169,7 @@ module Clash.Explicit.Signal
     -- * Boolean connectives
   , (.&&.), (.||.)
     -- * Product/Signal isomorphism
-  , Bundle(..)
+  , Bundle(..), DBundle
     -- * Simulation functions (not synthesisable)
   , simulate
   , simulateB
@@ -199,7 +199,7 @@ import Data.Maybe            (isJust, fromJust)
 import GHC.Stack             (HasCallStack, withFrozenCallStack)
 
 import Clash.Signal.Internal
-import Clash.Signal.Bundle   (Bundle (..))
+import Clash.Signal.Bundle   (Bundle (..), DBundle)
 
 {- $setup
 >>> :set -XDataKinds -XTypeApplications
