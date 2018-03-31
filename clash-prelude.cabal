@@ -59,7 +59,7 @@ Extra-source-files:   README.md
 
 extra-doc-files:      doc/*.svg
 
-Cabal-version:        >=1.18
+Cabal-version:        1.18
 Tested-with:          GHC == 8.2.2, GHC == 8.4.1, GHC == 8.5
 
 source-repository head
@@ -226,7 +226,7 @@ benchmark benchmark-clash-prelude
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
   main-is:          benchmark-main.hs
-  ghc-options:      -O2 -Wall
+  ghc-options:      -Wall
   hs-source-dirs:   benchmarks
 
   if !flag(benchmarks)
