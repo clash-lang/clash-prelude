@@ -276,7 +276,7 @@ The CλaSH compiler and Prelude library for circuit design only work with the
 
   (4) Verify that everything is working by:
 
-      * Downloading the <https://raw.githubusercontent.com/clash-lang/clash-compiler/36a60d7979012b39bcaac66ec7048a7ec7167fbe/examples/FIR.hs Fir.hs> example
+      * Downloading the <https://raw.githubusercontent.com/clash-lang/clash-compiler/4bfeb5a63e8c0dddc34d2d973c2200d01f71acee/examples/FIR.hs Fir.hs> example
       * Run: @clashi FIR.hs@
       * Execute, in the interpreter, the @:vhdl@ command
       * Execute, in the interpreter, the @:verilog@ command
