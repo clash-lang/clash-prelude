@@ -1,8 +1,22 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
-## 0.99
+## 0.99 *March 31st 2018*
+* Major API overhaul: check the migration guide at the end of `Clash.Tutorial`
 * New features:
-  * Explicit clock and reset lines
+  * Explicit clock and reset arguments
+  * Rename `CLaSH` to `Clash`
+  * Implicit/`Hidden` clock and reset arguments using a combination of
+    `reflection` and `ImplicitParams`.
+  * Large overhaul of `TopEntity`  annotations
+  * PLL and other clock sources can now be instantiated using regular functions:
+    `Clash.Intel.ClockGen` and `Clash.Xilinx.ClockGen`.
+  * DDR registers:
+    * Generic/ASIC: `Clash.Explicit.DDR`
+    * Intel: `Clash.Intel.DDR`
+    * Xilinx: `Clash.Intel.Xilinx`
+  * `Bit` is now a `newtype` instead of a `type` synonym and will be mapped to
+    a HDL scalar instead of an array of one (e.g `std_logic` instead of
+    `std_logic_vector(0 downto 0)`)
 
 ## 0.11.2
 * New features:
