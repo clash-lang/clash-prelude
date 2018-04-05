@@ -905,6 +905,7 @@ For example, given the following specification:
 module Blinker where
 
 import Clash.Prelude
+import Clash.Promoted.Symbol
 import Clash.Intel.ClockGen
 
 type Dom50 = Dom \"System\" 20000
