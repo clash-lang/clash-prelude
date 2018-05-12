@@ -1270,7 +1270,7 @@ a general listing of the available template holes:
   expression in @\<HOLE\>@, which has a bit vector (@std_logic_vector@) type, is
   converted to type indicated by @\<TYPE\>@. The @\<TYPE\>@ hole indicates the
   must be either @~TYP[N]@, @~TYPO@, or @~TYPELEM[\<HOLE\>]@.
-* @~QSysIncludeName@: the generated name of the included QSys component.
+* @~INCLUDENAME@: the generated name of the included component.
 * @~FILEPATH[\<HOLE\>]@: The argument mentioned in @\<HOLE\>@ is a file which
   must be copied to the location of the generated HDL.
 * @~GENERATE@: Verilog: create a /generate/ statement, except when already in
@@ -2230,8 +2230,8 @@ and / or easy to use as the standard Haskell features.
 
 * With the overhaul of 'Clash.Annotations.TopEntity' annotations and the
   introduction of explicit clock and reset arguments, PLLs and other clock
-  sources are now regular Clash function such as those found in
-  "Clash.Intel.ClockGen" and "Clash.Xilinx.ClockGen"
+  sources are now regular Clash functions such as those found in
+  "Clash.Intel.ClockGen" and "Clash.Xilinx.ClockGen".
 
 
 === Examples
@@ -2356,7 +2356,6 @@ Blinker circuit in the current version:
 module Blinker where
 
 import Clash.Prelude
-import Clash.Promoted.Symbol
 import Clash.Intel.ClockGen
 
 type Dom50 = Dom \"System\" 20000
