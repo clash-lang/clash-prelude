@@ -1,5 +1,8 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.99.1 *May 12th 2018*
+* Support for `ghc-typelits-natnormalise-0.6.1`
+
 ## 0.99 *March 31st 2018*
 * Major API overhaul: check the migration guide at the end of `Clash.Tutorial`
 * New features:
