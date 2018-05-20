@@ -136,6 +136,8 @@ Library
                       Clash.Signal
                       Clash.Signal.Bundle
                       Clash.Signal.Delayed
+                      Clash.Signal.Delayed.Bundle
+                      Clash.Signal.Delayed.Extra
                       Clash.Signal.Internal
 
                       Clash.Sized.BitVector
