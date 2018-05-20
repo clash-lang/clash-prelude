@@ -29,9 +29,9 @@ import           Clash.Sized.Vector            (Vec, dtfold)
 import           Clash.Promoted.Nat
 
 import           Data.Proxy
-import           Data.Singletons.Prelude
+import           Data.Singletons.Prelude       hiding (type (+), type (^))
 
-import           GHC.TypeLits                  (KnownNat, Nat)
+import           GHC.TypeLits                  (KnownNat, Nat, type (+), type (^))
 
 import           Clash.XException              (maybeX)
 
