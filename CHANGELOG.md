@@ -1,5 +1,10 @@
 # Changelog for [`clash-prelude` package](http://hackage.haskell.org/package/clash-prelude)
 
+## 0.99.3 *July 26th 2018*
+* Bundle and BitPack instances up to and including 62-tuples
+* Handle undefined writes to RAM properly
+* Handle undefined clock enables properly
+
 ## 0.99.1 *May 12th 2018*
 * Support for `ghc-typelits-natnormalise-0.6.1`
 * `Lift` instances for `TopEntity` and `PortName`
